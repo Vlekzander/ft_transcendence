@@ -1,0 +1,69 @@
+name: ft_transcendence
+services:
+    frontend:
+        build:
+            context: .
+            dockerfile: ./docker/frontend.Dockerfile
+        user: 1000:1000
+        volumes:
+            - ./apps/web:/home/node/apps/web
+            - ./packages/shared:/home/node/packages/shared
+        ports:
+            - 5173:5173
+    backend:
+        build:
+            context: .
+            dockerfile: ./docker/backend.Dockerfile
+        user: 1000:1000
+        volumes:
+            - ./apps/server/:/home/node/apps/server
+            - ./packages/shared:/home/node/packages/shared
+        networks:
+            - ft_network
+        ports:
+            - 3000:3000
+    database:
+        image: postgres:latest
+        volumes:
+            - postgres_data:/var/lib/postgresql/18/docker
+            - ./docker/initdb/:/docker-entrypoint-initdb.d
+        networks:
+            - ft_network
+        secrets:
+            - db_username
+            - db_password
+        environment:
+            POSTGRES_DB: posgres
+            POSTGRES_USER_FILE: /run/secrets/db_username
+            POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    pgadmin:
+        image: dpage/pgadmin4:latest
+        volumes:
+            - pgadmin_data:/var/lib/pgadmin
+        networks:
+            - ft_network
+        ports:
+            - 80:80
+        depends_on:
+            - database
+        secrets:
+            - db_password
+        environment:
+            PGADMIN_DEFAULT_EMAIL: apierret@student.42belgium.be
+            PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/db_password
+            PGADMIN_CONFIG_SERVER_MODE: False
+            PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: False
+
+volumes:
+    postgres_data:
+    pgadmin_data:
+
+networks:
+    ft_network:
+        driver: bridge
+
+secrets:
+    db_username:
+        file: docker/secrets/db_username.txt
+    db_password:
+        file: docker/secrets/db_password.txt

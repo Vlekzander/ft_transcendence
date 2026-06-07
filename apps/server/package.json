@@ -1,0 +1,29 @@
+{
+	"name": "@ft_transcendence/server",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"main": "dist/server.js",
+	"scripts": {
+		"dev": "tsx watch src/server.ts",
+		"build": "tsc && tsc-alias",
+		"start": "node dist/server.js",
+		"lint": "eslint .",
+		"test": "vitest"
+	},
+	"dependencies": {
+		"@ft_transcendence/shared": "0.0.0",
+		"cors": "^2.8.6",
+		"express": "^5.2.1"
+	},
+	"devDependencies": {
+		"@types/cors": "^2.8.19",
+		"@types/express": "^5.0.6",
+		"@types/node": "^25.9.1",
+		"eslint": "^10.4.1",
+		"tsc-alias": "^1.8.17",
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3",
+		"vitest": "^4.1.8"
+	}
+}

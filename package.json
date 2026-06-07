@@ -1,0 +1,24 @@
+{
+	"name": "ft_transcendence",
+	"private": true,
+	"type": "module",
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"dev": "npm run dev:web & npm run dev:server",
+		"dev:web": "npm run dev -w @ft_transcendence/web",
+		"dev:server": "npm run dev -w @ft_transcendence/server",
+		"build": "npm run build --workspaces --if-present",
+		"start:server": "npm run start -w @ft_transcendence/server",
+		"lint": "npm run lint --workspaces --if-present",
+		"format": "prettier --write ."
+	},
+	"allowScripts": {
+		"esbuild@0.28.0": true
+	},
+	"devDependencies": {
+		"prettier": "^3.8.3"
+	}
+}
