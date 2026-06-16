@@ -10,6 +10,8 @@ services:
             - ./packages/shared:/home/node/packages/shared
         ports:
             - 5173:5173
+        environment:
+          VITE_API_URL: "http://localhost:3000"
     backend:
         build:
             context: .
