@@ -10,7 +10,7 @@ COPY packages/shared/package.json ./packages/shared/package.json
 
 RUN npm install
 
-EXPOSE 5173
+EXPOSE 3000
 
 ENTRYPOINT ["tini", "--"]
 CMD ["npm", "run", "dev", "--workspace", "@ft_transcendence/server"]
