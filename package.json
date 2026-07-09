@@ -12,8 +12,10 @@
 		"dev:server": "npm run dev -w @ft_transcendence/server",
 		"build": "npm run build --workspaces --if-present",
 		"start:server": "npm run start -w @ft_transcendence/server",
+		"test:server": "npm run test -w @ft_transcendence/server",
 		"lint": "npm run lint --workspaces --if-present",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"prepare": "husky"
 	},
 	"allowScripts": {
 		"esbuild@0.28.1": true
@@ -23,6 +25,17 @@
 		"prettier": "^3.8.3"
 	},
 	"dependencies": {
-		"bcryptjs": "^3.0.3"
+		"bcryptjs": "^3.0.3",
+		"husky": "^9.1.7",
+		"lint-staged": "^17.0.8"
+	},
+	"lint-staged": {
+		"*.{js,jsx,ts,tsx}": [
+			"eslint --fix",
+			"prettier --write"
+		],
+		"*.{json,md,yml,yaml,css,scss}": [
+			"prettier --write"
+		]
 	}
 }

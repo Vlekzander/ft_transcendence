@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { MockDataManager } from "../data/MockDataManager";
 import { UserRole } from "../data/DataManager";
+import {
+	DuplicateEmailError,
+	DuplicateUsernameError,
+	UnknownAvatarIdError,
+	UnknownUserIdError,
+} from "../errors/data-manager.errors";
 
 describe("MockDataManager", () => {
 	let dataManager: MockDataManager;
@@ -40,7 +46,7 @@ describe("MockDataManager", () => {
 					username: "user2",
 					password: "secret456",
 				}),
-			).rejects.toThrow("Email already used");
+			).rejects.toThrow(DuplicateEmailError);
 		});
 
 		it("Throw an exception if the username is duplicated", async () => {
@@ -56,7 +62,7 @@ describe("MockDataManager", () => {
 					username: "dupname",
 					password: "secret456",
 				}),
-			).rejects.toThrow("Username already used");
+			).rejects.toThrow(DuplicateUsernameError);
 		});
 	});
 
@@ -171,7 +177,7 @@ describe("MockDataManager", () => {
 		it("Throw an exception if the id is invalid", async () => {
 			await expect(
 				dataManager.updateUserEmail("invalid", "updated@example.com"),
-			).rejects.toThrow("Invalid user id");
+			).rejects.toThrow(UnknownUserIdError);
 		});
 	});
 
@@ -194,7 +200,7 @@ describe("MockDataManager", () => {
 		it("Throw an exception if the id is invalid", async () => {
 			await expect(
 				dataManager.updateUserPassword("invalid", "superpassword"),
-			).rejects.toThrow("Invalid user id");
+			).rejects.toThrow(UnknownUserIdError);
 		});
 	});
 
@@ -219,7 +225,7 @@ describe("MockDataManager", () => {
 		it("Throw an exception if the id is invalid", async () => {
 			await expect(
 				dataManager.updateUserAvatar("invalid", "any avatar"),
-			).rejects.toThrow("Invalid user id");
+			).rejects.toThrow(UnknownUserIdError);
 		});
 	});
 
@@ -238,7 +244,7 @@ describe("MockDataManager", () => {
 		});
 		it("Throw an exception if the id is invalid", async () => {
 			await expect(dataManager.deleteUser("invalid")).rejects.toThrow(
-				"Invalid user id",
+				UnknownUserIdError,
 			);
 		});
 	});
@@ -254,7 +260,7 @@ describe("MockDataManager", () => {
 		});
 		it("Throw an exception if the id is invalid", async () => {
 			await expect(dataManager.deleteAvatar("invalid")).rejects.toThrow(
-				"Invalid avatar id",
+				UnknownAvatarIdError,
 			);
 		});
 	});
