@@ -1,3 +1,9 @@
+import {
+	DuplicateEmailError,
+	DuplicateUsernameError,
+	UnknownAvatarIdError,
+	UnknownUserIdError,
+} from "../errors/data-manager.errors";
 import { compareHash, generateHash } from "../utils/hash.util";
 import {
 	UserRole,
@@ -13,10 +19,9 @@ export class MockDataManager implements DataManager {
 
 	async createUser(data: CreateUserInput): Promise<UserDTO> {
 		for (const user of this.users.values()) {
-			if (user.email === data.email)
-				throw new Error("Email already used");
+			if (user.email === data.email) throw new DuplicateEmailError();
 			if (user.username === data.username)
-				throw new Error("Username already used");
+				throw new DuplicateUsernameError();
 		}
 		const now = new Date();
 		const hashedPassword = await generateHash(data.password);
@@ -79,34 +84,34 @@ export class MockDataManager implements DataManager {
 
 	async updateUserEmail(id: string, email: string): Promise<UserDTO> {
 		const user = this.users.get(id);
-		if (user == null) throw new Error("Invalid user id");
+		if (user == null) throw new UnknownUserIdError();
 		user.email = email;
 		return user;
 	}
 
 	async updateUserPassword(id: string, password: string): Promise<UserDTO> {
 		const user = this.users.get(id);
-		if (user == null) throw new Error("Invalid user id");
+		if (user == null) throw new UnknownUserIdError();
 		user.passwordHash = await generateHash(password);
 		return user;
 	}
 
 	async updateUserAvatar(id: string, avatarId: string): Promise<UserDTO> {
 		const user = this.users.get(id);
-		if (user == null) throw new Error("Invalid user id");
+		if (user == null) throw new UnknownUserIdError();
 		user.avatarUuid = avatarId;
 		return user;
 	}
 
 	async deleteUser(id: string): Promise<void> {
 		const user = this.users.get(id);
-		if (user == null) throw new Error("Invalid user id");
+		if (user == null) throw new UnknownUserIdError();
 		this.users.delete(id);
 	}
 
 	async deleteAvatar(id: string): Promise<void> {
 		const user = this.avatars.get(id);
-		if (user == null) throw new Error("Invalid avatar id");
+		if (user == null) throw new UnknownAvatarIdError();
 		this.avatars.delete(id);
 	}
 
@@ -115,7 +120,7 @@ export class MockDataManager implements DataManager {
 		password: string,
 	): Promise<boolean> {
 		const user = this.users.get(userId);
-		if (!user) throw new Error("Invalid user id");
+		if (!user) throw new UnknownUserIdError();
 		return compareHash(password, user.passwordHash);
 	}
 }
