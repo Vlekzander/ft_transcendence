@@ -17,6 +17,8 @@ services:
             context: .
             dockerfile: ./docker/backend.Dockerfile
         user: 1000:1000
+        env_file:
+            - ./apps/server/.env
         volumes:
             - ./apps/server/:/home/node/apps/server
             - ./packages/shared:/home/node/packages/shared
