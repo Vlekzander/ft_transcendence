@@ -1,11 +1,17 @@
-export class DuplicateEmailError extends Error {
+import { HttpError } from "./http.errors";
+
+export class DuplicateEmailError extends HttpError {
+	readonly statusCode = 409;
+
 	constructor() {
 		super("Email already exists");
 		this.name = "DuplicateEmailError";
 	}
 }
 
-export class DuplicateUsernameError extends Error {
+export class DuplicateUsernameError extends HttpError {
+	readonly statusCode = 409;
+
 	constructor() {
 		super("Username already exists");
 		this.name = "DuplicateUsernameError";

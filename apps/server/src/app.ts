@@ -2,6 +2,7 @@ import { hello } from "@ft_transcendence/shared";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
+import { errorHandler } from "./middlewares/error.middleware";
 import { authRouter } from "./routes/auth.routes";
 
 const app = express();
@@ -14,5 +15,7 @@ app.use("/auth", authRouter);
 app.get("/", (_req, res) => {
 	res.json({ message: hello("API") });
 });
+
+app.use(errorHandler);
 
 export default app;

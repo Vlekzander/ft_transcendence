@@ -17,6 +17,18 @@ export class MockDataManager implements DataManager {
 	private avatars = new Map<string, AvatarDTO>();
 	private users = new Map<string, UserDTO & { passwordHash: string }>();
 
+	private static instance: MockDataManager;
+
+	// Production code should share a single instance (see data/index.ts). The
+	// constructor stays public so tests can create isolated, non-shared
+	// instances (e.g. `new MockDataManager()` in a `beforeEach`).
+	static getInstance(): MockDataManager {
+		if (!MockDataManager.instance) {
+			MockDataManager.instance = new MockDataManager();
+		}
+		return MockDataManager.instance;
+	}
+
 	async createUser(data: CreateUserInput): Promise<UserDTO> {
 		for (const user of this.users.values()) {
 			if (user.email === data.email) throw new DuplicateEmailError();
