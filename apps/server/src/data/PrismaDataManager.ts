@@ -222,8 +222,18 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async deleteUser(_id: string): Promise<void> {
-		throw new Error("Not implemented");
+	async deleteUser(id: string): Promise<void> {
+		try {
+			await prisma.user.delete({ where: { uuid: id } });
+		} catch (error) {
+			if (
+				error instanceof Prisma.PrismaClientKnownRequestError &&
+				(error.code === "P2007" || error.code === "P2025")
+			) {
+				throw new UnknownUserIdError();
+			}
+			throw error;
+		}
 	}
 
 	async deleteAvatar(_id: string): Promise<void> {
