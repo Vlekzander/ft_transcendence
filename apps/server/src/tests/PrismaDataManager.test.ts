@@ -90,7 +90,13 @@ describe("PrismaDataManager", () => {
 		});
 
 		it("Returns null if id does not exist", async () => {
-			const user = await dataManager.getUserById("missing-id");
+			const user = await dataManager.getUserById(crypto.randomUUID());
+
+			expect(user).toBeNull();
+		});
+
+		it("Returns null if id is not an uuid", async () => {
+			const user = await dataManager.getUserById("no-uuid");
 
 			expect(user).toBeNull();
 		});
