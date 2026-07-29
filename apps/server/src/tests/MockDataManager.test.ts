@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { MockDataManager } from "../data/MockDataManager";
-import { UserRole } from "../data/DataManager";
 import {
 	DuplicateEmailError,
 	DuplicateUsernameError,
@@ -26,8 +25,6 @@ describe("MockDataManager", () => {
 			expect(user.uuid).toBeTypeOf("string");
 			expect(user.email).toBe("john@example.com");
 			expect(user.username).toBe("john");
-			expect(user.role).toBe(UserRole.USER);
-			expect(user.banned).toBe(false);
 			expect(user.avatarUuid).toBeNull();
 			expect(user.createdAt).toBeInstanceOf(Date);
 			expect(user).not.toHaveProperty("passwordHash");

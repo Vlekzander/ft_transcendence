@@ -1,9 +1,3 @@
-export enum UserRole {
-	USER,
-	MODERATOR,
-	ADMINISTRATOR,
-}
-
 export type CreateUserInput = {
 	email: string;
 	username: string;
@@ -14,8 +8,6 @@ export type UserDTO = {
 	uuid: string;
 	email: string;
 	username: string;
-	role: UserRole;
-	banned: boolean;
 	avatarUuid: string | null;
 	createdAt: Date;
 };
