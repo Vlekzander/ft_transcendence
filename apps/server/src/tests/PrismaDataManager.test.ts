@@ -235,8 +235,14 @@ describe("PrismaDataManager", () => {
 
 		it("Throw an exception if the id is invalid", async () => {
 			await expect(
-				dataManager.updateUserAvatar("invalid", "any avatar"),
+				dataManager.updateUserAvatar("invalid", crypto.randomUUID()),
 			).rejects.toThrow(UnknownUserIdError);
+		});
+
+		it("Returns null if id format is invalid", async () => {
+			const user = await dataManager.getUserById("no-uuid");
+
+			expect(user).toBeNull();
 		});
 	});
 
