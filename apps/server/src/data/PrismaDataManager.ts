@@ -7,7 +7,7 @@ import {
 } from "../errors/data-manager.errors";
 import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma.lib";
-import { generateHash } from "../utils/hash.util";
+import { compareHash, generateHash } from "../utils/hash.util";
 import {
 	AvatarDTO,
 	CreateUserInput,
@@ -252,9 +252,25 @@ export class PrismaDataManager implements DataManager {
 	}
 
 	async validateUserPassword(
-		_userId: string,
-		_password: string,
+		userId: string,
+		password: string,
 	): Promise<boolean> {
-		throw new Error("Not implemented");
+		try {
+			const result = await prisma.user.findUnique({
+				where: { uuid: userId },
+			});
+
+			if (!result) throw new UnknownUserIdError();
+
+			return await compareHash(password, result?.password);
+		} catch (error) {
+			if (
+				error instanceof Prisma.PrismaClientKnownRequestError &&
+				(error.code === "P2007" || error.code === "P2025")
+			) {
+				throw new UnknownUserIdError();
+			}
+			throw error;
+		}
 	}
 }

@@ -322,4 +322,38 @@ describe("PrismaDataManager", () => {
 			);
 		});
 	});
+
+	describe("validatePassword", () => {
+		it("Validate password", async () => {
+			const password = "secret123";
+
+			const created = await dataManager.createUser({
+				email: "user@example.com",
+				username: "user",
+				password: password,
+			});
+
+			const result = await dataManager.validateUserPassword(
+				created.uuid,
+				password,
+			);
+
+			expect(result).toBeTruthy();
+		});
+
+		it("Throw an exception if the id is invalid", async () => {
+			await expect(
+				dataManager.validateUserPassword(
+					crypto.randomUUID(),
+					"password",
+				),
+			).rejects.toThrow(UnknownUserIdError);
+		});
+
+		it("Throw an exception if the id format is invalid", async () => {
+			await expect(
+				dataManager.validateUserPassword("invalid", "password"),
+			).rejects.toThrow(UnknownUserIdError);
+		});
+	});
 });
