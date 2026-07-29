@@ -2,6 +2,7 @@ import {
 	DuplicateElementError,
 	DuplicateEmailError,
 	DuplicateUsernameError,
+	UnknownUserIdError,
 } from "../errors/data-manager.errors";
 import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma.lib";
@@ -145,8 +146,29 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async updateUserEmail(_id: string, _email: string): Promise<UserDTO> {
-		throw new Error("Not implemented");
+	async updateUserEmail(id: string, email: string): Promise<UserDTO> {
+		try {
+			const result = await prisma.user.update({
+				where: { uuid: id },
+				data: { email: email },
+			});
+
+			return {
+				uuid: result.uuid,
+				email: result.email,
+				username: result.username,
+				avatarUuid: result.avatarUuid,
+				createdAt: result.createdAt,
+			};
+		} catch (error) {
+			if (
+				error instanceof Prisma.PrismaClientKnownRequestError &&
+				error.code === "P2007"
+			) {
+				throw new UnknownUserIdError();
+			}
+			throw error;
+		}
 	}
 
 	async updateUserPassword(_id: string, _password: string): Promise<UserDTO> {
