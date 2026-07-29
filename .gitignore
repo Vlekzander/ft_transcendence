@@ -2,3 +2,5 @@ node_modules
 dist
 .env
 secrets
+
+apps/server/src/generated

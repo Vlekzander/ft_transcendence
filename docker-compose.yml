@@ -24,18 +24,23 @@ services:
             - ft_network
         ports:
             - 3000:3000
+        secrets:
+            - db_username
+            - db_password
+        environment:
+            DB_HOST: database
+            DB_NAME: ft_transcendence
     database:
         image: postgres:latest
         volumes:
             - postgres_data:/var/lib/postgresql/18/docker
-            - ./docker/initdb/:/docker-entrypoint-initdb.d
         networks:
             - ft_network
         secrets:
             - db_username
             - db_password
         environment:
-            POSTGRES_DB: posgres
+            POSTGRES_DB: postgres
             POSTGRES_USER_FILE: /run/secrets/db_username
             POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     pgadmin:
