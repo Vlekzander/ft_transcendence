@@ -2,6 +2,7 @@ import {
 	DuplicateElementError,
 	DuplicateEmailError,
 	DuplicateUsernameError,
+	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
 import { Prisma } from "../generated/prisma/client";
@@ -236,8 +237,18 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async deleteAvatar(_id: string): Promise<void> {
-		throw new Error("Not implemented");
+	async deleteAvatar(id: string): Promise<void> {
+		try {
+			await prisma.avatar.delete({ where: { uuid: id } });
+		} catch (error) {
+			if (
+				error instanceof Prisma.PrismaClientKnownRequestError &&
+				(error.code === "P2007" || error.code === "P2025")
+			) {
+				throw new UnknownAvatarIdError();
+			}
+			throw error;
+		}
 	}
 
 	async validateUserPassword(

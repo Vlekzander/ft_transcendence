@@ -309,7 +309,14 @@ describe("PrismaDataManager", () => {
 
 			expect(deleted).toBeNull();
 		});
+
 		it("Throw an exception if the id is invalid", async () => {
+			await expect(
+				dataManager.deleteAvatar(crypto.randomUUID()),
+			).rejects.toThrow(UnknownAvatarIdError);
+		});
+
+		it("Throw an exception if the id format is invalid", async () => {
 			await expect(dataManager.deleteAvatar("invalid")).rejects.toThrow(
 				UnknownAvatarIdError,
 			);
