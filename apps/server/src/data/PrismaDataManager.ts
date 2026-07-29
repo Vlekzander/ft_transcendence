@@ -93,8 +93,19 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async getUserByEmail(_email: string): Promise<UserDTO | null> {
-		throw new Error("Not implemented");
+	async getUserByEmail(email: string): Promise<UserDTO | null> {
+		const result = await prisma.user.findUnique({
+			where: { email: email },
+		});
+
+		if (!result) return null;
+		return {
+			uuid: result.uuid,
+			email: result.email,
+			username: result.username,
+			avatarUuid: result.avatarUuid,
+			createdAt: result.createdAt,
+		};
 	}
 
 	async getUserByUsername(_username: string): Promise<UserDTO | null> {

@@ -124,6 +124,11 @@ describe("PrismaDataManager", () => {
 
 			expect(user).toBeNull();
 		});
+		it("Returns null if email format is invalid", async () => {
+			const user = await dataManager.getUserByEmail("invalid");
+
+			expect(user).toBeNull();
+		});
 	});
 
 	describe("getUserByUsername", () => {
