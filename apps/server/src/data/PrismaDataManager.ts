@@ -197,8 +197,29 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async updateUserAvatar(_id: string, _avatarId: string): Promise<UserDTO> {
-		throw new Error("Not implemented");
+	async updateUserAvatar(id: string, avatarId: string): Promise<UserDTO> {
+		try {
+			const result = await prisma.user.update({
+				where: { uuid: id },
+				data: { avatar: { connect: { uuid: avatarId } } },
+			});
+
+			return {
+				uuid: result.uuid,
+				email: result.email,
+				username: result.username,
+				avatarUuid: result.avatarUuid,
+				createdAt: result.createdAt,
+			};
+		} catch (error) {
+			if (
+				error instanceof Prisma.PrismaClientKnownRequestError &&
+				(error.code === "P2007" || error.code === "P2025")
+			) {
+				throw new UnknownUserIdError();
+			}
+			throw error;
+		}
 	}
 
 	async deleteUser(_id: string): Promise<void> {
