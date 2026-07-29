@@ -163,7 +163,7 @@ export class PrismaDataManager implements DataManager {
 		} catch (error) {
 			if (
 				error instanceof Prisma.PrismaClientKnownRequestError &&
-				error.code === "P2007"
+				(error.code === "P2007" || error.code === "P2025")
 			) {
 				throw new UnknownUserIdError();
 			}

@@ -185,6 +185,15 @@ describe("PrismaDataManager", () => {
 			expect(updated.email).toBe("updated@example.com");
 		});
 
+		it("Throw an exception if the id is invalid", async () => {
+			await expect(
+				dataManager.updateUserEmail(
+					crypto.randomUUID(),
+					"updated@example.com",
+				),
+			).rejects.toThrow(UnknownUserIdError);
+		});
+
 		it("Throw an exception if the id format is invalid", async () => {
 			await expect(
 				dataManager.updateUserEmail("invalid", "updated@example.com"),
