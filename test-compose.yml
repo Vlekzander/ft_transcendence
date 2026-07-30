@@ -1,0 +1,45 @@
+name: ft_transcendence_test
+services:
+    backend:
+        container_name: ft_transcendence-backend-test
+        build:
+            context: .
+            dockerfile: ./docker/backend.Dockerfile
+        user: 1000:1000
+        volumes:
+            - ./apps/server/:/home/node/apps/server
+            - ./packages/shared:/home/node/packages/shared
+        networks:
+            - ft_network
+        ports:
+            - 3000:3000
+        env_file:
+            - .env.test
+        environment:
+            DB_HOST: database
+            DB_NAME: ${DB_NAME}
+        command: npx vitest --watch
+        depends_on:
+            database:
+                condition: service_healthy
+    database:
+        container_name: ft_transcendence-database
+        image: postgres:latest
+        networks:
+            - ft_network
+        env_file:
+            - .env.test
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        healthcheck:
+            test:
+                ["CMD-SHELL", "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
+            interval: 10s
+            timeout: 3s
+            retries: 3
+
+networks:
+    ft_network:
+        driver: bridge

@@ -1,6 +1,7 @@
 name: ft_transcendence
 services:
     frontend:
+        container_name: ft_transcendence-frontend
         build:
             context: .
             dockerfile: ./docker/frontend.Dockerfile
@@ -13,6 +14,7 @@ services:
         environment:
             VITE_API_URL: "http://localhost:3000"
     backend:
+        container_name: ft_transcendence-backend
         build:
             context: .
             dockerfile: ./docker/backend.Dockerfile
@@ -31,6 +33,7 @@ services:
             DB_HOST: database
             DB_NAME: ft_transcendence
     database:
+        container_name: ft_transcendence-database
         image: postgres:latest
         volumes:
             - postgres_data:/var/lib/postgresql/18/docker
@@ -44,6 +47,7 @@ services:
             POSTGRES_USER_FILE: /run/secrets/db_username
             POSTGRES_PASSWORD_FILE: /run/secrets/db_password
     pgadmin:
+        container_name: ft_transcendence-pgadmin
         image: dpage/pgadmin4:latest
         volumes:
             - pgadmin_data:/var/lib/pgadmin
