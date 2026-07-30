@@ -3,6 +3,7 @@ import { PrismaDataManager } from "../data/PrismaDataManager";
 import {
 	DuplicateEmailError,
 	DuplicateUsernameError,
+	InvalidIdError,
 	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
@@ -163,7 +164,7 @@ describe("PrismaDataManager", () => {
 		});
 
 		it("Returns null if avatar does not exist", async () => {
-			const avatar = await dataManager.getAvatarById("missing-avatar");
+			const avatar = await dataManager.getAvatarById(crypto.randomUUID());
 
 			expect(avatar).toBeNull();
 		});
@@ -197,7 +198,7 @@ describe("PrismaDataManager", () => {
 		it("Throw an exception if the id format is invalid", async () => {
 			await expect(
 				dataManager.updateUserEmail("invalid", "updated@example.com"),
-			).rejects.toThrow(UnknownUserIdError);
+			).rejects.toThrow(InvalidIdError);
 		});
 	});
 
@@ -229,7 +230,7 @@ describe("PrismaDataManager", () => {
 		it("Throw an exception if the id format is invalid", async () => {
 			await expect(
 				dataManager.updateUserPassword("invalid", "superpassword"),
-			).rejects.toThrow(UnknownUserIdError);
+			).rejects.toThrow(InvalidIdError);
 		});
 	});
 
@@ -260,16 +261,10 @@ describe("PrismaDataManager", () => {
 			).rejects.toThrow(UnknownUserIdError);
 		});
 
-		it("Throw an exception if the id foramt is invalid", async () => {
+		it("Throw an exception if the user id format is invalid", async () => {
 			await expect(
 				dataManager.updateUserAvatar("invalid", crypto.randomUUID()),
-			).rejects.toThrow(UnknownUserIdError);
-		});
-
-		it("Returns null if id format is invalid", async () => {
-			const user = await dataManager.getUserById("no-uuid");
-
-			expect(user).toBeNull();
+			).rejects.toThrow(InvalidIdError);
 		});
 	});
 
@@ -295,7 +290,7 @@ describe("PrismaDataManager", () => {
 
 		it("Throw an exception if the id format is invalid", async () => {
 			await expect(dataManager.deleteUser("invalid")).rejects.toThrow(
-				UnknownUserIdError,
+				InvalidIdError,
 			);
 		});
 	});
@@ -318,7 +313,7 @@ describe("PrismaDataManager", () => {
 
 		it("Throw an exception if the id format is invalid", async () => {
 			await expect(dataManager.deleteAvatar("invalid")).rejects.toThrow(
-				UnknownAvatarIdError,
+				InvalidIdError,
 			);
 		});
 	});
@@ -353,7 +348,7 @@ describe("PrismaDataManager", () => {
 		it("Throw an exception if the id format is invalid", async () => {
 			await expect(
 				dataManager.validateUserPassword("invalid", "password"),
-			).rejects.toThrow(UnknownUserIdError);
+			).rejects.toThrow(InvalidIdError);
 		});
 	});
 });

@@ -2,6 +2,7 @@ import {
 	DuplicateElementError,
 	DuplicateEmailError,
 	DuplicateUsernameError,
+	InvalidIdError,
 	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
@@ -22,6 +23,26 @@ function getPrismaConstraintFields(
 	return error.meta?.driverAdapterError?.cause?.constraint?.fields ?? [];
 }
 
+const userDtoSelect = {
+	uuid: true,
+	email: true,
+	username: true,
+	avatarUuid: true,
+	createdAt: true,
+} as const;
+
+type UserDtoRecord = Prisma.UserGetPayload<{ select: typeof userDtoSelect }>;
+
+function toUserDTO(user: UserDtoRecord): UserDTO {
+	return {
+		uuid: user.uuid,
+		email: user.email,
+		username: user.username,
+		avatarUuid: user.avatarUuid,
+		createdAt: user.createdAt,
+	};
+}
+
 export class PrismaDataManager implements DataManager {
 	async createUser(data: CreateUserInput): Promise<UserDTO> {
 		try {
@@ -32,15 +53,10 @@ export class PrismaDataManager implements DataManager {
 					username: data.username,
 					password: hashedPassword,
 				},
+				select: userDtoSelect,
 			});
 
-			return {
-				uuid: result.uuid,
-				email: result.email,
-				username: result.username,
-				avatarUuid: result.avatarUuid,
-				createdAt: result.createdAt,
-			};
+			return toUserDTO(result);
 		} catch (error) {
 			if (
 				error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -74,22 +90,14 @@ export class PrismaDataManager implements DataManager {
 		try {
 			const result = await prisma.user.findUnique({
 				where: { uuid: id },
+				select: userDtoSelect,
 			});
 
 			if (!result) return null;
-			return {
-				uuid: result.uuid,
-				email: result.email,
-				username: result.username,
-				avatarUuid: result.avatarUuid,
-				createdAt: result.createdAt,
-			};
+			return toUserDTO(result);
 		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				error.code === "P2007"
-			) {
-				return null;
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") return null;
 			}
 			throw error;
 		}
@@ -98,53 +106,33 @@ export class PrismaDataManager implements DataManager {
 	async getUserByEmail(email: string): Promise<UserDTO | null> {
 		const result = await prisma.user.findUnique({
 			where: { email: email },
+			select: userDtoSelect,
 		});
 
 		if (!result) return null;
-		return {
-			uuid: result.uuid,
-			email: result.email,
-			username: result.username,
-			avatarUuid: result.avatarUuid,
-			createdAt: result.createdAt,
-		};
+		return toUserDTO(result);
 	}
 
 	async getUserByUsername(username: string): Promise<UserDTO | null> {
 		const result = await prisma.user.findUnique({
 			where: { username: username },
+			select: userDtoSelect,
+		});
+
+		if (!result) return null;
+		return toUserDTO(result);
+	}
+
+	async getAvatarById(id: string): Promise<AvatarDTO | null> {
+		const result = await prisma.avatar.findUnique({
+			where: { uuid: id },
 		});
 
 		if (!result) return null;
 		return {
 			uuid: result.uuid,
-			email: result.email,
-			username: result.username,
-			avatarUuid: result.avatarUuid,
-			createdAt: result.createdAt,
+			path: result.path,
 		};
-	}
-
-	async getAvatarById(id: string): Promise<AvatarDTO | null> {
-		try {
-			const result = await prisma.avatar.findUnique({
-				where: { uuid: id },
-			});
-
-			if (!result) return null;
-			return {
-				uuid: result.uuid,
-				path: result.path,
-			};
-		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				error.code === "P2007"
-			) {
-				return null;
-			}
-			throw error;
-		}
 	}
 
 	async updateUserEmail(id: string, email: string): Promise<UserDTO> {
@@ -152,21 +140,14 @@ export class PrismaDataManager implements DataManager {
 			const result = await prisma.user.update({
 				where: { uuid: id },
 				data: { email: email },
+				select: userDtoSelect,
 			});
 
-			return {
-				uuid: result.uuid,
-				email: result.email,
-				username: result.username,
-				avatarUuid: result.avatarUuid,
-				createdAt: result.createdAt,
-			};
+			return toUserDTO(result);
 		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				(error.code === "P2007" || error.code === "P2025")
-			) {
-				throw new UnknownUserIdError();
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
 			}
 			throw error;
 		}
@@ -178,21 +159,14 @@ export class PrismaDataManager implements DataManager {
 			const result = await prisma.user.update({
 				where: { uuid: id },
 				data: { password: hashedPassword },
+				select: userDtoSelect,
 			});
 
-			return {
-				uuid: result.uuid,
-				email: result.email,
-				username: result.username,
-				avatarUuid: result.avatarUuid,
-				createdAt: result.createdAt,
-			};
+			return toUserDTO(result);
 		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				(error.code === "P2007" || error.code === "P2025")
-			) {
-				throw new UnknownUserIdError();
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
 			}
 			throw error;
 		}
@@ -200,24 +174,31 @@ export class PrismaDataManager implements DataManager {
 
 	async updateUserAvatar(id: string, avatarId: string): Promise<UserDTO> {
 		try {
+			const [user, avatar] = await Promise.all([
+				prisma.user.findUnique({
+					where: { uuid: id },
+					select: { uuid: true },
+				}),
+				prisma.avatar.findUnique({
+					where: { uuid: avatarId },
+					select: { uuid: true },
+				}),
+			]);
+
+			if (!user) throw new UnknownUserIdError();
+			if (!avatar) throw new UnknownAvatarIdError();
+
 			const result = await prisma.user.update({
 				where: { uuid: id },
 				data: { avatar: { connect: { uuid: avatarId } } },
+				select: userDtoSelect,
 			});
 
-			return {
-				uuid: result.uuid,
-				email: result.email,
-				username: result.username,
-				avatarUuid: result.avatarUuid,
-				createdAt: result.createdAt,
-			};
+			return toUserDTO(result);
 		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				(error.code === "P2007" || error.code === "P2025")
-			) {
-				throw new UnknownUserIdError();
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
 			}
 			throw error;
 		}
@@ -227,11 +208,9 @@ export class PrismaDataManager implements DataManager {
 		try {
 			await prisma.user.delete({ where: { uuid: id } });
 		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				(error.code === "P2007" || error.code === "P2025")
-			) {
-				throw new UnknownUserIdError();
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
 			}
 			throw error;
 		}
@@ -241,11 +220,9 @@ export class PrismaDataManager implements DataManager {
 		try {
 			await prisma.avatar.delete({ where: { uuid: id } });
 		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				(error.code === "P2007" || error.code === "P2025")
-			) {
-				throw new UnknownAvatarIdError();
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownAvatarIdError();
 			}
 			throw error;
 		}
@@ -258,17 +235,16 @@ export class PrismaDataManager implements DataManager {
 		try {
 			const result = await prisma.user.findUnique({
 				where: { uuid: userId },
+				select: { password: true },
 			});
 
 			if (!result) throw new UnknownUserIdError();
 
 			return await compareHash(password, result?.password);
 		} catch (error) {
-			if (
-				error instanceof Prisma.PrismaClientKnownRequestError &&
-				(error.code === "P2007" || error.code === "P2025")
-			) {
-				throw new UnknownUserIdError();
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
 			}
 			throw error;
 		}

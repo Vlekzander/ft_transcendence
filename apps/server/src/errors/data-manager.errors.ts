@@ -19,6 +19,20 @@ export class DuplicateUsernameError extends DuplicateElementError {
 	}
 }
 
+export class InvalidElementError extends Error {
+	constructor(message: string) {
+		super(message + " is invalid");
+		this.name = "InvalidElementError";
+	}
+}
+
+export class InvalidIdError extends Error {
+	constructor() {
+		super("Id");
+		this.name = "InvalidIdError";
+	}
+}
+
 export class UnknownUserIdError extends Error {
 	constructor() {
 		super("Unknown user id");
