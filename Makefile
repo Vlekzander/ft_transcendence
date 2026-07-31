@@ -13,20 +13,23 @@ up:
 
 down:
 	@$(DOCKER) down
+	@$(DOCKER) --env-file .env.test -f test-compose.yml down
 
 logs:
 	@$(DOCKER) logs --follow
 
 clean: down
-	-@docker-compose down -v
+	-@$(DOCKER) down -v
+	-@$(DOCKER) --env-file .env.test -f test-compose.yml down -v
 
 fclean: clean
-	-@docker-compose down --rmi local
+	-@$(DOCKER) down --rmi local
+	-@$(DOCKER) --env-file .env.test -f test-compose.yml down --rmi local
 
 re: clean build
 
 status:
-	$(DOCKER) ps
+	@$(DOCKER) ps
 
 lint:
 	npm run lint
@@ -34,9 +37,16 @@ lint:
 format:
 	npm run format
 
+test:
+	@$(DOCKER) --env-file .env.test -f test-compose.yml up -d
+	@$(DOCKER) --env-file .env.test -f test-compose.yml logs -f backend
+
+test-logs:
+	$(DOCKER) -f test-compose.yml logs --follow
+
 secrets:
 	@mkdir -p ./docker/secrets
 	@export DB_USERNAME='$(P_DB_USERNAME)'; echo "$$DB_USERNAME" > ./docker/secrets/db_username.txt
 	@export DB_PASSWORD='$(P_DB_PASSWORD)'; echo "$$DB_PASSWORD" > ./docker/secrets/db_password.txt
 
-.PHONY: all build up down logs clean re status lint format secrets
+.PHONY: all build up down logs clean re status lint format test test-logs secrets

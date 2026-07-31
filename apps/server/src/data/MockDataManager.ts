@@ -6,7 +6,6 @@ import {
 } from "../errors/data-manager.errors";
 import { compareHash, generateHash } from "../utils/hash.util";
 import {
-	UserRole,
 	CreateUserInput,
 	UserDTO,
 	AvatarDTO,
@@ -30,8 +29,6 @@ export class MockDataManager implements DataManager {
 			email: data.email,
 			username: data.username,
 			passwordHash: hashedPassword,
-			role: UserRole.USER,
-			banned: false,
 			avatarUuid: null,
 			createdAt: now,
 		};

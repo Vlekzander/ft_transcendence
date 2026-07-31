@@ -1,14 +1,35 @@
-export class DuplicateEmailError extends Error {
+export class DuplicateElementError extends Error {
+	constructor(message: string) {
+		super(message + " already exists");
+		this.name = "DuplicateElementError";
+	}
+}
+
+export class DuplicateEmailError extends DuplicateElementError {
 	constructor() {
-		super("Email already exists");
+		super("Email");
 		this.name = "DuplicateEmailError";
 	}
 }
 
-export class DuplicateUsernameError extends Error {
+export class DuplicateUsernameError extends DuplicateElementError {
 	constructor() {
-		super("Username already exists");
+		super("Username");
 		this.name = "DuplicateUsernameError";
+	}
+}
+
+export class InvalidElementError extends Error {
+	constructor(message: string) {
+		super(message + " is invalid");
+		this.name = "InvalidElementError";
+	}
+}
+
+export class InvalidIdError extends Error {
+	constructor() {
+		super("Id");
+		this.name = "InvalidIdError";
 	}
 }
 

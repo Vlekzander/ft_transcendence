@@ -1,0 +1,26 @@
+generator client {
+	provider = "prisma-client"
+	output = "../src/generated/prisma"
+}
+
+datasource db {
+	provider = "postgresql"
+}
+
+model User {
+	uuid		String		@id @default(uuid()) @db.Uuid
+	email		String		@unique
+	username	String		@unique
+	password	String
+	createdAt	DateTime	@default(now())
+
+	avatarUuid	String?		@unique @db.Uuid
+	avatar		Avatar?		@relation(fields: [avatarUuid], references: [uuid], onDelete: Cascade)
+}
+
+model Avatar {
+	uuid	String	@id @default(uuid()) @db.Uuid
+	path	String
+
+	user	User?
+}
