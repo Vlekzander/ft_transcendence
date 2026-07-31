@@ -10,7 +10,7 @@
 		"start": "node dist/server.js",
 		"lint": "eslint .",
 		"test": "vitest",
-		"postinstall": "prisma generate"
+		"postinstall": "prisma generate || true"
 	},
 	"dependencies": {
 		"@ft_transcendence/shared": "0.0.0",
