@@ -39,7 +39,7 @@ format:
 
 test:
 	@$(DOCKER) --env-file .env.test -f test-compose.yml up -d
-	@(DOCKER) -f test-compose.yml logs -f backend
+	@$(DOCKER) -f test-compose.yml logs -f backend
 
 test-logs:
 	$(DOCKER) -f test-compose.yml logs --follow

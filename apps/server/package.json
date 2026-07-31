@@ -9,7 +9,8 @@
 		"build": "tsc && tsc-alias",
 		"start": "node dist/server.js",
 		"lint": "eslint .",
-		"test": "vitest"
+		"test": "vitest",
+		"postinstall": "prisma generate"
 	},
 	"dependencies": {
 		"@ft_transcendence/shared": "0.0.0",
