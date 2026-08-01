@@ -29,6 +29,7 @@ services:
         secrets:
             - db_username
             - db_password
+            - jwt_secret
         environment:
             DB_HOST: database
             DB_NAME: ft_transcendence
@@ -78,3 +79,5 @@ secrets:
         file: docker/secrets/db_username.txt
     db_password:
         file: docker/secrets/db_password.txt
+    jwt_secret:
+        file: docker/secrets/jwt_secret.txt
