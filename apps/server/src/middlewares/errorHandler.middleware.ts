@@ -6,10 +6,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, next) => {
 
 	const mapped = mapError(err);
 
-	return res
-		.status(mapped.status)
-		.json({
-			succes: false,
-			error: { code: mapped.code, message: mapped.message },
-		});
+	return res.status(mapped.status).json({
+		error: { code: mapped.code, message: mapped.message },
+	});
 };
