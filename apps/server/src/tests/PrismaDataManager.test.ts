@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { PrismaDataManager } from "../data/PrismaDataManager";
 import {
 	DuplicateEmailError,
 	DuplicateUsernameError,
@@ -8,14 +7,14 @@ import {
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
+import { DataManager, DataManagerSingleton } from "../data/DataManager";
 
 describe("PrismaDataManager", () => {
-	let dataManager: PrismaDataManager;
+	const dataManager: DataManager = DataManagerSingleton.getInstance();
 
 	beforeEach(async () => {
 		await prisma.avatar.deleteMany({});
 		await prisma.user.deleteMany({});
-		dataManager = new PrismaDataManager();
 	});
 
 	describe("createUser", () => {

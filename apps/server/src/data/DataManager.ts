@@ -1,3 +1,6 @@
+import { MockDataManager } from "./MockDataManager";
+import { PrismaDataManager } from "./PrismaDataManager";
+
 export type CreateUserInput = {
 	email: string;
 	username: string;
@@ -31,4 +34,20 @@ export interface DataManager {
 	deleteAvatar(id: string): Promise<void>;
 
 	validateUserPassword(userId: string, password: string): Promise<boolean>;
+}
+
+export class DataManagerSingleton {
+	private static instance: DataManager | null = null;
+
+	private constructor() {}
+
+	static getInstance(): DataManager {
+		if (!this.instance) this.instance = new PrismaDataManager();
+		return this.instance;
+	}
+
+	static nodb(): DataManager {
+		this.instance = new MockDataManager();
+		return this.instance;
+	}
 }

@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { MockDataManager } from "../data/MockDataManager";
 import {
 	DuplicateEmailError,
 	DuplicateUsernameError,
 	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
+import { DataManager, DataManagerSingleton } from "../data/DataManager";
 
 describe("MockDataManager", () => {
-	let dataManager: MockDataManager;
+	let dataManager: DataManager;
 
 	beforeEach(() => {
-		dataManager = new MockDataManager();
+		dataManager = DataManagerSingleton.nodb();
 	});
 
 	describe("createUser", () => {
