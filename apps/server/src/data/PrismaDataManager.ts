@@ -1,4 +1,4 @@
-import { CreateUserDTO } from "@ft_transcendence/shared";
+import { RegisterUserDTO } from "@ft_transcendence/shared";
 import {
 	DuplicateElementError,
 	DuplicateEmailError,
@@ -29,7 +29,7 @@ const userDtoSelect = {
 } as const;
 
 export class PrismaDataManager implements DataManager {
-	async createUser(data: CreateUserDTO): Promise<UserEntity> {
+	async createUser(data: RegisterUserDTO): Promise<UserEntity> {
 		try {
 			const hashedPassword = await generateHash(data.password);
 			const result = await prisma.user.create({

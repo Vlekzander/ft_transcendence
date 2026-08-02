@@ -7,7 +7,7 @@ export const UserResponseSchema = z.object({
 	avatarUuid: z.string().nullable(),
 });
 
-export const CreateUserSchema = z
+export const RegisterUserSchema = z
 	.object({
 		email: z.email(),
 		username: z.string().min(3).max(20),
@@ -20,4 +20,4 @@ export const CreateUserSchema = z
 	});
 
 export type UserResponseDTO = z.infer<typeof UserResponseSchema>;
-export type CreateUserDTO = z.infer<typeof CreateUserSchema>;
+export type RegisterUserDTO = z.infer<typeof RegisterUserSchema>;

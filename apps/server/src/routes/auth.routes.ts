@@ -2,7 +2,7 @@ import { Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
 import { generateAccessToken, JWT_MAX_AGE } from "../utils/jwt.util";
 import { readEnv } from "../utils/env.util";
-import { CreateUserSchema } from "@ft_transcendence/shared";
+import { RegisterUserSchema } from "@ft_transcendence/shared";
 import { toUserResponseDTO } from "../data/User.data";
 import { ValidationError } from "../errors/auth.errors";
 import { requireGuest } from "../middlewares/auth.middleware";
@@ -11,7 +11,7 @@ const authRouter = Router();
 
 authRouter.post("/register", requireGuest, async (req, res, next) => {
 	try {
-		const parsed = CreateUserSchema.safeParse(req.body);
+		const parsed = RegisterUserSchema.safeParse(req.body);
 		if (!parsed.success) {
 			const issue = parsed.error.issues[0];
 			throw new ValidationError(issue.path[0].toString(), issue.message);

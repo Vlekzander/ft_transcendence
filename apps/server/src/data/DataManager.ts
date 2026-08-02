@@ -1,4 +1,4 @@
-import { CreateUserDTO } from "@ft_transcendence/shared";
+import { RegisterUserDTO } from "@ft_transcendence/shared";
 import { PrismaDataManager } from "./PrismaDataManager";
 import { UserEntity } from "./User.data";
 
@@ -8,7 +8,7 @@ export type AvatarDTO = {
 };
 
 export interface DataManager {
-	createUser(data: CreateUserDTO): Promise<UserEntity>;
+	createUser(data: RegisterUserDTO): Promise<UserEntity>;
 	createAvatar(path: string): Promise<AvatarDTO>;
 	getUserById(id: string): Promise<UserEntity | null>;
 	getUserByEmail(email: string): Promise<UserEntity | null>;
