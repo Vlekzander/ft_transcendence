@@ -20,3 +20,10 @@ export class ValidationError extends AppDomainError {
 		this.name = `${input[0].toUpperCase() + input.slice(1)}ValidationError`;
 	}
 }
+
+export class InvalidCredentialsError extends AppDomainError {
+	constructor() {
+		super("Invalid credentials");
+		this.name = "InvalidCredentialsError";
+	}
+}
