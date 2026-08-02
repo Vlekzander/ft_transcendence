@@ -5,10 +5,11 @@ import { readEnv } from "../utils/env.util";
 import { CreateUserSchema } from "@ft_transcendence/shared";
 import { toUserResponseDTO } from "../data/User.data";
 import { ValidationError } from "../errors/auth.errors";
+import { requireGuest } from "../middlewares/auth.middleware";
 
 const authRouter = Router();
 
-authRouter.post("/register", async (req, res, next) => {
+authRouter.post("/register", requireGuest, async (req, res, next) => {
 	try {
 		const parsed = CreateUserSchema.safeParse(req.body);
 		if (!parsed.success) {

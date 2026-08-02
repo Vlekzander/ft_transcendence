@@ -7,6 +7,13 @@ export class PasswordConfirmationError extends AppDomainError {
 	}
 }
 
+export class AlreadyAuthError extends AppDomainError {
+	constructor() {
+		super("Already authenticated");
+		this.name = "AlreadyAuthError";
+	}
+}
+
 export class ValidationError extends AppDomainError {
 	constructor(input: string, message: string) {
 		super(message);

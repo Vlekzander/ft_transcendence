@@ -1,3 +1,4 @@
+import { AlreadyAuthError, ValidationError } from "./auth.errors";
 import {
 	DuplicateElementError,
 	InvalidElementError,
@@ -24,6 +25,8 @@ export function mapError(err: Error): ErrorResponse {
 		err instanceof UnknownAvatarIdError
 	)
 		return ((error.status = 404), error);
+	if (err instanceof ValidationError) return ((error.status = 400), error);
+	if (err instanceof AlreadyAuthError) return ((error.status = 403), error);
 	if (err instanceof AppDomainError) return ((error.status = 400), error);
 
 	return {
