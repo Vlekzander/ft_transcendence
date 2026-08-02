@@ -23,6 +23,7 @@ describe("PrismaDataManager", () => {
 				email: "john@example.com",
 				username: "john",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			expect(user.uuid).toBeTypeOf("string");
@@ -38,6 +39,7 @@ describe("PrismaDataManager", () => {
 				email: "dup@example.com",
 				username: "user1",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			await expect(
@@ -45,6 +47,7 @@ describe("PrismaDataManager", () => {
 					email: "dup@example.com",
 					username: "user2",
 					password: "secret456",
+					confirmPassword: "secret456",
 				}),
 			).rejects.toThrow(DuplicateEmailError);
 		});
@@ -54,6 +57,7 @@ describe("PrismaDataManager", () => {
 				email: "user1@example.com",
 				username: "dupname",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			await expect(
@@ -61,6 +65,7 @@ describe("PrismaDataManager", () => {
 					email: "user2@example.com",
 					username: "dupname",
 					password: "secret456",
+					confirmPassword: "secret456",
 				}),
 			).rejects.toThrow(DuplicateUsernameError);
 		});
@@ -81,6 +86,7 @@ describe("PrismaDataManager", () => {
 				email: "findme@example.com",
 				username: "findme",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const user = await dataManager.getUserById(created.uuid);
@@ -108,6 +114,7 @@ describe("PrismaDataManager", () => {
 				email: "mail@example.com",
 				username: "mailuser",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const user = await dataManager.getUserByEmail("mail@example.com");
@@ -137,6 +144,7 @@ describe("PrismaDataManager", () => {
 				email: "name@example.com",
 				username: "targetuser",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const user = await dataManager.getUserByUsername("targetuser");
@@ -175,6 +183,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const updated = await dataManager.updateUserEmail(
@@ -207,6 +216,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const updated = await dataManager.updateUserPassword(
@@ -239,6 +249,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const avatar = await dataManager.createAvatar("/avatars/cat.png");
@@ -273,6 +284,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			await dataManager.deleteUser(created.uuid);
@@ -325,6 +337,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: password,
+				confirmPassword: password,
 			});
 
 			const result = await dataManager.validateUserPassword(
