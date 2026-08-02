@@ -1,3 +1,4 @@
+import { CreateUserDTO } from "@ft_transcendence/shared";
 import {
 	DuplicateElementError,
 	DuplicateEmailError,
@@ -9,12 +10,8 @@ import {
 import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma.lib";
 import { compareHash, generateHash } from "../utils/hash.util";
-import {
-	AvatarDTO,
-	CreateUserInput,
-	DataManager,
-	UserDTO,
-} from "./DataManager";
+import { AvatarDTO, DataManager } from "./DataManager";
+import { UserEntity } from "./User.data";
 
 function getPrismaConstraintFields(
 	error: Prisma.PrismaClientKnownRequestError,
@@ -31,20 +28,8 @@ const userDtoSelect = {
 	createdAt: true,
 } as const;
 
-type UserDtoRecord = Prisma.UserGetPayload<{ select: typeof userDtoSelect }>;
-
-function toUserDTO(user: UserDtoRecord): UserDTO {
-	return {
-		uuid: user.uuid,
-		email: user.email,
-		username: user.username,
-		avatarUuid: user.avatarUuid,
-		createdAt: user.createdAt,
-	};
-}
-
 export class PrismaDataManager implements DataManager {
-	async createUser(data: CreateUserInput): Promise<UserDTO> {
+	async createUser(data: CreateUserDTO): Promise<UserEntity> {
 		try {
 			const hashedPassword = await generateHash(data.password);
 			const result = await prisma.user.create({
@@ -56,7 +41,7 @@ export class PrismaDataManager implements DataManager {
 				select: userDtoSelect,
 			});
 
-			return toUserDTO(result);
+			return result;
 		} catch (error) {
 			if (
 				error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -86,7 +71,7 @@ export class PrismaDataManager implements DataManager {
 		};
 	}
 
-	async getUserById(id: string): Promise<UserDTO | null> {
+	async getUserById(id: string): Promise<UserEntity | null> {
 		try {
 			const result = await prisma.user.findUnique({
 				where: { uuid: id },
@@ -94,7 +79,7 @@ export class PrismaDataManager implements DataManager {
 			});
 
 			if (!result) return null;
-			return toUserDTO(result);
+			return result;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") return null;
@@ -103,24 +88,24 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async getUserByEmail(email: string): Promise<UserDTO | null> {
+	async getUserByEmail(email: string): Promise<UserEntity | null> {
 		const result = await prisma.user.findUnique({
 			where: { email: email },
 			select: userDtoSelect,
 		});
 
 		if (!result) return null;
-		return toUserDTO(result);
+		return result;
 	}
 
-	async getUserByUsername(username: string): Promise<UserDTO | null> {
+	async getUserByUsername(username: string): Promise<UserEntity | null> {
 		const result = await prisma.user.findUnique({
 			where: { username: username },
 			select: userDtoSelect,
 		});
 
 		if (!result) return null;
-		return toUserDTO(result);
+		return result;
 	}
 
 	async getAvatarById(id: string): Promise<AvatarDTO | null> {
@@ -135,7 +120,7 @@ export class PrismaDataManager implements DataManager {
 		};
 	}
 
-	async updateUserEmail(id: string, email: string): Promise<UserDTO> {
+	async updateUserEmail(id: string, email: string): Promise<UserEntity> {
 		try {
 			const result = await prisma.user.update({
 				where: { uuid: id },
@@ -143,7 +128,7 @@ export class PrismaDataManager implements DataManager {
 				select: userDtoSelect,
 			});
 
-			return toUserDTO(result);
+			return result;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();
@@ -153,7 +138,10 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async updateUserPassword(id: string, password: string): Promise<UserDTO> {
+	async updateUserPassword(
+		id: string,
+		password: string,
+	): Promise<UserEntity> {
 		const hashedPassword = await generateHash(password);
 		try {
 			const result = await prisma.user.update({
@@ -162,7 +150,7 @@ export class PrismaDataManager implements DataManager {
 				select: userDtoSelect,
 			});
 
-			return toUserDTO(result);
+			return result;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();
@@ -172,7 +160,7 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async updateUserAvatar(id: string, avatarId: string): Promise<UserDTO> {
+	async updateUserAvatar(id: string, avatarId: string): Promise<UserEntity> {
 		try {
 			const [user, avatar] = await Promise.all([
 				prisma.user.findUnique({
@@ -194,7 +182,7 @@ export class PrismaDataManager implements DataManager {
 				select: userDtoSelect,
 			});
 
-			return toUserDTO(result);
+			return result;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();

@@ -1,29 +1,15 @@
 import { AppDomainError } from "./domain.errors";
 
-export class MissingElementError extends AppDomainError {
-	constructor(message: string) {
-		super(message + " is missing");
-		this.name = "MissingElementError";
+export class PasswordConfirmationError extends AppDomainError {
+	constructor() {
+		super("The password and confirmation do not match");
+		this.name = "PasswordConfirmationError";
 	}
 }
 
-export class MissingEmailError extends MissingElementError {
-	constructor() {
-		super("Email");
-		this.name = "MissingEmailError";
-	}
-}
-
-export class MissingUsernameError extends MissingElementError {
-	constructor() {
-		super("Username");
-		this.name = "MissingUsernameError";
-	}
-}
-
-export class MissingPasswordError extends MissingElementError {
-	constructor() {
-		super("Password");
-		this.name = "MissingPasswordError";
+export class ValidationError extends AppDomainError {
+	constructor(input: string, message: string) {
+		super(message);
+		this.name = `${input[0].toUpperCase() + input.slice(1)}ValidationError`;
 	}
 }
