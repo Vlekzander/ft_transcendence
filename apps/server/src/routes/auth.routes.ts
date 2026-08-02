@@ -31,7 +31,7 @@ authRouter.post("/register", requireGuest, async (req, res, next) => {
 		);
 		const dto = toUserResponseDTO(user);
 		res.cookie("token", generateAccessToken(dto.uuid), options);
-		res.status(200).json({ data: dto });
+		res.status(201).json({ data: dto });
 	} catch (err) {
 		next(err);
 	}
