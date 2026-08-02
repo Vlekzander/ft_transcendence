@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { CookieOptions, Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
 import { generateAccessToken, JWT_MAX_AGE } from "../utils/jwt.util";
 import { readEnv } from "../utils/env.util";
@@ -12,6 +12,13 @@ import { requireGuest } from "../middlewares/auth.middleware";
 
 const authRouter = Router();
 
+const options: CookieOptions = {
+	httpOnly: true,
+	secure: readEnv("NODE_ENV") === "production",
+	sameSite: "strict",
+	maxAge: JWT_MAX_AGE,
+};
+
 authRouter.post("/register", requireGuest, async (req, res, next) => {
 	try {
 		const parsed = RegisterUserSchema.safeParse(req.body);
@@ -23,12 +30,7 @@ authRouter.post("/register", requireGuest, async (req, res, next) => {
 			parsed.data,
 		);
 		const dto = toUserResponseDTO(user);
-		res.cookie("token", generateAccessToken(dto.uuid), {
-			httpOnly: true,
-			secure: readEnv("NODE_ENV") === "production",
-			sameSite: "strict",
-			maxAge: JWT_MAX_AGE,
-		});
+		res.cookie("token", generateAccessToken(dto.uuid), options);
 		res.status(200).json({ data: dto });
 	} catch (err) {
 		next(err);
@@ -46,19 +48,14 @@ authRouter.post("/login", requireGuest, async (req, res, next) => {
 			parsed.data.username,
 		);
 		if (!user) throw new InvalidCredentialsError();
-		const auth =
+		const validation =
 			await DataManagerSingleton.getInstance().validateUserPassword(
 				user.uuid,
 				parsed.data.password,
 			);
-		if (!auth) throw new InvalidCredentialsError();
+		if (!validation) throw new InvalidCredentialsError();
 		const dto = toUserResponseDTO(user);
-		res.cookie("token", generateAccessToken(dto.uuid), {
-			httpOnly: true,
-			secure: readEnv("NODE_ENV") === "production",
-			sameSite: "strict",
-			maxAge: JWT_MAX_AGE,
-		});
+		res.cookie("token", generateAccessToken(dto.uuid), options);
 		res.status(200).json({ data: dto });
 	} catch (err) {
 		next(err);
