@@ -17,7 +17,6 @@ services:
             - .env.test
         environment:
             DB_HOST: database
-            DB_NAME: ${DB_NAME}
         command: npx vitest --watch
         depends_on:
             database:
