@@ -1,6 +1,10 @@
 import { CookieOptions, Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
-import { generateAccessToken, JWT_MAX_AGE } from "../utils/jwt.util";
+import {
+	generateAccessToken,
+	JWT_MAX_AGE,
+	validateAccessToken,
+} from "../utils/jwt.util";
 import { readEnv } from "../utils/env.util";
 import { parseLoginUser, parseRegisterUser } from "@ft_transcendence/shared";
 import { toUserResponseDTO } from "../data/User.data";
@@ -53,6 +57,20 @@ authRouter.post("/logout", requireAuth, async (_req, res, next) => {
 	try {
 		res.clearCookie("token", options);
 		res.sendStatus(204);
+	} catch (err) {
+		next(err);
+	}
+});
+
+//INFO: For debugging purposes, delete this once the /account page has been created
+authRouter.get("/whoami", requireAuth, async (req, res, next) => {
+	try {
+		const token = req.cookies?.token;
+		const payload = validateAccessToken(token);
+		const user = await DataManagerSingleton.getInstance().getUserById(
+			payload.sub as string,
+		);
+		res.status(200).json({ username: user?.username });
 	} catch (err) {
 		next(err);
 	}

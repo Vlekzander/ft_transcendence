@@ -1,7 +1,32 @@
 import { ValidationError } from "../errors/validation.errors";
-import { LoginUserSchema, RegisterUserSchema } from "../schemas/user.schemas";
+import {
+	LoginUserDTO,
+	LoginUserSchema,
+	RegisterUserDTO,
+	RegisterUserSchema,
+} from "../schemas/user.schemas";
 
-export function parseRegisterUser(intput: unknown, toThrow = true) {
+export function parseRegisterUser(input: unknown): RegisterUserDTO {
+	const result = RegisterUserSchema.safeParse(input);
+
+	if (result.success) return result.data;
+
+	const issue = result.error.issues[0];
+	const field = issue?.path[0];
+
+	if (
+		field === "username" ||
+		field === "email" ||
+		field === "password" ||
+		field === "confirmPassword"
+	)
+		throw new ValidationError(field, issue.message);
+	throw new ValidationError("Input", "Invalid registration data");
+}
+
+export function parseRegisterUserNoThrow(
+	intput: unknown,
+): RegisterUserDTO | ValidationError[] {
 	const result = RegisterUserSchema.safeParse(intput);
 
 	if (result.success) return result.data;
@@ -10,12 +35,13 @@ export function parseRegisterUser(intput: unknown, toThrow = true) {
 		(issue) =>
 			new ValidationError(String(issue.path[0] ?? ""), issue.message),
 	);
-	if (toThrow) throw errors[0];
 	return errors;
 }
 
-export function parseLoginUser(input: unknown, toThrow = true) {
-	const result = LoginUserSchema.safeParse(input);
+export function parseLoginUserNoThrow(
+	intput: unknown,
+): LoginUserDTO | ValidationError[] {
+	const result = RegisterUserSchema.safeParse(intput);
 
 	if (result.success) return result.data;
 
@@ -23,6 +49,18 @@ export function parseLoginUser(input: unknown, toThrow = true) {
 		(issue) =>
 			new ValidationError(String(issue.path[0] ?? ""), issue.message),
 	);
-	if (toThrow) throw errors[0];
 	return errors;
+}
+
+export function parseLoginUser(input: unknown): LoginUserDTO {
+	const result = LoginUserSchema.safeParse(input);
+
+	if (result.success) return result.data;
+
+	const issue = result.error.issues[0];
+	const field = issue?.path[0];
+
+	if (field === "username" || field === "password")
+		throw new ValidationError(field, issue.message);
+	throw new ValidationError("Input", "Invalid registration data");
 }

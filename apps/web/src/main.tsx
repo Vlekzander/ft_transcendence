@@ -1,20 +1,23 @@
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import "./style.css";
-import { hello } from "@ft_transcendence/shared";
+import RegisterPage from "./pages/RegisterPage";
+import Layout from "./Layout";
 
 const router = createBrowserRouter([
 	{
 		path: "/",
-		element: <div className="bg-red-500">Une page</div>,
-	},
-	{
-		path: "/test",
-		element: <div className="bg-green-500">Une autre page</div>,
-	},
-	{
-		path: "/shared",
-		element: <div className="bg-blue-500">{hello("shared")}</div>,
+		element: <Layout />,
+		children: [
+			{
+				path: "/",
+				element: <div className="bg-red-500">Une page</div>,
+			},
+			{
+				path: "/register",
+				element: <RegisterPage />,
+			},
+		],
 	},
 ]);
 
