@@ -3,6 +3,7 @@ import app from "../app";
 import request from "supertest";
 import { beforeEach, describe, expect, it } from "vitest";
 import { generateAccessToken } from "../utils/jwt.util";
+import { DataManagerSingleton } from "../data/DataManager";
 
 describe("auth.routes", () => {
 	beforeEach(async () => {
@@ -200,6 +201,132 @@ describe("auth.routes", () => {
 
 			expect(response.status).toBe(409);
 			expect(response.body?.error.code).toBe("DuplicateEmailError");
+		});
+	});
+
+	describe("/auth/login", () => {
+		const username = "user";
+		const password = "password123";
+
+		beforeEach(async () => {
+			await DataManagerSingleton.getInstance().createUser({
+				username: username,
+				email: "user@gmail.com",
+				password: password,
+				confirmPassword: "confirmPassword",
+			});
+		});
+
+		const invalidCases = [
+			{
+				name: "missing username",
+				data: {
+					password: "password123",
+				},
+				code: 400,
+				error: "UsernameValidationError",
+			},
+			{
+				name: "missing password",
+				data: {
+					username: "user",
+				},
+				code: 400,
+				error: "PasswordValidationError",
+			},
+			{
+				name: "invalid username",
+				data: {
+					username: "u",
+					password: "password123",
+				},
+				code: 400,
+				error: "UsernameValidationError",
+			},
+			{
+				name: "invalid password",
+				data: {
+					username: "user",
+					password: "pass",
+				},
+				code: 400,
+				error: "PasswordValidationError",
+			},
+		];
+
+		it("POST should login user", async () => {
+			const data = {
+				username: username,
+				password: password,
+			};
+
+			const response = await request(app)
+				.post("/auth/login")
+				.send(data)
+				.set("Accept", "application/json");
+
+			expect(response.status).toBe(200);
+			expect(response.body.data?.username).toBe(data.username);
+		});
+
+		it.each(invalidCases)(
+			"POST should fail with $name",
+			async ({ data, code, error }) => {
+				const response = await request(app)
+					.post("/auth/login")
+					.send(data)
+					.set("Accept", "application/json");
+
+				expect(response.status).toBe(code);
+				expect(response.body?.error.code).toBe(error);
+			},
+		);
+
+		it("POST should fail when already authenticated", async () => {
+			const data = {
+				username: username,
+				password: password,
+			};
+
+			const token = generateAccessToken("none");
+			const response = await request(app)
+				.post("/auth/login")
+				.send(data)
+				.set("Accept", "application/json")
+				.set("Cookie", [`token=${token}`]);
+
+			expect(response.status).toBe(403);
+			expect(response.body?.error.code).toBe("AlreadyAuthError");
+		});
+
+		it("POST should fail with incorrect username", async () => {
+			const data = {
+				username: "unknown",
+				password: password,
+			};
+
+			const response = await request(app)
+				.post("/auth/login")
+				.send(data)
+				.set("Accept", "application/json");
+
+			expect(response.status).toBe(400);
+			expect(response.body?.error.code).toBe("InvalidCredentialsError");
+		});
+
+		it("POST should fail with incorrect password", async () => {
+			const data = {
+				username: username,
+				password: "unknown123",
+			};
+
+			const response = await request(app)
+				.post("/auth/login")
+				.send(data)
+				.set("Accept", "application/json");
+
+			expect(response.status).toBe(400);
+			expect(response.body?.error.code).toBe("InvalidCredentialsError");
 		});
 	});
 });
