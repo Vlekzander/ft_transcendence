@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
+import { API_URL } from "../config";
 
 //WARN: USING TEMP ROUTE /auth/whoami
 export function RequireAuth() {
 	const [ok, setOk] = useState<boolean | null>(null);
 
 	useEffect(() => {
-		fetch("http://localhost:3000/auth/whoami", { credentials: "include" })
+		fetch(`${API_URL}/auth/whoami`, { credentials: "include" })
 			.then((res) => setOk(res.ok))
 			.catch(() => setOk(false));
 	}, []);
@@ -21,7 +22,7 @@ export function RequireGuest() {
 	const [ok, setOk] = useState<boolean | null>(null);
 
 	useEffect(() => {
-		fetch("http://localhost:3000/auth/whoami", { credentials: "include" })
+		fetch(`${API_URL}/auth/whoami`, { credentials: "include" })
 			.then((res) => setOk(res.ok))
 			.catch(() => setOk(false));
 	}, []);

@@ -4,6 +4,7 @@ import {
 	ValidationError,
 } from "@ft_transcendence/shared";
 import { useNavigate } from "react-router";
+import { API_URL } from "../config";
 
 const errorFieldMap = {
 	UsernameValidationError: "username",
@@ -53,7 +54,7 @@ export default function RegisterForm() {
 				setErrors(nextErrors);
 				return;
 			}
-			const res = await fetch("http://localhost:3000/auth/register", {
+			const res = await fetch(`${API_URL}/auth/register`, {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				credentials: "include",
