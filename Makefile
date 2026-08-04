@@ -39,8 +39,7 @@ format:
 test: test-up
 	
 test-up:
-	@$(DOCKER) --env-file .env.test -f test-compose.yml up -d
-	@$(DOCKER) --env-file .env.test -f test-compose.yml logs -f backend
+	@$(DOCKER) --env-file .env.test -f test-compose.yml run --rm backend npx vitest --maxWorkers=1 --watch
 
 test-down:
 	@$(DOCKER) --env-file .env.test -f test-compose.yml down
