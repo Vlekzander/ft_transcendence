@@ -51,7 +51,7 @@ authRouter.post("/login", requireGuest, async (req, res, next) => {
 
 authRouter.post("/logout", requireAuth, async (_req, res, next) => {
 	try {
-		res.clearCookie("token", { path: "/" });
+		res.clearCookie("token", options);
 		res.sendStatus(204);
 	} catch (err) {
 		next(err);
