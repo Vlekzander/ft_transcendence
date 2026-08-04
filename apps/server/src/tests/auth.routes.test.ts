@@ -10,6 +10,93 @@ describe("auth.routes", () => {
 	});
 
 	describe("/auth/register", () => {
+		const invalidCases = [
+			{
+				name: "missing username",
+				data: {
+					email: "user@gmail.com",
+					password: "password123",
+					confirmPassword: "password123",
+				},
+				code: 400,
+				error: "UsernameValidationError",
+			},
+			{
+				name: "missing email",
+				data: {
+					username: "user",
+					password: "password123",
+					confirmPassword: "password123",
+				},
+				code: 400,
+				error: "EmailValidationError",
+			},
+			{
+				name: "missing password",
+				data: {
+					username: "user",
+					email: "user@gmail.com",
+					confirmPassword: "password123",
+				},
+				code: 400,
+				error: "PasswordValidationError",
+			},
+			{
+				name: "missing confirm password",
+				data: {
+					username: "user",
+					email: "user@gmail.com",
+					password: "password123",
+				},
+				code: 400,
+				error: "ConfirmPasswordValidationError",
+			},
+			{
+				name: "invalid username",
+				data: {
+					username: "u",
+					email: "user@gmail.com",
+					password: "password123",
+					confirmPassword: "password123",
+				},
+				code: 400,
+				error: "UsernameValidationError",
+			},
+			{
+				name: "invalid email",
+				data: {
+					username: "user",
+					email: "usergmail.com",
+					password: "password123",
+					confirmPassword: "password123",
+				},
+				code: 400,
+				error: "EmailValidationError",
+			},
+			{
+				name: "invalid password",
+				data: {
+					username: "user",
+					email: "user@gmail.com",
+					password: "pass",
+					confirmPassword: "pass",
+				},
+				code: 400,
+				error: "PasswordValidationError",
+			},
+			{
+				name: "unmatch passwords",
+				data: {
+					username: "user",
+					email: "user@gmail.com",
+					password: "password123",
+					confirmPassword: "password456",
+				},
+				code: 400,
+				error: "ConfirmPasswordValidationError",
+			},
+		];
+
 		it("POST should register user", async () => {
 			const data = {
 				username: "user",
@@ -29,7 +116,7 @@ describe("auth.routes", () => {
 			expect(response.body.data?.avatarUuid).toBeNull();
 		});
 
-		it("POST should response an error with auth cookie", async () => {
+		it("POST should fail when already authenticated", async () => {
 			const data = {
 				username: "user",
 				email: "user@gmail.com",
@@ -48,7 +135,20 @@ describe("auth.routes", () => {
 			expect(response.body?.error.code).toBe("AlreadyAuthError");
 		});
 
-		it("POST should response an error with duplicate username", async () => {
+		it.each(invalidCases)(
+			"POST should fail with $name",
+			async ({ data, code, error }) => {
+				const response = await request(app)
+					.post("/auth/register")
+					.send(data)
+					.set("Accept", "application/json");
+
+				expect(response.status).toBe(code);
+				expect(response.body?.error.code).toBe(error);
+			},
+		);
+
+		it("POST should fail with duplicated username", async () => {
 			const first = {
 				username: "user",
 				email: "user@gmail.com",
@@ -75,7 +175,7 @@ describe("auth.routes", () => {
 			expect(response.body?.error.code).toBe("DuplicateUsernameError");
 		});
 
-		it("POST should response an error with duplicate email", async () => {
+		it("POST should fail duplicated email", async () => {
 			const first = {
 				username: "another",
 				email: "user@gmail.com",
@@ -100,142 +200,6 @@ describe("auth.routes", () => {
 
 			expect(response.status).toBe(409);
 			expect(response.body?.error.code).toBe("DuplicateEmailError");
-		});
-
-		it("POST should response an error with invalid username", async () => {
-			const data = {
-				username: "u",
-				email: "user@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe("UsernameValidationError");
-		});
-
-		it("POST should response an error with invalid email", async () => {
-			const data = {
-				username: "user",
-				email: "usergmail.com",
-				password: "password123",
-				confirmPassword: "password123",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe("EmailValidationError");
-		});
-
-		it("POST should response an error with invalid password", async () => {
-			const data = {
-				username: "user",
-				email: "user@gmail.com",
-				password: "pass",
-				confirmPassword: "pass",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe("PasswordValidationError");
-		});
-
-		it("POST should response an error with unmatch passwords", async () => {
-			const data = {
-				username: "user",
-				email: "user@gmail.com",
-				password: "password",
-				confirmPassword: "wordpass",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe(
-				"ConfirmPasswordValidationError",
-			);
-		});
-
-		it("POST should response an error with missing username", async () => {
-			const data = {
-				email: "user@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe("UsernameValidationError");
-		});
-
-		it("POST should response an error with missing email", async () => {
-			const data = {
-				username: "user",
-				password: "password123",
-				confirmPassword: "password123",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe("EmailValidationError");
-		});
-
-		it("POST should response an error with missing password", async () => {
-			const data = {
-				email: "user@gmail.com",
-				username: "user",
-				confirmPassword: "password123",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe("PasswordValidationError");
-		});
-
-		it("POST should response an error with missing confirm password", async () => {
-			const data = {
-				email: "user@gmail.com",
-				username: "user",
-				password: "password123",
-			};
-
-			const response = await request(app)
-				.post("/auth/register")
-				.send(data)
-				.set("Accept", "application/json");
-
-			expect(response.status).toBe(400);
-			expect(response.body?.error.code).toBe(
-				"ConfirmPasswordValidationError",
-			);
 		});
 	});
 });
