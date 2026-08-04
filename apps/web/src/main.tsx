@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import "./style.css";
 import RegisterPage from "./pages/RegisterPage";
 import Layout from "./Layout";
+import { RequireAuth, RequireGuest } from "./utils/auth.utils";
 
 const router = createBrowserRouter([
 	{
@@ -10,12 +11,21 @@ const router = createBrowserRouter([
 		element: <Layout />,
 		children: [
 			{
-				path: "/",
-				element: <div className="bg-red-500">Une page</div>,
+				element: <RequireAuth />,
+				children: [],
 			},
 			{
-				path: "/register",
-				element: <RegisterPage />,
+				element: <RequireGuest />,
+				children: [
+					{
+						path: "/register",
+						element: <RegisterPage />,
+					},
+				],
+			},
+			{
+				path: "/",
+				element: <div className="bg-red-500">Une page</div>,
 			},
 		],
 	},

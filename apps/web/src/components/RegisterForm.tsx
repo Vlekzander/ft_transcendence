@@ -3,6 +3,7 @@ import {
 	parseRegisterUserNoThrow,
 	ValidationError,
 } from "@ft_transcendence/shared";
+import { useNavigate } from "react-router";
 
 const errorFieldMap = {
 	UsernameValidationError: "username",
@@ -16,6 +17,7 @@ type ErrorField = (typeof errorFieldMap)[keyof typeof errorFieldMap];
 type RegisterErrors = Partial<Record<ErrorField, string>>;
 
 export default function RegisterForm() {
+	const navigate = useNavigate();
 	const [formData, setFormData] = useState({
 		username: "",
 		email: "",
@@ -24,6 +26,7 @@ export default function RegisterForm() {
 	});
 
 	const [errors, setErrors] = useState<RegisterErrors>({});
+	const [error, setError] = useState("");
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -38,6 +41,7 @@ export default function RegisterForm() {
 
 		try {
 			setErrors({});
+			setError("");
 			const result = parseRegisterUserNoThrow(formData);
 			if (Array.isArray(result)) {
 				const nextErrors: RegisterErrors = {};
@@ -56,10 +60,14 @@ export default function RegisterForm() {
 				body: JSON.stringify(result),
 			});
 
-			if (res.ok) console.log("Register!");
-			else console.log(await res.json());
+			if (res.ok) {
+				navigate("/", { replace: true });
+				return;
+			}
+			const err = await res.json();
+			setError(err?.error.message);
 		} catch (err) {
-			console.log(err);
+			setError(err?.message);
 			return;
 		}
 	};
@@ -68,6 +76,7 @@ export default function RegisterForm() {
 		<div className="grow flex items-center justify-center">
 			<form onSubmit={handleSubmit} className="border flex flex-col">
 				<h2>Register</h2>
+				<p className="min-h-5 text-sm text-red-500"> {error ?? " "} </p>
 				<div>
 					<label htmlFor="username">Username </label>
 					<input
