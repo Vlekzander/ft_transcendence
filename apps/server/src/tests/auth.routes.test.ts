@@ -329,4 +329,22 @@ describe("auth.routes", () => {
 			expect(response.body?.error.code).toBe("InvalidCredentialsError");
 		});
 	});
+
+	describe("/auth/logout", () => {
+		it("POST should logout user", async () => {
+			const token = generateAccessToken("none");
+			const response = await request(app)
+				.post("/auth/logout")
+				.set("Cookie", [`token=${token}`]);
+
+			expect(response.status).toBe(204);
+		});
+
+		it("POST should fail if authenticated", async () => {
+			const response = await request(app).post("/auth/logout");
+
+			expect(response.status).toBe(401);
+			expect(response.body?.error.code).toBe("RequireAuthError");
+		});
+	});
 });

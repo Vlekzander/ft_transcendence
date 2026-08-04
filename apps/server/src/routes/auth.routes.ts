@@ -8,7 +8,7 @@ import {
 	InvalidCredentialsError,
 	ValidationError,
 } from "../errors/auth.errors";
-import { requireGuest } from "../middlewares/auth.middleware";
+import { requireAuth, requireGuest } from "../middlewares/auth.middleware";
 
 const authRouter = Router();
 
@@ -57,6 +57,15 @@ authRouter.post("/login", requireGuest, async (req, res, next) => {
 		const dto = toUserResponseDTO(user);
 		res.cookie("token", generateAccessToken(dto.uuid), options);
 		res.status(200).json({ data: dto });
+	} catch (err) {
+		next(err);
+	}
+});
+
+authRouter.post("/logout", requireAuth, async (_req, res, next) => {
+	try {
+		res.clearCookie("token", { path: "/" });
+		res.sendStatus(204);
 	} catch (err) {
 		next(err);
 	}

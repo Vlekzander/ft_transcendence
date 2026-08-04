@@ -14,6 +14,13 @@ export class AlreadyAuthError extends AppDomainError {
 	}
 }
 
+export class RequireAuthError extends AppDomainError {
+	constructor() {
+		super("Authentication required");
+		this.name = "RequireAuthError";
+	}
+}
+
 export class ValidationError extends AppDomainError {
 	constructor(input: string, message: string) {
 		super(message);

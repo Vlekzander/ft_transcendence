@@ -1,4 +1,8 @@
-import { AlreadyAuthError, ValidationError } from "./auth.errors";
+import {
+	AlreadyAuthError,
+	RequireAuthError,
+	ValidationError,
+} from "./auth.errors";
 import {
 	DuplicateElementError,
 	InvalidElementError,
@@ -27,8 +31,9 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 404), error);
 	if (err instanceof ValidationError) return ((error.status = 400), error);
 	if (err instanceof AlreadyAuthError) return ((error.status = 403), error);
-	if (err instanceof AppDomainError) return ((error.status = 400), error);
+	if (err instanceof RequireAuthError) return ((error.status = 401), error);
 
+	if (err instanceof AppDomainError) return ((error.status = 400), error);
 	return {
 		status: 500,
 		code: "InternalServerError",
