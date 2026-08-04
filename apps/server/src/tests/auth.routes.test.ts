@@ -7,7 +7,10 @@ import { DataManagerSingleton } from "../data/DataManager";
 
 describe("auth.routes", () => {
 	beforeEach(async () => {
-		await prisma.user.deleteMany({});
+		await prisma.$transaction([
+			prisma.avatar.deleteMany(),
+			prisma.user.deleteMany(),
+		]);
 	});
 
 	describe("/auth/register", () => {

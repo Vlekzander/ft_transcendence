@@ -1,4 +1,4 @@
-import { AppDomainError } from "./domain.errors";
+import { AppDomainError } from "@ft_transcendence/shared";
 
 export class DuplicateElementError extends AppDomainError {
 	constructor(message: string) {

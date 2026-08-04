@@ -1,11 +1,4 @@
-import { AppDomainError } from "./domain.errors";
-
-export class PasswordConfirmationError extends AppDomainError {
-	constructor() {
-		super("The password and confirmation do not match");
-		this.name = "PasswordConfirmationError";
-	}
-}
+import { AppDomainError } from "@ft_transcendence/shared";
 
 export class AlreadyAuthError extends AppDomainError {
 	constructor() {
@@ -18,13 +11,6 @@ export class RequireAuthError extends AppDomainError {
 	constructor() {
 		super("Authentication required");
 		this.name = "RequireAuthError";
-	}
-}
-
-export class ValidationError extends AppDomainError {
-	constructor(input: string, message: string) {
-		super(message);
-		this.name = `${input[0].toUpperCase() + input.slice(1)}ValidationError`;
 	}
 }
 

@@ -13,8 +13,10 @@ describe("PrismaDataManager", () => {
 	const dataManager: DataManager = DataManagerSingleton.getInstance();
 
 	beforeEach(async () => {
-		await prisma.avatar.deleteMany({});
-		await prisma.user.deleteMany({});
+		await prisma.$transaction([
+			prisma.avatar.deleteMany(),
+			prisma.user.deleteMany(),
+		]);
 	});
 
 	describe("createUser", () => {

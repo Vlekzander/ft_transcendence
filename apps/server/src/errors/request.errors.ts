@@ -1,15 +1,11 @@
-import {
-	AlreadyAuthError,
-	RequireAuthError,
-	ValidationError,
-} from "./auth.errors";
+import { AppDomainError, ValidationError } from "@ft_transcendence/shared";
+import { AlreadyAuthError, RequireAuthError } from "./auth.errors";
 import {
 	DuplicateElementError,
 	InvalidElementError,
 	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "./data-manager.errors";
-import { AppDomainError } from "./domain.errors";
 
 type ErrorResponse = {
 	status: number;

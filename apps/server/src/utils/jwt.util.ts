@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import { readEnv, readSecret } from "./env.util";
-import { AppDomainError } from "../errors/domain.errors";
+import { AppDomainError } from "@ft_transcendence/shared";
 
 export const JWT_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
 
