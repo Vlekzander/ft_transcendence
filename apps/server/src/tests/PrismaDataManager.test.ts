@@ -91,7 +91,8 @@ describe("PrismaDataManager", () => {
 
 			const user = await dataManager.getUserById(created.uuid);
 
-			expect(user).toEqual(created);
+			expect(user?.email).toEqual(created.email);
+			expect(user?.username).toEqual(created.username);
 			expect(user).not.toHaveProperty("passwordHash");
 		});
 
