@@ -1,5 +1,6 @@
 P_DB_USERNAME ?= $(shell sh -c 'read -p "Database user: " var; echo $$var')
 P_DB_PASSWORD ?= $(shell sh -c 'read -p "Database password: " var; echo $$var')
+P_JWT_SECRET ?= $(shell sh -c 'read -p "JWT Secret: " var; echo $$var')
 
 DOCKER = docker compose
 
@@ -51,5 +52,6 @@ secrets:
 	@mkdir -p ./docker/secrets
 	@export DB_USERNAME='$(P_DB_USERNAME)'; echo "$$DB_USERNAME" > ./docker/secrets/db_username.txt
 	@export DB_PASSWORD='$(P_DB_PASSWORD)'; echo "$$DB_PASSWORD" > ./docker/secrets/db_password.txt
+	@export JWT_SECRET='$(P_JWT_SECRET)'; echo "$$JWT_SECRET" > ./docker/secrets/jwt_secret.txt
 
 .PHONY: all build up down logs clean re status lint format test test-up test-down test-logs secrets
