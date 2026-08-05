@@ -4,6 +4,7 @@ import "./style.css";
 import RegisterPage from "./pages/RegisterPage";
 import Layout from "./Layout";
 import { RequireAuth, RequireGuest } from "./RoutesProtections";
+import LoginPage from "./pages/LoginPage";
 
 const router = createBrowserRouter([
 	{
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
 					{
 						path: "/register",
 						element: <RegisterPage />,
+					},
+					{
+						path: "/login",
+						element: <LoginPage />,
 					},
 				],
 			},

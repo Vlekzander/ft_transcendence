@@ -41,7 +41,7 @@ export function parseRegisterUserNoThrow(
 export function parseLoginUserNoThrow(
 	intput: unknown,
 ): LoginUserDTO | ValidationError[] {
-	const result = RegisterUserSchema.safeParse(intput);
+	const result = LoginUserSchema.safeParse(intput);
 
 	if (result.success) return result.data;
 
