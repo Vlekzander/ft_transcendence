@@ -19,8 +19,8 @@ describe("auth.routes", () => {
 				name: "missing username",
 				data: {
 					email: "user@gmail.com",
-					password: "password123",
-					confirmPassword: "password123",
+					password: "Password123",
+					confirmPassword: "Password123",
 				},
 				code: 400,
 				error: "UsernameValidationError",
@@ -29,8 +29,8 @@ describe("auth.routes", () => {
 				name: "missing email",
 				data: {
 					username: "user",
-					password: "password123",
-					confirmPassword: "password123",
+					password: "Password123",
+					confirmPassword: "Password123",
 				},
 				code: 400,
 				error: "EmailValidationError",
@@ -40,7 +40,7 @@ describe("auth.routes", () => {
 				data: {
 					username: "user",
 					email: "user@gmail.com",
-					confirmPassword: "password123",
+					confirmPassword: "Password123",
 				},
 				code: 400,
 				error: "PasswordValidationError",
@@ -50,7 +50,7 @@ describe("auth.routes", () => {
 				data: {
 					username: "user",
 					email: "user@gmail.com",
-					password: "password123",
+					password: "Password123",
 				},
 				code: 400,
 				error: "ConfirmPasswordValidationError",
@@ -60,8 +60,8 @@ describe("auth.routes", () => {
 				data: {
 					username: "u",
 					email: "user@gmail.com",
-					password: "password123",
-					confirmPassword: "password123",
+					password: "Password123",
+					confirmPassword: "Password123",
 				},
 				code: 400,
 				error: "UsernameValidationError",
@@ -71,8 +71,8 @@ describe("auth.routes", () => {
 				data: {
 					username: "user",
 					email: "usergmail.com",
-					password: "password123",
-					confirmPassword: "password123",
+					password: "Password123",
+					confirmPassword: "Password123",
 				},
 				code: 400,
 				error: "EmailValidationError",
@@ -93,7 +93,7 @@ describe("auth.routes", () => {
 				data: {
 					username: "user",
 					email: "user@gmail.com",
-					password: "password123",
+					password: "Password123",
 					confirmPassword: "password456",
 				},
 				code: 400,
@@ -105,8 +105,8 @@ describe("auth.routes", () => {
 			const data = {
 				username: "user",
 				email: "user@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
+				password: "Password123",
+				confirmPassword: "Password123",
 			};
 
 			const response = await request(app)
@@ -124,8 +124,8 @@ describe("auth.routes", () => {
 			const data = {
 				username: "user",
 				email: "user@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
+				password: "Password123",
+				confirmPassword: "Password123",
 			};
 
 			const token = generateAccessToken("none");
@@ -156,14 +156,14 @@ describe("auth.routes", () => {
 			const first = {
 				username: "user",
 				email: "user@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
+				password: "Password123",
+				confirmPassword: "Password123",
 			};
 			const second = {
 				username: "user",
 				email: "another@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
+				password: "Password123",
+				confirmPassword: "Password123",
 			};
 
 			await request(app)
@@ -183,14 +183,14 @@ describe("auth.routes", () => {
 			const first = {
 				username: "another",
 				email: "user@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
+				password: "Password123",
+				confirmPassword: "Password123",
 			};
 			const second = {
 				username: "user",
 				email: "user@gmail.com",
-				password: "password123",
-				confirmPassword: "password123",
+				password: "Password123",
+				confirmPassword: "Password123",
 			};
 
 			await request(app)
@@ -209,7 +209,7 @@ describe("auth.routes", () => {
 
 	describe("/auth/login", () => {
 		const username = "user";
-		const password = "password123";
+		const password = "Password123";
 
 		beforeEach(async () => {
 			await DataManagerSingleton.getInstance().createUser({
@@ -224,7 +224,7 @@ describe("auth.routes", () => {
 			{
 				name: "missing username",
 				data: {
-					password: "password123",
+					password: "Password123",
 				},
 				code: 400,
 				error: "UsernameValidationError",
@@ -241,7 +241,7 @@ describe("auth.routes", () => {
 				name: "invalid username",
 				data: {
 					username: "u",
-					password: "password123",
+					password: "Password123",
 				},
 				code: 400,
 				error: "UsernameValidationError",
@@ -320,7 +320,7 @@ describe("auth.routes", () => {
 		it("POST should fail with incorrect password", async () => {
 			const data = {
 				username: username,
-				password: "unknown123",
+				password: "Unknown123",
 			};
 
 			const response = await request(app)
