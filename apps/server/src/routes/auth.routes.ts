@@ -63,14 +63,22 @@ authRouter.post("/logout", requireAuth, async (_req, res, next) => {
 });
 
 //INFO: For debugging purposes, delete this once the /account page has been created
-authRouter.get("/whoami", requireAuth, async (req, res, next) => {
+authRouter.get("/whoami", async (req, res, next) => {
 	try {
 		const token = req.cookies?.token;
+		if (!token)
+			return res
+				.status(200)
+				.json({ authenticated: false, username: null });
 		const payload = validateAccessToken(token);
 		const user = await DataManagerSingleton.getInstance().getUserById(
 			payload.sub as string,
 		);
-		res.status(200).json({ username: user?.username });
+		if (!user)
+			return res
+				.status(200)
+				.json({ authenticated: false, username: null });
+		res.status(200).json({ authenticated: true, username: user.username });
 	} catch (err) {
 		next(err);
 	}

@@ -3,7 +3,7 @@ import { createBrowserRouter, RouterProvider } from "react-router";
 import "./style.css";
 import RegisterPage from "./pages/RegisterPage";
 import Layout from "./Layout";
-import { RequireAuth, RequireGuest } from "./utils/auth.utils";
+import { RequireAuth, RequireGuest } from "./RoutesProtections";
 
 const router = createBrowserRouter([
 	{
