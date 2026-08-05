@@ -3,19 +3,29 @@ import {
 	parseRegisterUserNoThrow,
 	ValidationError,
 } from "@ft_transcendence/shared";
-import { useNavigate } from "react-router";
+import { useNavigate } from "react-router-dom";
 import { API_URL } from "../config";
+import { DEFAULT_ERROR, getApiErrorMessage } from "../utils/api.utils";
 
 const errorFieldMap = {
 	UsernameValidationError: "username",
 	EmailValidationError: "email",
 	PasswordValidationError: "password",
 	ConfirmPasswordValidationError: "confirmPassword",
-};
+} as const;
 
 type ErrorField = (typeof errorFieldMap)[keyof typeof errorFieldMap];
 
 type RegisterErrors = Partial<Record<ErrorField, string>>;
+
+function mapValidationErrors(errors: ValidationError[]): RegisterErrors {
+	const nextErrors: RegisterErrors = {};
+	for (const err of errors) {
+		const field = errorFieldMap[err.name as keyof typeof errorFieldMap];
+		if (field) nextErrors[field] = err.message;
+	}
+	return nextErrors;
+}
 
 export default function RegisterForm() {
 	const navigate = useNavigate();
@@ -25,9 +35,9 @@ export default function RegisterForm() {
 		password: "",
 		confirmPassword: "",
 	});
-
 	const [errors, setErrors] = useState<RegisterErrors>({});
 	const [error, setError] = useState("");
+	const [loading, setLoading] = useState(false);
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -41,17 +51,12 @@ export default function RegisterForm() {
 		e.preventDefault();
 
 		try {
+			setLoading(true);
 			setErrors({});
 			setError("");
 			const result = parseRegisterUserNoThrow(formData);
 			if (Array.isArray(result)) {
-				const nextErrors: RegisterErrors = {};
-				for (const err of result as ValidationError[]) {
-					const field =
-						errorFieldMap[err.name as keyof typeof errorFieldMap];
-					if (field) nextErrors[field] = err.message;
-				}
-				setErrors(nextErrors);
+				setErrors(mapValidationErrors(result));
 				return;
 			}
 			const res = await fetch(`${API_URL}/auth/register`, {
@@ -60,16 +65,12 @@ export default function RegisterForm() {
 				credentials: "include",
 				body: JSON.stringify(result),
 			});
-
-			if (res.ok) {
-				navigate("/", { replace: true });
-				return;
-			}
-			const err = await res.json();
-			setError(err?.error.message);
+			if (res.ok) navigate("/", { replace: true });
+			else setError(await getApiErrorMessage(res));
 		} catch (err) {
-			setError(err?.message);
-			return;
+			setError(err instanceof Error ? err.message : DEFAULT_ERROR);
+		} finally {
+			setLoading(false);
 		}
 	};
 
@@ -77,7 +78,7 @@ export default function RegisterForm() {
 		<div className="grow flex items-center justify-center">
 			<form onSubmit={handleSubmit} className="border flex flex-col">
 				<h2>Register</h2>
-				<p className="min-h-5 text-sm text-red-500"> {error ?? " "} </p>
+				<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
 				<div>
 					<label htmlFor="username">Username </label>
 					<input
@@ -89,8 +90,7 @@ export default function RegisterForm() {
 						onChange={handleChange}
 					/>
 					<p className="min-h-5 text-sm text-red-500">
-						{" "}
-						{errors.username ?? " "}{" "}
+						{errors.username || " "}
 					</p>
 				</div>
 				<div>
@@ -98,14 +98,14 @@ export default function RegisterForm() {
 					<input
 						id="email"
 						name="email"
-						type="text"
+						type="email"
+						autoComplete="email"
 						required
 						value={formData.email}
 						onChange={handleChange}
 					/>
 					<p className="min-h-5 text-sm text-red-500">
-						{" "}
-						{errors.email ?? " "}{" "}
+						{errors.email || " "}
 					</p>
 				</div>
 				<div>
@@ -119,8 +119,7 @@ export default function RegisterForm() {
 						onChange={handleChange}
 					/>
 					<p className="min-h-5 text-sm text-red-500">
-						{" "}
-						{errors.password ?? " "}{" "}
+						{errors.password || " "}
 					</p>
 				</div>
 				<div>
@@ -134,11 +133,12 @@ export default function RegisterForm() {
 						onChange={handleChange}
 					/>
 					<p className="min-h-5 text-sm text-red-500">
-						{" "}
-						{errors.confirmPassword ?? " "}{" "}
+						{errors.confirmPassword || " "}
 					</p>
 				</div>
-				<button type="submit">Register</button>
+				<button type="submit" disabled={loading}>
+					{loading ? "Register..." : "Register"}
+				</button>
 			</form>
 		</div>
 	);
