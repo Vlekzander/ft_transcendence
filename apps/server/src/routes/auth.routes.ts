@@ -20,68 +20,48 @@ const options: CookieOptions = {
 	maxAge: JWT_MAX_AGE,
 };
 
-authRouter.post("/register", requireGuest, async (req, res, next) => {
-	try {
-		const data = parseRegisterUser(req.body);
-		const user = await DataManagerSingleton.getInstance().createUser(data);
-		const dto = toUserResponseDTO(user);
-		res.cookie("token", generateAccessToken(dto.uuid), options);
-		res.status(201).json({ data: dto });
-	} catch (err) {
-		next(err);
-	}
+authRouter.post("/register", requireGuest, async (req, res) => {
+	const data = parseRegisterUser(req.body);
+	const user = await DataManagerSingleton.getInstance().createUser(data);
+	const dto = toUserResponseDTO(user);
+	res.cookie("token", generateAccessToken(dto.uuid), options);
+	res.status(201).json({ data: dto });
 });
 
-authRouter.post("/login", requireGuest, async (req, res, next) => {
-	try {
-		const data = parseLoginUser(req.body);
-		const user = await DataManagerSingleton.getInstance().getUserByUsername(
-			data.username,
+authRouter.post("/login", requireGuest, async (req, res) => {
+	const data = parseLoginUser(req.body);
+	const user = await DataManagerSingleton.getInstance().getUserByUsername(
+		data.username,
+	);
+	if (!user) throw new InvalidCredentialsError();
+	const validation =
+		await DataManagerSingleton.getInstance().validateUserPassword(
+			user.uuid,
+			data.password,
 		);
-		if (!user) throw new InvalidCredentialsError();
-		const validation =
-			await DataManagerSingleton.getInstance().validateUserPassword(
-				user.uuid,
-				data.password,
-			);
-		if (!validation) throw new InvalidCredentialsError();
-		const dto = toUserResponseDTO(user);
-		res.cookie("token", generateAccessToken(dto.uuid), options);
-		res.status(200).json({ data: dto });
-	} catch (err) {
-		next(err);
-	}
+	if (!validation) throw new InvalidCredentialsError();
+	const dto = toUserResponseDTO(user);
+	res.cookie("token", generateAccessToken(dto.uuid), options);
+	res.status(200).json({ data: dto });
 });
 
-authRouter.post("/logout", requireAuth, async (_req, res, next) => {
-	try {
-		res.clearCookie("token", options);
-		res.sendStatus(204);
-	} catch (err) {
-		next(err);
-	}
+authRouter.post("/logout", requireAuth, async (_req, res) => {
+	res.clearCookie("token", options);
+	res.sendStatus(204);
 });
 
 //INFO: For debugging purposes, delete this once the /account page has been created
-authRouter.get("/whoami", async (req, res, next) => {
-	try {
-		const token = req.cookies?.token;
-		if (!token)
-			return res
-				.status(200)
-				.json({ authenticated: false, username: null });
-		const payload = validateAccessToken(token);
-		const user = await DataManagerSingleton.getInstance().getUserById(
-			payload.sub as string,
-		);
-		if (!user)
-			return res
-				.status(200)
-				.json({ authenticated: false, username: null });
-		res.status(200).json({ authenticated: true, username: user.username });
-	} catch (err) {
-		next(err);
-	}
+authRouter.get("/whoami", async (req, res) => {
+	const token = req.cookies?.token;
+	if (!token)
+		return res.status(200).json({ authenticated: false, username: null });
+	const payload = validateAccessToken(token);
+	const user = await DataManagerSingleton.getInstance().getUserById(
+		payload.sub as string,
+	);
+	if (!user)
+		return res.status(200).json({ authenticated: false, username: null });
+	res.status(200).json({ authenticated: true, username: user.username });
 });
 
 export default authRouter;
