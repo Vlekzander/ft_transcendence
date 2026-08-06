@@ -1,20 +1,43 @@
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import "./style.css";
-import { hello } from "@ft_transcendence/shared";
+import RegisterPage from "./pages/RegisterPage";
+import Layout from "./Layout";
+import { RequireAuth, RequireGuest } from "./RoutesProtections";
+import LoginPage from "./pages/LoginPage";
+import LogoutPage from "./pages/LogoutPage";
 
 const router = createBrowserRouter([
 	{
 		path: "/",
-		element: <div className="bg-red-500">Une page</div>,
-	},
-	{
-		path: "/test",
-		element: <div className="bg-green-500">Une autre page</div>,
-	},
-	{
-		path: "/shared",
-		element: <div className="bg-blue-500">{hello("shared")}</div>,
+		element: <Layout />,
+		children: [
+			{
+				element: <RequireAuth />,
+				children: [],
+			},
+			{
+				element: <RequireGuest />,
+				children: [
+					{
+						path: "/register",
+						element: <RegisterPage />,
+					},
+					{
+						path: "/login",
+						element: <LoginPage />,
+					},
+				],
+			},
+			{
+				path: "/",
+				element: <div className="bg-red-500">Une page</div>,
+			},
+			{
+				path: "/logout",
+				element: <LogoutPage />,
+			},
+		],
 	},
 ]);
 

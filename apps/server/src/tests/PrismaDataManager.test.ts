@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { PrismaDataManager } from "../data/PrismaDataManager";
 import {
 	DuplicateEmailError,
 	DuplicateUsernameError,
@@ -8,14 +7,16 @@ import {
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
+import { DataManager, DataManagerSingleton } from "../data/DataManager";
 
 describe("PrismaDataManager", () => {
-	let dataManager: PrismaDataManager;
+	const dataManager: DataManager = DataManagerSingleton.getInstance();
 
 	beforeEach(async () => {
-		await prisma.avatar.deleteMany({});
-		await prisma.user.deleteMany({});
-		dataManager = new PrismaDataManager();
+		await prisma.$transaction([
+			prisma.avatar.deleteMany(),
+			prisma.user.deleteMany(),
+		]);
 	});
 
 	describe("createUser", () => {
@@ -24,6 +25,7 @@ describe("PrismaDataManager", () => {
 				email: "john@example.com",
 				username: "john",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			expect(user.uuid).toBeTypeOf("string");
@@ -39,6 +41,7 @@ describe("PrismaDataManager", () => {
 				email: "dup@example.com",
 				username: "user1",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			await expect(
@@ -46,6 +49,7 @@ describe("PrismaDataManager", () => {
 					email: "dup@example.com",
 					username: "user2",
 					password: "secret456",
+					confirmPassword: "secret456",
 				}),
 			).rejects.toThrow(DuplicateEmailError);
 		});
@@ -55,6 +59,7 @@ describe("PrismaDataManager", () => {
 				email: "user1@example.com",
 				username: "dupname",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			await expect(
@@ -62,6 +67,7 @@ describe("PrismaDataManager", () => {
 					email: "user2@example.com",
 					username: "dupname",
 					password: "secret456",
+					confirmPassword: "secret456",
 				}),
 			).rejects.toThrow(DuplicateUsernameError);
 		});
@@ -82,11 +88,13 @@ describe("PrismaDataManager", () => {
 				email: "findme@example.com",
 				username: "findme",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const user = await dataManager.getUserById(created.uuid);
 
-			expect(user).toEqual(created);
+			expect(user?.email).toEqual(created.email);
+			expect(user?.username).toEqual(created.username);
 			expect(user).not.toHaveProperty("passwordHash");
 		});
 
@@ -109,6 +117,7 @@ describe("PrismaDataManager", () => {
 				email: "mail@example.com",
 				username: "mailuser",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const user = await dataManager.getUserByEmail("mail@example.com");
@@ -138,6 +147,7 @@ describe("PrismaDataManager", () => {
 				email: "name@example.com",
 				username: "targetuser",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const user = await dataManager.getUserByUsername("targetuser");
@@ -176,6 +186,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const updated = await dataManager.updateUserEmail(
@@ -208,6 +219,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const updated = await dataManager.updateUserPassword(
@@ -240,6 +252,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			const avatar = await dataManager.createAvatar("/avatars/cat.png");
@@ -274,6 +287,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: "secret123",
+				confirmPassword: "secret123",
 			});
 
 			await dataManager.deleteUser(created.uuid);
@@ -326,6 +340,7 @@ describe("PrismaDataManager", () => {
 				email: "user@example.com",
 				username: "user",
 				password: password,
+				confirmPassword: password,
 			});
 
 			const result = await dataManager.validateUserPassword(

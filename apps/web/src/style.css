@@ -1,1 +1,34 @@
 @import "tailwindcss";
+
+@theme {
+	--color-background: #ffffff;
+	--color-primary: #2563eb;
+	--color-secondary: #f8fafc;
+	--color-foreground: #0f172a;
+	--color-muted-foreground: #64748b;
+	--color-border: #e2e8f0;
+}
+
+form {
+	@apply w-full max-w-md rounded-2xl border border-border bg-background p-8 text-foreground shadow-sm;
+}
+
+form h2 {
+	@apply mb-6 text-center text-3xl font-semibold tracking-tight;
+}
+
+form label {
+	@apply mb-2 block text-sm font-medium text-foreground;
+}
+
+form input {
+	@apply w-full rounded-lg border border-border bg-secondary px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20;
+}
+
+form div {
+	@apply mb-4;
+}
+
+form button {
+	@apply mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-white transition hover:opacity-90 active:scale-[0.99];
+}

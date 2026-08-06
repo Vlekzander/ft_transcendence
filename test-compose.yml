@@ -12,18 +12,17 @@ services:
         networks:
             - ft_network
         ports:
-            - 3000:3000
+            - 3333:3000
         env_file:
             - .env.test
         environment:
             DB_HOST: database
-            DB_NAME: ${DB_NAME}
         command: npx vitest --watch
         depends_on:
             database:
                 condition: service_healthy
     database:
-        container_name: ft_transcendence-database
+        container_name: ft_transcendence-database-test
         image: postgres:latest
         networks:
             - ft_network
