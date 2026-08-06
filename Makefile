@@ -43,10 +43,10 @@ test-up:
 	@$(DOCKER) --env-file .env.test -f test-compose.yml run --rm backend npx vitest --maxWorkers=1 --watch
 
 test-down:
-	@$(DOCKER) --env-file .env.test -f test-compose.yml down
+	-@$(DOCKER) --env-file .env.test -f test-compose.yml down
 
 test-logs:
-	$(DOCKER) -f test-compose.yml logs --follow
+	@$(DOCKER) --env-file .env.test -f test-compose.yml logs --follow
 
 secrets:
 	@mkdir -p ./docker/secrets
