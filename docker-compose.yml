@@ -33,6 +33,9 @@ services:
         environment:
             DB_HOST: database
             DB_NAME: ft_transcendence
+        depends_on:
+            database:
+                condition: service_healthy
     database:
         container_name: ft_transcendence-database
         image: postgres:latest
@@ -44,9 +47,17 @@ services:
             - db_username
             - db_password
         environment:
-            POSTGRES_DB: postgres
             POSTGRES_USER_FILE: /run/secrets/db_username
             POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "sh -c 'pg_isready -U $(cat /run/secrets/db_username) -d $(cat /run/secrets/db_password)'",
+                ]
+            interval: 10s
+            timeout: 3s
+            retries: 3
     pgadmin:
         container_name: ft_transcendence-pgadmin
         image: dpage/pgadmin4:latest
