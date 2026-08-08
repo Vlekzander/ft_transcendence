@@ -75,71 +75,69 @@ export default function RegisterForm() {
 	};
 
 	return (
-		<div className="grow flex items-center justify-center">
-			<form onSubmit={handleSubmit} className="border flex flex-col">
-				<h2>Register</h2>
-				<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
-				<div>
-					<label htmlFor="username">Username </label>
-					<input
-						id="username"
-						name="username"
-						type="text"
-						required
-						value={formData.username}
-						onChange={handleChange}
-					/>
-					<p className="min-h-5 text-sm text-red-500">
-						{errors.username || " "}
-					</p>
-				</div>
-				<div>
-					<label htmlFor="email">Email </label>
-					<input
-						id="email"
-						name="email"
-						type="email"
-						autoComplete="email"
-						required
-						value={formData.email}
-						onChange={handleChange}
-					/>
-					<p className="min-h-5 text-sm text-red-500">
-						{errors.email || " "}
-					</p>
-				</div>
-				<div>
-					<label htmlFor="password">Password </label>
-					<input
-						id="password"
-						name="password"
-						type="password"
-						required
-						value={formData.password}
-						onChange={handleChange}
-					/>
-					<p className="min-h-5 text-sm text-red-500">
-						{errors.password || " "}
-					</p>
-				</div>
-				<div>
-					<label htmlFor="confirmPassword">Confirm password </label>
-					<input
-						id="confirmPassword"
-						name="confirmPassword"
-						type="password"
-						required
-						value={formData.confirmPassword}
-						onChange={handleChange}
-					/>
-					<p className="min-h-5 text-sm text-red-500">
-						{errors.confirmPassword || " "}
-					</p>
-				</div>
-				<button type="submit" disabled={loading}>
-					{loading ? "Register..." : "Register"}
-				</button>
-			</form>
-		</div>
+		<form onSubmit={handleSubmit} className="border flex flex-col">
+			<h2>Register</h2>
+			<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
+			<div>
+				<label htmlFor="username">Username </label>
+				<input
+					id="username"
+					name="username"
+					type="text"
+					required
+					value={formData.username}
+					onChange={handleChange}
+				/>
+				<p className="min-h-5 text-sm text-red-500">
+					{errors.username || " "}
+				</p>
+			</div>
+			<div>
+				<label htmlFor="email">Email </label>
+				<input
+					id="email"
+					name="email"
+					type="email"
+					autoComplete="email"
+					required
+					value={formData.email}
+					onChange={handleChange}
+				/>
+				<p className="min-h-5 text-sm text-red-500">
+					{errors.email || " "}
+				</p>
+			</div>
+			<div>
+				<label htmlFor="password">Password </label>
+				<input
+					id="password"
+					name="password"
+					type="password"
+					required
+					value={formData.password}
+					onChange={handleChange}
+				/>
+				<p className="min-h-5 text-sm text-red-500">
+					{errors.password || " "}
+				</p>
+			</div>
+			<div>
+				<label htmlFor="confirmPassword">Confirm password </label>
+				<input
+					id="confirmPassword"
+					name="confirmPassword"
+					type="password"
+					required
+					value={formData.confirmPassword}
+					onChange={handleChange}
+				/>
+				<p className="min-h-5 text-sm text-red-500">
+					{errors.confirmPassword || " "}
+				</p>
+			</div>
+			<button type="submit" disabled={loading}>
+				{loading ? "Register..." : "Register"}
+			</button>
+		</form>
 	);
 }

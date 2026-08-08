@@ -72,42 +72,40 @@ export default function LoginForm() {
 	};
 
 	return (
-		<div className="grow flex items-center justify-center">
-			<form onSubmit={handleSubmit} className="border flex flex-col">
-				<h2>Login</h2>
-				<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
-				<div>
-					<label htmlFor="username">Username </label>
-					<input
-						id="username"
-						name="username"
-						type="text"
-						required
-						value={formData.username}
-						onChange={handleChange}
-					/>
-					<p className="min-h-5 text-sm text-red-500">
-						{errors.username || " "}
-					</p>
-				</div>
-				<div>
-					<label htmlFor="password">Password </label>
-					<input
-						id="password"
-						name="password"
-						type="password"
-						required
-						value={formData.password}
-						onChange={handleChange}
-					/>
-					<p className="min-h-5 text-sm text-red-500">
-						{errors.password || " "}
-					</p>
-				</div>
-				<button type="submit" disabled={loading}>
-					{loading ? "Login..." : "Login"}
-				</button>
-			</form>
-		</div>
+		<form onSubmit={handleSubmit} className="border flex flex-col">
+			<h2>Login</h2>
+			<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
+			<div>
+				<label htmlFor="username">Username </label>
+				<input
+					id="username"
+					name="username"
+					type="text"
+					required
+					value={formData.username}
+					onChange={handleChange}
+				/>
+				<p className="min-h-5 text-sm text-red-500">
+					{errors.username || " "}
+				</p>
+			</div>
+			<div>
+				<label htmlFor="password">Password </label>
+				<input
+					id="password"
+					name="password"
+					type="password"
+					required
+					value={formData.password}
+					onChange={handleChange}
+				/>
+				<p className="min-h-5 text-sm text-red-500">
+					{errors.password || " "}
+				</p>
+			</div>
+			<button type="submit" disabled={loading}>
+				{loading ? "Login..." : "Login"}
+			</button>
+		</form>
 	);
 }
