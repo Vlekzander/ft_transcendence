@@ -1,4 +1,11 @@
-import { Crown, Star, Trophy } from "lucide-react";
+import {
+	Crown,
+	Gamepad2,
+	Lightbulb,
+	PencilLine,
+	Star,
+	Trophy,
+} from "lucide-react";
 import { useState } from "react";
 
 export default function ProfilePage() {
@@ -22,7 +29,7 @@ export default function ProfilePage() {
 							<h1 className="text-3xl font-extrabold order-2 sm:order-1">
 								SpongyBobby
 							</h1>
-							<span className="inline-flex items-center gap-1 text-xs border border-purple-600 bg-purple-600/10 text-purple-500 p-1 whitespace-nowrap order-1 sm:order-2">
+							<span className="inline-flex items-center gap-1 text-xs border border-primary bg-primary/10 text-primary/90 p-1 whitespace-nowrap order-1 sm:order-2">
 								<Crown size={16} />
 								Top 10
 							</span>
@@ -46,7 +53,7 @@ export default function ProfilePage() {
 								</div>
 							</div>
 							<div className="flex items-center justify-center sm:justify-start gap-2">
-								<Trophy className="text-purple-400" />
+								<Trophy className="text-primary" />
 								<div className="flex flex-col">
 									<span className="text-xl font-bold">
 										#1
@@ -56,6 +63,35 @@ export default function ProfilePage() {
 									</span>
 								</div>
 							</div>
+						</div>
+					</div>
+				</div>
+				<div className="mt-7">
+					<div className="grid grid-cols-1 sm:grid-cols-5 gap-y-px gap-x-0 sm:gap-y-0 sm:gap-x-px bg-gray-200">
+						<div className="flex flex-col gap-2 p-3 bg-background">
+							<Gamepad2 className="text-primary" />
+							<span className="text-2xl font-bold">193</span>
+							<span className="text-sm">Games played</span>
+						</div>
+						<div className="flex flex-col gap-2 p-3 bg-background">
+							<Trophy className="text-primary" />
+							<span className="text-2xl font-bold">98</span>
+							<span className="text-sm">Wins</span>
+						</div>
+						<div className="flex flex-col gap-2 p-3 bg-background">
+							<Lightbulb className="text-primary" />
+							<span className="text-2xl font-bold">1247</span>
+							<span className="text-sm">Words guessed</span>
+						</div>
+						<div className="flex flex-col gap-2 p-3 bg-background">
+							<PencilLine className="text-primary" />
+							<span className="text-2xl font-bold">251</span>
+							<span className="text-sm">Drawings</span>
+						</div>
+						<div className="flex flex-col gap-2 p-3 bg-background">
+							<Star className="text-primary" />
+							<span className="text-2xl font-bold">5200</span>
+							<span className="text-sm">Best score</span>
 						</div>
 					</div>
 				</div>
