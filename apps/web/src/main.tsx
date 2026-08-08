@@ -6,6 +6,7 @@ import Layout from "./Layout";
 import { RequireAuth, RequireGuest } from "./RoutesProtections";
 import LoginPage from "./pages/LoginPage";
 import LogoutPage from "./pages/LogoutPage";
+import ProfilePage from "./pages/ProfilePage";
 
 const router = createBrowserRouter([
 	{
@@ -36,6 +37,10 @@ const router = createBrowserRouter([
 			{
 				path: "/logout",
 				element: <LogoutPage />,
+			},
+			{
+				path: "/profile",
+				element: <ProfilePage />,
 			},
 		],
 	},
