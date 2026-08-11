@@ -1,7 +1,9 @@
 import {
+	Check,
 	ChevronDown,
 	Clock,
 	Crown,
+	Flame,
 	Gamepad2,
 	Lightbulb,
 	Medal,
@@ -11,6 +13,17 @@ import {
 	UserRound,
 } from "lucide-react";
 import { useState } from "react";
+
+function ProgressBar({ value }: { value: number }) {
+	return (
+		<div className="w-full bg-gray-200 h-2">
+			<div
+				className="bg-primary h-2"
+				style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+			/>
+		</div>
+	);
+}
 
 export default function ProfilePage() {
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
@@ -260,7 +273,69 @@ export default function ProfilePage() {
 					</div>
 				)}
 
-				{tab === "achievements" && <div>TODO ACHIEVEMENTS</div>}
+				{tab === "achievements" && (
+					<div>
+						<h2 className="font-bold text-2xl mb-7">
+							Achievements
+						</h2>
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+							<div className="flex flex-col gap-2 p-3 border border-gray-200 border-l-gray-400 border-l-3">
+								<div className="flex gap-2">
+									<div className="w-12 h-12 bg-primary flex items-center justify-center text-white">
+										<Check size={32} />
+									</div>
+									<div>
+										<div>
+											<span className="sm:text-lg font-semibold">
+												Blabliblou
+											</span>
+											<span className="uppercase bg-gray-400/10 text-gray-400/90 border border-gray-400 px-1 mx-1.5">
+												Common
+											</span>
+										</div>
+										<p className="text-sm text-gray-500">
+											blablabla blabla blablabla
+										</p>
+									</div>
+								</div>
+								<div>
+									<ProgressBar value={100} />
+									<div className="flex justify-between text-gray-400">
+										<span>100%</span>
+										<span>X/Y</span>
+									</div>
+								</div>
+							</div>
+							<div className="flex flex-col gap-2 p-3 border border-gray-200">
+								<div className="flex gap-2">
+									<div className="w-12 h-12 border border-primary bg-gray-400/15 flex items-center justify-center text-primary">
+										<Flame size={32} />
+									</div>
+									<div>
+										<div>
+											<span className="sm:text-lg font-semibold">
+												Blabliblou
+											</span>
+											<span className="uppercase bg-purple-400/10 text-purple-400/90 border border-purple-400 px-1 mx-1.5">
+												Epic
+											</span>
+										</div>
+										<p className="text-sm text-gray-500">
+											blablabla blabla blablabla
+										</p>
+									</div>
+								</div>
+								<div>
+									<ProgressBar value={13} />
+									<div className="flex justify-between text-gray-400">
+										<span>13%</span>
+										<span>X/Y</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
 
 				{tab === "friends" && <div>TODO FRIENDS</div>}
 			</div>
