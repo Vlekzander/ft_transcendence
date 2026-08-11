@@ -1,10 +1,14 @@
 import {
+	ChevronDown,
+	Clock,
 	Crown,
 	Gamepad2,
 	Lightbulb,
+	Medal,
 	PencilLine,
 	Star,
 	Trophy,
+	UserRound,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -12,6 +16,15 @@ export default function ProfilePage() {
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
 	);
+
+	const [openedIndex, setOpenedIndex] = useState<number[]>([]);
+
+	const toggleIndex = (index: number) => {
+		if (openedIndex.includes(index))
+			setOpenedIndex(openedIndex.filter((i) => i !== index));
+		else setOpenedIndex([...openedIndex, index]);
+	};
+
 	return (
 		<div className="p-5 flex justify-center">
 			<div className="w-full sm:w-4/5">
@@ -45,7 +58,7 @@ export default function ProfilePage() {
 								<Star className="text-orange-400" />
 								<div className="flex flex-col">
 									<span className="text-xl font-bold">
-										48 720
+										48720
 									</span>
 									<span className="text-gray-500 text-sm">
 										points
@@ -110,7 +123,142 @@ export default function ProfilePage() {
 					)}
 				</div>
 
-				{tab === "history" && <div>TODO HISTORY</div>}
+				{tab === "history" && (
+					<div>
+						<h2 className="font-bold text-2xl mb-7">
+							Game history
+						</h2>
+						<button
+							type="button"
+							onClick={() => toggleIndex(0)}
+							className="w-full flex justify-between items-center border border-gray-400 p-3 sm:px-5 text-sm sm:text-base cursor-pointer transition-colors hover:bg-gray-400/10"
+						>
+							<div>
+								<div className="flex gap-1">
+									<span className="uppercase font-semibold px-0.5 border border-green-500 bg-green-500/10 text-green-500/90">
+										Victory
+									</span>
+									<span className="uppercase font-semibold px-0.5 border border-yellow-500 bg-yellow-500/10 text-yellow-500/90">
+										Solo
+									</span>
+								</div>
+								<span className="font-semibold">
+									08 Août 2026
+								</span>
+							</div>
+							<div className="flex gap-2">
+								<span className="inline-flex items-center gap-1">
+									<Medal size={20} strokeWidth={1} />
+									#1
+								</span>
+								<span className="inline-flex items-center gap-1">
+									<Star size={20} strokeWidth={1} />
+									1903
+								</span>
+								<div
+									className={`transition-transform duration-200 ${openedIndex.includes(0) ? "rotate-180" : "rotate-0"}`}
+								>
+									<ChevronDown />
+								</div>
+							</div>
+						</button>
+						<div
+							className={`text-sm sm:text-base border border-gray-400 -my-px transition-all duration-300 ${openedIndex.includes(0) ? "opacity-100" : "max-h-0 opacity-0"}`}
+						>
+							<div className="p-3 sm:px-5">
+								<div className="flex flex-col sm:flex-row justify-between">
+									<span className="inline-flex gap-2 items-center text-sm">
+										<Clock
+											width={20}
+											className="text-primary"
+										/>
+										<span className="text-gray-500">
+											Duration
+										</span>
+										<span className="font-semibold">
+											14:00
+										</span>
+									</span>
+									<span className="inline-flex gap-2 items-center text-sm">
+										<UserRound
+											width={20}
+											className="text-primary"
+										/>
+										<span className="text-gray-500">
+											Players
+										</span>
+										<span className="font-semibold">4</span>
+									</span>
+								</div>
+								<h3 className="text-lg text-gray-600 mt-3">
+									Game ranking
+								</h3>
+								<div>
+									<div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border p-2 sm:px-3 bg-primary/10">
+										<span>1</span>
+										<div className="flex items-center gap-5">
+											<div className="w-5 h-5">
+												<img
+													src="/assets/default_avatar.jpg"
+													width={5}
+													height={5}
+													className="w-full h-full object-cover border"
+												/>
+											</div>
+											<span>SpongyBobby</span>
+										</div>
+										<span>1903</span>
+									</div>
+									<div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border p-2 sm:px-3 -mt-px">
+										<span>2</span>
+										<div className="flex items-center gap-5">
+											<div className="w-5 h-5">
+												<img
+													src="/assets/default_avatar.jpg"
+													width={5}
+													height={5}
+													className="w-full h-full object-cover border"
+												/>
+											</div>
+											<span>SpongyBobby</span>
+										</div>
+										<span>1756</span>
+									</div>
+									<div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border p-2 sm:px-3 -mt-px">
+										<span>3</span>
+										<div className="flex items-center gap-5">
+											<div className="w-5 h-5">
+												<img
+													src="/assets/default_avatar.jpg"
+													width={5}
+													height={5}
+													className="w-full h-full object-cover border"
+												/>
+											</div>
+											<span>SpongyBobby</span>
+										</div>
+										<span>1234</span>
+									</div>
+									<div className="grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border p-2 sm:px-3 -mt-px">
+										<span>4</span>
+										<div className="flex items-center gap-5">
+											<div className="w-5 h-5">
+												<img
+													src="/assets/default_avatar.jpg"
+													width={5}
+													height={5}
+													className="w-full h-full object-cover border"
+												/>
+											</div>
+											<span>SpongyBobby</span>
+										</div>
+										<span>1111</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				)}
 
 				{tab === "achievements" && <div>TODO ACHIEVEMENTS</div>}
 
