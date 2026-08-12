@@ -4,22 +4,19 @@ import {
 	ChevronDown,
 	Clock,
 	Crown,
-	Flame,
 	Gamepad2,
-	Lightbulb,
 	Medal,
-	PencilLine,
 	Star,
 	Trophy,
 	UserRound,
 	UserRoundPlus,
 	X,
-	type LucideIcon,
 } from "lucide-react";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { useState } from "react";
 import { v7 as uuidv7 } from "uuid";
 
-function ProgressBar({ value }: { value: number }) {
+function ProgressBarComponenent({ value }: { value: number }) {
 	return (
 		<div className="w-full bg-gray-200 h-2">
 			<div
@@ -31,19 +28,99 @@ function ProgressBar({ value }: { value: number }) {
 }
 
 function StatComponent({
-	icon: Icon,
+	icon,
 	value,
 	label,
 }: {
-	icon: LucideIcon;
+	icon: string;
 	value: string;
 	label: string;
 }) {
 	return (
 		<div className="flex flex-col gap-2 p-3 bg-background">
-			<Icon className="text-primary" />
+			<DynamicIcon name={icon as IconName} className="text-primary" />
 			<span className="text-2xl font-bold">{value}</span>
 			<span className="text-sm">{label}</span>
+		</div>
+	);
+}
+
+type Achievement = {
+	icon: string;
+	title: string;
+	description: string;
+	objective: number;
+	current: number;
+};
+
+const achievements: Achievement[] = [
+	{
+		icon: "flame",
+		title: "aaa",
+		description: "bbb",
+		objective: 13,
+		current: 1,
+	},
+	{
+		icon: "zap",
+		title: "ccc",
+		description: "ddd",
+		objective: 100,
+		current: 57,
+	},
+	{
+		icon: "user",
+		title: "Blablablabla",
+		description: "blibliblibli",
+		objective: 38,
+		current: 192,
+	},
+];
+
+function AchievementCardComponent({
+	achievement,
+}: {
+	achievement: Achievement;
+}) {
+	const progress = Math.round(
+		(achievement.current / achievement.objective) * 100,
+	);
+	return (
+		<div className="flex flex-col gap-2 p-3 border border-gray-200">
+			<div className="flex gap-2">
+				<div
+					className={`w-12 h-12 flex items-center justify-center ${progress >= 100 ? "bg-primary text-white" : "border-primary bg-gray-400/15 text-primary"}`}
+				>
+					{progress >= 100 ? (
+						<Check size={32} />
+					) : (
+						<DynamicIcon
+							name={achievement.icon as IconName}
+							size={32}
+						/>
+					)}
+				</div>
+				<div>
+					<div>
+						<span className="sm:text-lg font-semibold">
+							{achievement.title}
+						</span>
+					</div>
+					<p className="text-sm text-gray-500">
+						{achievement.description}
+					</p>
+				</div>
+			</div>
+			<div>
+				<ProgressBarComponenent value={progress} />
+				<div className="flex justify-between text-gray-400">
+					<span>{Math.min(progress, 100)}%</span>
+					<span>
+						{Math.min(achievement.current, achievement.objective)}/
+						{achievement.objective}
+					</span>
+				</div>
+			</div>
 		</div>
 	);
 }
@@ -184,27 +261,27 @@ export default function ProfilePage() {
 				<div className="mt-7">
 					<div className="grid grid-cols-1 sm:grid-cols-5 gap-y-px gap-x-0 sm:gap-y-0 sm:gap-x-px bg-gray-200">
 						<StatComponent
-							icon={Gamepad2}
+							icon={"gamepad-2"}
 							value={"193"}
 							label={"Games Played"}
 						/>
 						<StatComponent
-							icon={Trophy}
+							icon={"trophy"}
 							value={"98"}
 							label={"Wins"}
 						/>
 						<StatComponent
-							icon={Lightbulb}
+							icon={"lightbulb"}
 							value={"1247"}
 							label={"Words guessed"}
 						/>
 						<StatComponent
-							icon={PencilLine}
+							icon={"pencil-line"}
 							value={"251"}
 							label={"Drawings"}
 						/>
 						<StatComponent
-							icon={Star}
+							icon={"star"}
 							value={"5200"}
 							label={"Best score"}
 						/>
@@ -361,60 +438,9 @@ export default function ProfilePage() {
 				{tab === "achievements" && (
 					<div>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
-							<div className="flex flex-col gap-2 p-3 border border-gray-200 border-l-gray-400 border-l-3">
-								<div className="flex gap-2">
-									<div className="w-12 h-12 bg-primary flex items-center justify-center text-white">
-										<Check size={32} />
-									</div>
-									<div>
-										<div>
-											<span className="sm:text-lg font-semibold">
-												Blabliblou
-											</span>
-											<span className="uppercase bg-gray-400/10 text-gray-400/90 border border-gray-400 px-1 mx-1.5">
-												Common
-											</span>
-										</div>
-										<p className="text-sm text-gray-500">
-											blablabla blabla blablabla
-										</p>
-									</div>
-								</div>
-								<div>
-									<ProgressBar value={100} />
-									<div className="flex justify-between text-gray-400">
-										<span>100%</span>
-										<span>X/Y</span>
-									</div>
-								</div>
-							</div>
-							<div className="flex flex-col gap-2 p-3 border border-gray-200">
-								<div className="flex gap-2">
-									<div className="w-12 h-12 border border-primary bg-gray-400/15 flex items-center justify-center text-primary">
-										<Flame size={32} />
-									</div>
-									<div>
-										<div>
-											<span className="sm:text-lg font-semibold">
-												Blabliblou
-											</span>
-											<span className="uppercase bg-purple-400/10 text-purple-400/90 border border-purple-400 px-1 mx-1.5">
-												Epic
-											</span>
-										</div>
-										<p className="text-sm text-gray-500">
-											blablabla blabla blablabla
-										</p>
-									</div>
-								</div>
-								<div>
-									<ProgressBar value={13} />
-									<div className="flex justify-between text-gray-400">
-										<span>13%</span>
-										<span>X/Y</span>
-									</div>
-								</div>
-							</div>
+							{achievements.map((a) => (
+								<AchievementCardComponent achievement={a} />
+							))}
 						</div>
 					</div>
 				)}
