@@ -125,6 +125,67 @@ function AchievementCardComponent({
 	);
 }
 
+function FriendComponent({
+	user,
+	status,
+}: {
+	user: UserResponseDTO;
+	status: "online" | "offline" | "ingame";
+}) {
+	return (
+		<div className="flex flex-col sm:flex-row justify-between sm:items-center p-2 bg-background">
+			<div className="flex gap-2 items-center">
+				<div className="w-12 h-12">
+					<img
+						src="/assets/default_avatar.jpg"
+						className="w-full h-full object-cover border"
+					/>
+				</div>
+				<div>
+					<span className="font-semibold text-lg">
+						{user.username}
+					</span>
+					{status === "online" && (
+						<div className="flex items-center gap-1">
+							<div className="w-2 h-2 bg-green-500"></div>
+							<span className="text-gray-500 text-sm">
+								Online
+							</span>
+						</div>
+					)}
+					{status === "offline" && (
+						<div className="flex items-center gap-1">
+							<div className="w-2 h-2 bg-gray-500"></div>
+							<span className="text-gray-500 text-sm">
+								Offline
+							</span>
+						</div>
+					)}
+					{status === "ingame" && (
+						<div className="flex items-center gap-1">
+							<div className="w-2 h-2 bg-primary"></div>
+							<span className="text-gray-500 text-sm">
+								In game
+							</span>
+						</div>
+					)}
+				</div>
+			</div>
+			<div className="flex gap-2 items-center self-end sm:self-auto">
+				{status === "ingame" && (
+					<button className="flex items-center gap-1 text-sm text-green-500/90 hover:bg-green-500/10 border border-green-500 p-1 cursor-pointer">
+						<Gamepad2 size={20} />
+						<span>Join</span>
+					</button>
+				)}
+				<button className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 cursor-pointer">
+					<X strokeWidth={1} />
+				</button>
+			</div>
+		</div>
+	);
+}
+
 type PlayerGameStats = {
 	id: string;
 	position: number;
@@ -452,63 +513,9 @@ export default function ProfilePage() {
 							Add friend
 						</button>
 						<div className="grid grid-cols-1 sm:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
-							<div className="flex flex-col sm:flex-row justify-between sm:items-center p-2 bg-background">
-								<div className="flex gap-2 items-center">
-									<div className="w-12 h-12">
-										<img
-											src="/assets/default_avatar.jpg"
-											className="w-full h-full object-cover border"
-										/>
-									</div>
-									<div>
-										<span className="font-semibold text-lg">
-											SpongyBobby
-										</span>
-										<div className="flex items-center gap-1">
-											<div className="w-2 h-2 bg-purple-500"></div>
-											<span className="text-gray-500 text-sm">
-												In game
-											</span>
-										</div>
-									</div>
-								</div>
-								<div className="flex gap-2 items-center self-end sm:self-auto">
-									<button className="flex items-center gap-1 text-sm text-green-500/90 hover:bg-green-500/10 border border-green-500 p-1 cursor-pointer">
-										<Gamepad2 size={20} />
-										<span>Join</span>
-									</button>
-									<button className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 cursor-pointer">
-										<X strokeWidth={1} />
-									</button>
-								</div>
-							</div>
-							<div className="flex flex-col sm:flex-row justify-between sm:items-center p-2 bg-background">
-								<div className="flex gap-2 items-center">
-									<div className="w-12 h-12">
-										<img
-											src="/assets/default_avatar.jpg"
-											className="w-full h-full object-cover border"
-										/>
-									</div>
-									<div>
-										<span className="font-semibold text-lg">
-											SpongyBobby
-										</span>
-										<div className="flex items-center gap-1">
-											<div className="w-2 h-2 bg-green-500"></div>
-											<span className="text-gray-500 text-sm">
-												Online
-											</span>
-										</div>
-									</div>
-								</div>
-								<div className="flex gap-2 items-center self-end sm:self-auto">
-									<button className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 cursor-pointer">
-										<X strokeWidth={1} />
-									</button>
-								</div>
-							</div>
-							<div className="bg-background"></div>
+							<FriendComponent user={userData} status="ingame" />
+							<FriendComponent user={userData} status="online" />
+							<FriendComponent user={userData} status="offline" />
 						</div>
 					</div>
 				)}
