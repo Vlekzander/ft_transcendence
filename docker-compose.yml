@@ -53,7 +53,7 @@ services:
             test:
                 [
                     "CMD-SHELL",
-                    "sh -c 'pg_isready -U $(cat /run/secrets/db_username) -d $(cat /run/secrets/db_password)'",
+                    "sh -c 'pg_isready -U $(cat /run/secrets/db_username) -d ft_transcendence'",
                 ]
             interval: 10s
             timeout: 3s
