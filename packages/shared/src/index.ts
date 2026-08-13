@@ -3,6 +3,10 @@ export * from "./errors/validation.errors";
 
 export * from "./schemas/user.schemas";
 
+export * from "./types/Achievement.types";
+export * from "./types/ProfileStat.types";
+export * from "./types/Status.types";
+
 export * from "./validators/user.validators";
 
 export const hello = (name: string) => `Hello ${name}`;

@@ -1,57 +1,25 @@
-import type { UserResponseDTO } from "@ft_transcendence/shared";
+import type {
+	Achievement,
+	ProfileStat,
+	Status,
+	UserResponseDTO,
+} from "@ft_transcendence/shared";
 import {
-	Check,
 	ChevronDown,
 	Clock,
 	Crown,
-	Gamepad2,
 	Medal,
 	Star,
 	Trophy,
 	UserRound,
 	UserRoundPlus,
-	X,
 } from "lucide-react";
-import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import { useState } from "react";
 import { v7 as uuidv7 } from "uuid";
-
-function ProgressBarComponenent({ value }: { value: number }) {
-	return (
-		<div className="w-full bg-gray-200 h-2">
-			<div
-				className="bg-primary h-2"
-				style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
-			/>
-		</div>
-	);
-}
-
-function StatComponent({
-	icon,
-	value,
-	label,
-}: {
-	icon: string;
-	value: string;
-	label: string;
-}) {
-	return (
-		<div className="flex flex-col gap-2 p-3 bg-background">
-			<DynamicIcon name={icon as IconName} className="text-primary" />
-			<span className="text-2xl font-bold">{value}</span>
-			<span className="text-sm">{label}</span>
-		</div>
-	);
-}
-
-type Achievement = {
-	icon: string;
-	title: string;
-	description: string;
-	objective: number;
-	current: number;
-};
+import FriendComponent from "../components/Friend.component";
+import ProfileStatComponent from "../components/ProfileStat.component";
+import AchievementCardComponent from "../components/AchievementCard.component";
+import UserStatusComponent from "../components/UserStatus.component";
 
 const achievements: Achievement[] = [
 	{
@@ -77,118 +45,36 @@ const achievements: Achievement[] = [
 	},
 ];
 
-function AchievementCardComponent({
-	achievement,
-}: {
-	achievement: Achievement;
-}) {
-	const progress = Math.round(
-		(achievement.current / achievement.objective) * 100,
-	);
-	return (
-		<div className="flex flex-col gap-2 p-3 border border-gray-200">
-			<div className="flex gap-2">
-				<div
-					className={`w-12 h-12 flex items-center justify-center ${progress >= 100 ? "bg-primary text-white" : "border-primary bg-gray-400/15 text-primary"}`}
-				>
-					{progress >= 100 ? (
-						<Check size={32} />
-					) : (
-						<DynamicIcon
-							name={achievement.icon as IconName}
-							size={32}
-						/>
-					)}
-				</div>
-				<div>
-					<div>
-						<span className="sm:text-lg font-semibold">
-							{achievement.title}
-						</span>
-					</div>
-					<p className="text-sm text-gray-500">
-						{achievement.description}
-					</p>
-				</div>
-			</div>
-			<div>
-				<ProgressBarComponenent value={progress} />
-				<div className="flex justify-between text-gray-400">
-					<span>{Math.min(progress, 100)}%</span>
-					<span>
-						{Math.min(achievement.current, achievement.objective)}/
-						{achievement.objective}
-					</span>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-function FriendComponent({
-	user,
-	status,
-}: {
-	user: UserResponseDTO;
-	status: "online" | "offline" | "ingame";
-}) {
-	return (
-		<div className="flex flex-col sm:flex-row justify-between sm:items-center p-2 bg-background">
-			<div className="flex gap-2 items-center">
-				<div className="w-12 h-12">
-					<img
-						src="/assets/default_avatar.jpg"
-						className="w-full h-full object-cover border"
-					/>
-				</div>
-				<div>
-					<span className="font-semibold text-lg">
-						{user.username}
-					</span>
-					{status === "online" && (
-						<div className="flex items-center gap-1">
-							<div className="w-2 h-2 bg-green-500"></div>
-							<span className="text-gray-500 text-sm">
-								Online
-							</span>
-						</div>
-					)}
-					{status === "offline" && (
-						<div className="flex items-center gap-1">
-							<div className="w-2 h-2 bg-gray-500"></div>
-							<span className="text-gray-500 text-sm">
-								Offline
-							</span>
-						</div>
-					)}
-					{status === "ingame" && (
-						<div className="flex items-center gap-1">
-							<div className="w-2 h-2 bg-primary"></div>
-							<span className="text-gray-500 text-sm">
-								In game
-							</span>
-						</div>
-					)}
-				</div>
-			</div>
-			<div className="flex gap-2 items-center self-end sm:self-auto">
-				{status === "ingame" && (
-					<button className="flex items-center gap-1 text-sm text-green-500/90 hover:bg-green-500/10 border border-green-500 p-1 cursor-pointer">
-						<Gamepad2 size={20} />
-						<span>Join</span>
-					</button>
-				)}
-				<button className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 cursor-pointer">
-					<X strokeWidth={1} />
-				</button>
-			</div>
-		</div>
-	);
-}
+const stats: ProfileStat[] = [
+	{
+		icon: "gamepad-2",
+		label: "Game Played",
+		value: "193",
+	},
+	{
+		icon: "trophy",
+		label: "Wins",
+		value: "42",
+	},
+	{
+		icon: "lightbulb",
+		label: "Words Guessed",
+		value: "1247",
+	},
+	{
+		icon: "pencil-line",
+		label: "Drawings",
+		value: "251",
+	},
+	{
+		icon: "star",
+		label: "Best score",
+		value: "520",
+	},
+];
 
 type PlayerGameStats = {
 	id: string;
-	position: number;
 	points: number;
 };
 
@@ -212,8 +98,8 @@ const fakeHistory: GameHistoryEntry[] = [
 		durationInSeconds: 345,
 		mode: "DUO",
 		players: [
-			{ id: userData.uuid, position: 1, points: 200 },
-			{ id: "test", position: 2, points: 100 },
+			{ id: userData.uuid, points: 200 },
+			{ id: "test", points: 100 },
 		],
 	},
 	{
@@ -221,17 +107,52 @@ const fakeHistory: GameHistoryEntry[] = [
 		durationInSeconds: 345,
 		mode: "SOLO",
 		players: [
-			{ id: "test", position: 1, points: 100 },
-			{ id: userData.uuid, position: 2, points: 75 },
-			{ id: "test", position: 3, points: 0 },
+			{ id: "test", points: 100 },
+			{ id: userData.uuid, points: 75 },
+			{ id: "test", points: 0 },
 		],
+	},
+];
+
+type friend = {
+	user: UserResponseDTO;
+	status: Status;
+};
+
+const fakeFriendsList: friend[] = [
+	{
+		user: {
+			uuid: crypto.randomUUID(),
+			username: "Another",
+			email: "spongybobby@gmail.com",
+			avatarUuid: null,
+		},
+		status: "in_game",
+	},
+	{
+		user: {
+			uuid: crypto.randomUUID(),
+			username: "Blabla",
+			email: "spongybobby@gmail.com",
+			avatarUuid: null,
+		},
+		status: "online",
+	},
+	{
+		user: {
+			uuid: crypto.randomUUID(),
+			username: "Nobody",
+			email: "spongybobby@gmail.com",
+			avatarUuid: null,
+		},
+		status: "offline",
 	},
 ];
 
 function getPlayerPosition(game: GameHistoryEntry, uuid: string): number {
 	let position = 0;
-	game.players.forEach((p) => {
-		if (p.id === uuid) position = p.position;
+	game.players.forEach((p, i) => {
+		if (p.id === uuid) position = i + 1;
 	});
 
 	return position;
@@ -288,10 +209,7 @@ export default function ProfilePage() {
 							</span>
 						</div>
 						<div className="flex items-center justify-center sm:justify-start gap-1 m-1">
-							<div className="w-2 h-2 bg-green-500"></div>
-							<span className="text-gray-500 text-sm">
-								Online
-							</span>
+							<UserStatusComponent status="online" />
 						</div>
 						<div className="grid grid-cols-2 gap-4 mt-3">
 							<div className="flex items-center justify-center sm:justify-start gap-2">
@@ -321,31 +239,9 @@ export default function ProfilePage() {
 				</div>
 				<div className="mt-7">
 					<div className="grid grid-cols-1 sm:grid-cols-5 gap-y-px gap-x-0 sm:gap-y-0 sm:gap-x-px bg-gray-200">
-						<StatComponent
-							icon={"gamepad-2"}
-							value={"193"}
-							label={"Games Played"}
-						/>
-						<StatComponent
-							icon={"trophy"}
-							value={"98"}
-							label={"Wins"}
-						/>
-						<StatComponent
-							icon={"lightbulb"}
-							value={"1247"}
-							label={"Words guessed"}
-						/>
-						<StatComponent
-							icon={"pencil-line"}
-							value={"251"}
-							label={"Drawings"}
-						/>
-						<StatComponent
-							icon={"star"}
-							value={"5200"}
-							label={"Best score"}
-						/>
+						{stats.map((s) => (
+							<ProfileStatComponent stat={s} />
+						))}
 					</div>
 				</div>
 
@@ -513,9 +409,12 @@ export default function ProfilePage() {
 							Add friend
 						</button>
 						<div className="grid grid-cols-1 sm:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
-							<FriendComponent user={userData} status="ingame" />
-							<FriendComponent user={userData} status="online" />
-							<FriendComponent user={userData} status="offline" />
+							{fakeFriendsList.map((friend) => (
+								<FriendComponent
+									user={friend.user}
+									status={friend.status}
+								/>
+							))}
 						</div>
 					</div>
 				)}
