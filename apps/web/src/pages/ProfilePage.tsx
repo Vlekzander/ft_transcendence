@@ -1,10 +1,11 @@
 import type {
 	Achievement,
-	ProfileStat,
+	Stat,
 	Status,
 	UserResponseDTO,
 } from "@ft_transcendence/shared";
 import {
+	Check,
 	ChevronDown,
 	Clock,
 	Crown,
@@ -17,12 +18,13 @@ import {
 import { useState } from "react";
 import { v7 as uuidv7 } from "uuid";
 import FriendComponent from "../components/Friend.component";
-import ProfileStatComponent from "../components/ProfileStat.component";
-import AchievementCardComponent from "../components/AchievementCard.component";
 import UserStatusComponent from "../components/UserStatus.component";
+import { DynamicIcon, type IconName } from "lucide-react/dynamic";
+import ProgressBarComponent from "../components/Progressbar.component";
 
 const achievements: Achievement[] = [
 	{
+		uuid: crypto.randomUUID(),
 		icon: "flame",
 		title: "aaa",
 		description: "bbb",
@@ -30,6 +32,7 @@ const achievements: Achievement[] = [
 		current: 1,
 	},
 	{
+		uuid: crypto.randomUUID(),
 		icon: "zap",
 		title: "ccc",
 		description: "ddd",
@@ -37,6 +40,7 @@ const achievements: Achievement[] = [
 		current: 57,
 	},
 	{
+		uuid: crypto.randomUUID(),
 		icon: "user",
 		title: "Blablablabla",
 		description: "blibliblibli",
@@ -45,7 +49,7 @@ const achievements: Achievement[] = [
 	},
 ];
 
-const stats: ProfileStat[] = [
+const stats: Stat[] = [
 	{
 		icon: "gamepad-2",
 		label: "Game Played",
@@ -174,6 +178,63 @@ function extractDateFromUuid(uuid: string) {
 	return new Date(timestamp);
 }
 
+function StatComponent({ stat }: { stat: Stat }) {
+	return (
+		<div className="flex flex-col gap-2 p-3 bg-background">
+			<DynamicIcon
+				name={stat.icon as IconName}
+				className="text-primary"
+			/>
+			<span className="text-2xl font-bold">{stat.value}</span>
+			<span className="text-sm">{stat.label}</span>
+		</div>
+	);
+}
+
+function AchievementComponent({ achievement }: { achievement: Achievement }) {
+	const progress = Math.round(
+		(achievement.current / achievement.objective) * 100,
+	);
+	return (
+		<div className="flex flex-col gap-2 p-3 border border-gray-200">
+			<div className="flex gap-2">
+				<div
+					className={`w-12 h-12 flex items-center justify-center ${progress >= 100 ? "bg-primary text-white" : "border-primary bg-gray-400/15 text-primary"}`}
+				>
+					{progress >= 100 ? (
+						<Check size={32} />
+					) : (
+						<DynamicIcon
+							name={achievement.icon as IconName}
+							size={32}
+						/>
+					)}
+				</div>
+				<div>
+					<div>
+						<span className="sm:text-lg font-semibold">
+							{achievement.title}
+						</span>
+					</div>
+					<p className="text-sm text-gray-500">
+						{achievement.description}
+					</p>
+				</div>
+			</div>
+			<div>
+				<ProgressBarComponent value={progress} />
+				<div className="flex justify-between text-gray-400">
+					<span>{Math.min(progress, 100)}%</span>
+					<span>
+						{Math.min(achievement.current, achievement.objective)}/
+						{achievement.objective}
+					</span>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export default function ProfilePage() {
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
@@ -239,8 +300,8 @@ export default function ProfilePage() {
 				</div>
 				<div className="mt-7">
 					<div className="grid grid-cols-1 sm:grid-cols-5 gap-y-px gap-x-0 sm:gap-y-0 sm:gap-x-px bg-gray-200">
-						{stats.map((s) => (
-							<ProfileStatComponent stat={s} />
+						{stats.map((s, i) => (
+							<StatComponent stat={s} key={i} />
 						))}
 					</div>
 				</div>
@@ -396,7 +457,10 @@ export default function ProfilePage() {
 					<div>
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
 							{achievements.map((a) => (
-								<AchievementCardComponent achievement={a} />
+								<AchievementComponent
+									achievement={a}
+									key={a.uuid}
+								/>
 							))}
 						</div>
 					</div>
@@ -413,6 +477,7 @@ export default function ProfilePage() {
 								<FriendComponent
 									user={friend.user}
 									status={friend.status}
+									key={friend.user.uuid}
 								/>
 							))}
 						</div>

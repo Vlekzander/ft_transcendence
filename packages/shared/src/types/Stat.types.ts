@@ -1,4 +1,4 @@
-export type ProfileStat = {
+export type Stat = {
 	icon: string;
 	label: string;
 	value: string;
