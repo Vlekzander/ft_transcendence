@@ -79,6 +79,7 @@ const stats: Stat[] = [
 
 type PlayerGameStats = {
 	id: string;
+	username: string;
 	points: number;
 };
 
@@ -102,8 +103,8 @@ const fakeHistory: GameHistoryEntry[] = [
 		durationInSeconds: 345,
 		mode: "DUO",
 		players: [
-			{ id: userData.uuid, points: 200 },
-			{ id: "test", points: 100 },
+			{ id: userData.uuid, username: "SpongyBobby", points: 200 },
+			{ id: "test", username: "Patrick", points: 100 },
 		],
 	},
 	{
@@ -111,9 +112,9 @@ const fakeHistory: GameHistoryEntry[] = [
 		durationInSeconds: 345,
 		mode: "SOLO",
 		players: [
-			{ id: "test", points: 100 },
-			{ id: userData.uuid, points: 75 },
-			{ id: "test", points: 0 },
+			{ id: "test", username: "Patrick", points: 100 },
+			{ id: userData.uuid, username: "SpongyBobby", points: 75 },
+			{ id: "test2", username: "Plankton", points: 0 },
 		],
 	},
 ];
@@ -153,22 +154,24 @@ const fakeFriendsList: friend[] = [
 	},
 ];
 
-function getPlayerPosition(game: GameHistoryEntry, uuid: string): number {
-	let position = 0;
-	game.players.forEach((p, i) => {
-		if (p.id === uuid) position = i + 1;
-	});
+function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
+	const index = game.players.findIndex((player) => player.id === userId);
 
-	return position;
+	if (index === -1) {
+		return null;
+	}
+
+	return {
+		position: index + 1,
+		points: game.players[index].points,
+	};
 }
 
-function getPlayerPoints(game: GameHistoryEntry, uuid: string): number {
-	let points = 0;
-	game.players.forEach((p) => {
-		if (p.id === uuid) points = p.points;
-	});
+function formatDuration(totalSeconds: number) {
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
 
-	return points;
+	return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 function extractDateFromUuid(uuid: string) {
@@ -235,16 +238,156 @@ function AchievementComponent({ achievement }: { achievement: Achievement }) {
 	);
 }
 
+type GameRankingRowProps = {
+	player: PlayerGameStats;
+	position: number;
+	isCurrentUser: boolean;
+};
+
+function GameRankingRowComponent({
+	player,
+	position,
+	isCurrentUser,
+}: GameRankingRowProps) {
+	return (
+		<div
+			className={`grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border p-2 sm:px-3 ${isCurrentUser ? "bg-primary/10" : ""} ${position > 1 ? "-mt-px" : ""}`}
+		>
+			<span>{position}</span>
+			<div className="flex items-center gap-5">
+				<div className="w-5 h-5">
+					<img
+						src="/assets/default_avatar.jpg"
+						alt=""
+						width={20}
+						height={20}
+						className="w-5 h-5 object-cover border"
+					/>
+				</div>
+				<span>{player.username}</span>
+			</div>
+			<span>{player.points}</span>
+		</div>
+	);
+}
+
+type GameHistoryItemProp = {
+	game: GameHistoryEntry;
+	currentUserId: string;
+	isOpen: boolean;
+	onToggle: () => void;
+};
+
+function GameHistoryItem({
+	game,
+	currentUserId,
+	isOpen,
+	onToggle,
+}: GameHistoryItemProp) {
+	const result = getPlayerGameResult(game, currentUserId);
+
+	if (result == null) return null;
+
+	const isVictory = result.position === 1;
+
+	return (
+		<article>
+			<button
+				type="button"
+				onClick={onToggle}
+				className="w-full flex justify-between items-center border border-gray-400 p-3 sm:px-5 text-sm sm:text-base cursor-pointer transition-colors hover:bg-gray-400/10"
+			>
+				<div>
+					<div className="flex gap-1">
+						<span
+							className={`uppercase font-semibold px-0.5 border ${isVictory ? "border-green-500 bg-green-500/10 text-green-500/90" : "border-red-500 bg-red-500/10 text-red-500/90"}`}
+						>
+							{isVictory ? "Victory" : "Defeat"}
+						</span>
+						<span
+							className={`uppercase font-semibold px-0.5 border ${game.mode === "SOLO" ? "border-yellow-500 bg-yellow-500/10 text-yellow-500/90" : "border-purple-500 bg-purple-500/10 text-purple-500/90"}`}
+						>
+							{game.mode}
+						</span>
+					</div>
+					<span className="font-semibold">
+						{extractDateFromUuid(game.id).toLocaleDateString(
+							"en-US",
+							{
+								dateStyle: "long",
+							},
+						)}
+					</span>
+				</div>
+				<div className="flex gap-2">
+					<span className="inline-flex items-center gap-1">
+						<Medal size={20} strokeWidth={1} />#{result.position}
+					</span>
+					<span className="inline-flex items-center gap-1">
+						<Star size={20} strokeWidth={1} />
+						{result.points}
+					</span>
+					<div
+						className={`transition-transform duration-200 ${isOpen ? "rotate-180" : "rotate-0"}`}
+					>
+						<ChevronDown />
+					</div>
+				</div>
+			</button>
+			{isOpen && (
+				<section
+					className={`text-sm sm:text-base border border-gray-400 -my-px`}
+				>
+					<div className="p-3 sm:px-5">
+						<div className="flex flex-col sm:flex-row justify-between">
+							<span className="inline-flex gap-2 items-center text-sm">
+								<Clock width={20} className="text-primary" />
+								<span className="text-gray-500">Duration</span>
+								<span className="font-semibold">
+									{formatDuration(game.durationInSeconds)}
+								</span>
+							</span>
+							<span className="inline-flex gap-2 items-center text-sm">
+								<UserRound
+									width={20}
+									className="text-primary"
+								/>
+								<span className="text-gray-500">Players</span>
+								<span className="font-semibold">
+									{game.players.length}
+								</span>
+							</span>
+						</div>
+						<h3 className="text-lg text-gray-600 mt-3">
+							Game ranking
+						</h3>
+						<div>
+							{game.players.map((player, index) => (
+								<GameRankingRowComponent
+									key={`${game.id}-${player.id}-${index}`}
+									player={player}
+									position={index + 1}
+									isCurrentUser={player.id === userData.uuid}
+								/>
+							))}
+						</div>
+					</div>
+				</section>
+			)}
+		</article>
+	);
+}
+
 export default function UserPage() {
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
 	);
 
-	const [openedIndex, setOpenedIndex] = useState<number>(-1);
+	const [openedGameId, setOpenedGameId] = useState("");
 
-	const toggleIndex = (index: number) => {
-		if (openedIndex === index) setOpenedIndex(-1);
-		else setOpenedIndex(index);
+	const toggleGame = (gameId: string) => {
+		if (openedGameId === gameId) setOpenedGameId("");
+		else setOpenedGameId(gameId);
 	};
 
 	return (
@@ -301,7 +444,7 @@ export default function UserPage() {
 				<div className="mt-7">
 					<div className="grid grid-cols-1 sm:grid-cols-5 gap-y-px gap-x-0 sm:gap-y-0 sm:gap-x-px bg-gray-200">
 						{stats.map((s, i) => (
-							<StatComponent stat={s} key={i} />
+							<StatComponent key={i} stat={s} />
 						))}
 					</div>
 				</div>
@@ -312,7 +455,7 @@ export default function UserPage() {
 							<button
 								key={t}
 								onClick={() => setTab(t)}
-								className={`uppercase cursor-pointer p-1 sm:p-2 -mb-px border-b-2 ${tab === t ? "text-foreground border-foreground" : "text-gray-500 border-transparent"}`}
+								className={`uppercase cursor-pointer p-1 sm:p-2 -mb-px border-b-2 hover:text-foreground ${tab === t ? "text-foreground border-foreground" : "text-gray-500 border-transparent"}`}
 							>
 								{t}
 							</button>
@@ -324,132 +467,14 @@ export default function UserPage() {
 
 				{tab === "history" && (
 					<div className="flex flex-col gap-2">
-						{fakeHistory.map((game, index) => (
-							<div key={index}>
-								<button
-									type="button"
-									onClick={() => toggleIndex(index)}
-									className="w-full flex justify-between items-center border border-gray-400 p-3 sm:px-5 text-sm sm:text-base cursor-pointer transition-colors hover:bg-gray-400/10"
-								>
-									<div>
-										<div className="flex gap-1">
-											{getPlayerPosition(
-												game,
-												userData.uuid,
-											) === 1 ? (
-												<span className="uppercase font-semibold px-0.5 border border-green-500 bg-green-500/10 text-green-500/90">
-													Victory
-												</span>
-											) : (
-												<span className="uppercase font-semibold px-0.5 border border-red-500 bg-red-500/10 text-red-500/90">
-													Defeat
-												</span>
-											)}
-											{game.mode === "SOLO" ? (
-												<span className="uppercase font-semibold px-0.5 border border-yellow-500 bg-yellow-500/10 text-yellow-500/90">
-													Solo
-												</span>
-											) : (
-												<span className="uppercase font-semibold px-0.5 border border-purple-500 bg-purple-500/10 text-purple-500/90">
-													DUO
-												</span>
-											)}
-										</div>
-										<span className="font-semibold">
-											{extractDateFromUuid(
-												game.id,
-											).toLocaleDateString("en-US", {
-												dateStyle: "long",
-											})}
-										</span>
-									</div>
-									<div className="flex gap-2">
-										<span className="inline-flex items-center gap-1">
-											<Medal size={20} strokeWidth={1} />#
-											{getPlayerPosition(
-												game,
-												userData.uuid,
-											)}
-										</span>
-										<span className="inline-flex items-center gap-1">
-											<Star size={20} strokeWidth={1} />
-											{getPlayerPoints(
-												game,
-												userData.uuid,
-											)}
-										</span>
-										<div
-											className={`transition-transform duration-200 ${openedIndex === index ? "rotate-180" : "rotate-0"}`}
-										>
-											<ChevronDown />
-										</div>
-									</div>
-								</button>
-								<div
-									className={`text-sm sm:text-base border border-gray-400 -my-px`}
-									hidden={openedIndex !== index}
-								>
-									<div className="p-3 sm:px-5">
-										<div className="flex flex-col sm:flex-row justify-between">
-											<span className="inline-flex gap-2 items-center text-sm">
-												<Clock
-													width={20}
-													className="text-primary"
-												/>
-												<span className="text-gray-500">
-													Duration
-												</span>
-												<span className="font-semibold">
-													{`${Math.floor(game.durationInSeconds / 60)}:${game.durationInSeconds % 60}`}
-												</span>
-											</span>
-											<span className="inline-flex gap-2 items-center text-sm">
-												<UserRound
-													width={20}
-													className="text-primary"
-												/>
-												<span className="text-gray-500">
-													Players
-												</span>
-												<span className="font-semibold">
-													{game.players.length}
-												</span>
-											</span>
-										</div>
-										<h3 className="text-lg text-gray-600 mt-3">
-											Game ranking
-										</h3>
-										<div>
-											{game.players.map(
-												(player, index) => (
-													<div
-														key={index}
-														className={`grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border p-2 sm:px-3 ${player.id === userData.uuid ? "bg-primary/10" : ""} ${index > 0 ? "-mt-px" : ""}`}
-													>
-														<span>{index + 1}</span>
-														<div className="flex items-center gap-5">
-															<div className="w-5 h-5">
-																<img
-																	src="/assets/default_avatar.jpg"
-																	width={5}
-																	height={5}
-																	className="w-full h-full object-cover border"
-																/>
-															</div>
-															<span>
-																SpongyBobby
-															</span>
-														</div>
-														<span>
-															{player.points}
-														</span>
-													</div>
-												),
-											)}
-										</div>
-									</div>
-								</div>
-							</div>
+						{fakeHistory.map((game) => (
+							<GameHistoryItem
+								key={game.id}
+								game={game}
+								currentUserId={userData.uuid}
+								isOpen={openedGameId === game.id}
+								onToggle={() => toggleGame(game.id)}
+							/>
 						))}
 					</div>
 				)}
@@ -459,8 +484,8 @@ export default function UserPage() {
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
 							{achievements.map((a) => (
 								<AchievementComponent
-									achievement={a}
 									key={a.uuid}
+									achievement={a}
 								/>
 							))}
 						</div>
@@ -476,9 +501,9 @@ export default function UserPage() {
 						<div className="grid grid-cols-1 sm:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
 							{fakeFriendsList.map((friend) => (
 								<FriendComponent
+									key={friend.user.uuid}
 									user={friend.user}
 									status={friend.status}
-									key={friend.user.uuid}
 								/>
 							))}
 						</div>
