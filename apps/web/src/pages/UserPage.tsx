@@ -235,7 +235,7 @@ function AchievementComponent({ achievement }: { achievement: Achievement }) {
 	);
 }
 
-export default function ProfilePage() {
+export default function UserPage() {
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
 	);
@@ -325,7 +325,7 @@ export default function ProfilePage() {
 				{tab === "history" && (
 					<div className="flex flex-col gap-2">
 						{fakeHistory.map((game, index) => (
-							<div>
+							<div key={index}>
 								<button
 									type="button"
 									onClick={() => toggleIndex(index)}
@@ -423,6 +423,7 @@ export default function ProfilePage() {
 											{game.players.map(
 												(player, index) => (
 													<div
+														key={index}
 														className={`grid grid-cols-[2rem_minmax(0,1fr)_auto] items-center gap-3 border p-2 sm:px-3 ${player.id === userData.uuid ? "bg-primary/10" : ""} ${index > 0 ? "-mt-px" : ""}`}
 													>
 														<span>{index + 1}</span>
