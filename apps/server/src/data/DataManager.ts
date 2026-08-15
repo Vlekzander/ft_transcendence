@@ -1,11 +1,10 @@
-import { RegisterUserDTO } from "@ft_transcendence/shared";
+import {
+	AvatarDTO,
+	GameHistoryEntry,
+	RegisterUserDTO,
+} from "@ft_transcendence/shared";
 import { PrismaDataManager } from "./PrismaDataManager";
 import { UserEntity } from "./User.data";
-
-export type AvatarDTO = {
-	uuid: string;
-	path: string;
-};
 
 export interface DataManager {
 	createUser(data: RegisterUserDTO): Promise<UserEntity>;
@@ -19,8 +18,8 @@ export interface DataManager {
 	updateUserAvatar(id: string, avatarId: string): Promise<UserEntity>;
 	deleteUser(id: string): Promise<void>;
 	deleteAvatar(id: string): Promise<void>;
-
 	validateUserPassword(userId: string, password: string): Promise<boolean>;
+	getUserHistory(id: string): Promise<GameHistoryEntry[]>;
 }
 
 export class DataManagerSingleton {

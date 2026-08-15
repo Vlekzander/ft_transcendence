@@ -14,6 +14,8 @@ describe("PrismaDataManager", () => {
 
 	beforeEach(async () => {
 		await prisma.$transaction([
+			prisma.userOnGame.deleteMany(),
+			prisma.game.deleteMany(),
 			prisma.avatar.deleteMany(),
 			prisma.user.deleteMany(),
 		]);
@@ -365,5 +367,66 @@ describe("PrismaDataManager", () => {
 				dataManager.validateUserPassword("invalid", "password"),
 			).rejects.toThrow(InvalidIdError);
 		});
+	});
+
+	describe("GetUserHistory", () => {
+		it("Should return user history", async () => {
+			const user = await dataManager.createUser({
+				username: "Bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+			for (let i = 0; i < 5; i++) {
+				const game = await prisma.game.create({
+					data: { finished: true },
+				}); //TODO: TEMP, replace with dataManager.createGame(...)
+				await prisma.userOnGame.create({
+					data: { gameId: game.uuid, userId: user.uuid },
+				});
+			}
+
+			const history = await dataManager.getUserHistory(user.uuid);
+
+			expect(history.length).toBe(5);
+			history.forEach((game) => {
+				expect(game.finished).toBe(true);
+				expect(game.mode).toBe("SOLO");
+				game.participants.forEach((participant) => {
+					expect(participant.userId).toBe(user.uuid);
+					expect(participant.user.uuid).toBe(user.uuid);
+					expect(participant.user.username).toBe(user.username);
+					expect(participant.user.avatar).toBeNull();
+				});
+			});
+		});
+
+		it("Should return an empty array if there is no history", async () => {
+			const user = await dataManager.createUser({
+				username: "Bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const history = await dataManager.getUserHistory(user.uuid);
+
+			expect(history.length).toBe(0);
+		});
+
+		it("Should return an empty array if the user history is empty", async () => {
+			const history = await dataManager.getUserHistory(
+				crypto.randomUUID(),
+			);
+
+			expect(history.length).toBe(0);
+		});
+
+		it("Should throw an exception if the id is invalid", async () => {
+			await expect(dataManager.getUserHistory("invalid")).rejects.toThrow(
+				InvalidIdError,
+			);
+		});
+		//TODO: EXCEPTION IF USER DO NOT EXIST
 	});
 });

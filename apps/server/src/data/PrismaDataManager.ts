@@ -1,4 +1,8 @@
-import { RegisterUserDTO } from "@ft_transcendence/shared";
+import {
+	AvatarDTO,
+	GameHistoryEntry,
+	RegisterUserDTO,
+} from "@ft_transcendence/shared";
 import {
 	DuplicateElementError,
 	DuplicateEmailError,
@@ -10,7 +14,7 @@ import {
 import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma.lib";
 import { compareHash, generateHash } from "../utils/hash.util";
-import { AvatarDTO, DataManager } from "./DataManager";
+import { DataManager } from "./DataManager";
 import { UserEntity } from "./User.data";
 
 function getPrismaConstraintFields(
@@ -233,6 +237,55 @@ export class PrismaDataManager implements DataManager {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();
 				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
+	async getUserHistory(id: string): Promise<GameHistoryEntry[]> {
+		try {
+			const result = await prisma.userOnGame.findMany({
+				where: { userId: id },
+				include: {
+					game: {
+						include: {
+							participants: {
+								select: {
+									userId: true,
+									score: true,
+									user: {
+										select: {
+											uuid: true,
+											username: true,
+											avatar: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			});
+
+			const history: GameHistoryEntry[] = result.map((game) => ({
+				uuid: game.game.uuid,
+				mode: game.game.mode,
+				finished: game.game.finished,
+				participants: game.game.participants.map((p) => ({
+					userId: p.userId,
+					score: p.score ?? 0,
+					user: {
+						uuid: p.user.uuid,
+						username: p.user.username,
+						avatar: p.user.avatar,
+					},
+				})),
+			}));
+
+			return history;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
 			}
 			throw error;
 		}
