@@ -4,6 +4,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
+import usersRouter from "./routes/users.routes";
 
 const app = express();
 
@@ -17,6 +18,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/auth", authRouter);
+app.use("/users", usersRouter);
 
 app.get("/", (_req, res) => {
 	res.json({ message: hello("API") });
