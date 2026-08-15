@@ -401,6 +401,37 @@ describe("PrismaDataManager", () => {
 			});
 		});
 
+		it("Should return user history with only finished games", async () => {
+			const user = await dataManager.createUser({
+				username: "Bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+			for (let i = 0; i < 5; i++) {
+				const game = await prisma.game.create({
+					data: { finished: i < 3 ? true : false },
+				}); //TODO: TEMP, replace with dataManager.createGame(...)
+				await prisma.userOnGame.create({
+					data: { gameId: game.uuid, userId: user.uuid },
+				});
+			}
+
+			const history = await dataManager.getUserHistory(user.uuid);
+
+			expect(history.length).toBe(3);
+			history.forEach((game) => {
+				expect(game.finished).toBe(true);
+				expect(game.mode).toBe("SOLO");
+				game.participants.forEach((participant) => {
+					expect(participant.userId).toBe(user.uuid);
+					expect(participant.user.uuid).toBe(user.uuid);
+					expect(participant.user.username).toBe(user.username);
+					expect(participant.user.avatar).toBeNull();
+				});
+			});
+		});
+
 		it("Should return an empty array if there is no history", async () => {
 			const user = await dataManager.createUser({
 				username: "Bob",
@@ -427,6 +458,5 @@ describe("PrismaDataManager", () => {
 				InvalidIdError,
 			);
 		});
-		//TODO: EXCEPTION IF USER DO NOT EXIST
 	});
 });

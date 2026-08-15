@@ -267,20 +267,22 @@ export class PrismaDataManager implements DataManager {
 				},
 			});
 
-			const history: GameHistoryEntry[] = result.map((game) => ({
-				uuid: game.game.uuid,
-				mode: game.game.mode,
-				finished: game.game.finished,
-				participants: game.game.participants.map((p) => ({
-					userId: p.userId,
-					score: p.score ?? 0,
-					user: {
-						uuid: p.user.uuid,
-						username: p.user.username,
-						avatar: p.user.avatar,
-					},
-				})),
-			}));
+			const history: GameHistoryEntry[] = result
+				.filter((game) => game.game.finished)
+				.map((game) => ({
+					uuid: game.game.uuid,
+					mode: game.game.mode,
+					finished: game.game.finished,
+					participants: game.game.participants.map((p) => ({
+						userId: p.userId,
+						score: p.score ?? 0,
+						user: {
+							uuid: p.user.uuid,
+							username: p.user.username,
+							avatar: p.user.avatar,
+						},
+					})),
+				}));
 
 			return history;
 		} catch (error) {
