@@ -1,5 +1,8 @@
 import type {
 	Achievement,
+	GameHistoryEntry,
+	GameParticipant,
+	PublicUserDTO,
 	Stat,
 	Status,
 	UserResponseDTO,
@@ -15,12 +18,13 @@ import {
 	UserRound,
 	UserRoundPlus,
 } from "lucide-react";
-import { useState } from "react";
-import { v7 as uuidv7 } from "uuid";
+import { useEffect, useState } from "react";
 import FriendComponent from "../components/Friend.component";
 import UserStatusComponent from "../components/UserStatus.component";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../components/Progressbar.component";
+import { useParams } from "react-router";
+import { API_URL } from "../config";
 
 const achievements: Achievement[] = [
 	{
@@ -77,48 +81,6 @@ const stats: Stat[] = [
 	},
 ];
 
-type PlayerGameStats = {
-	id: string;
-	username: string;
-	points: number;
-};
-
-type GameHistoryEntry = {
-	id: string; //UUIDV7
-	durationInSeconds: number;
-	mode: "SOLO" | "DUO";
-	players: PlayerGameStats[];
-};
-
-const userData: UserResponseDTO = {
-	uuid: crypto.randomUUID(),
-	username: "SpongyBobby",
-	email: "spongybobby@gmail.com",
-	avatarUuid: null,
-};
-
-const fakeHistory: GameHistoryEntry[] = [
-	{
-		id: uuidv7(),
-		durationInSeconds: 345,
-		mode: "DUO",
-		players: [
-			{ id: userData.uuid, username: "SpongyBobby", points: 200 },
-			{ id: "test", username: "Patrick", points: 100 },
-		],
-	},
-	{
-		id: uuidv7(),
-		durationInSeconds: 345,
-		mode: "SOLO",
-		players: [
-			{ id: "test", username: "Patrick", points: 100 },
-			{ id: userData.uuid, username: "SpongyBobby", points: 75 },
-			{ id: "test2", username: "Plankton", points: 0 },
-		],
-	},
-];
-
 type friend = {
 	user: UserResponseDTO;
 	status: Status;
@@ -155,7 +117,9 @@ const fakeFriendsList: friend[] = [
 ];
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
-	const index = game.players.findIndex((player) => player.id === userId);
+	const index = game.participants.findIndex(
+		(participant) => participant.userId === userId,
+	);
 
 	if (index === -1) {
 		return null;
@@ -163,7 +127,7 @@ function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 
 	return {
 		position: index + 1,
-		points: game.players[index].points,
+		points: game.participants[index].score,
 	};
 }
 
@@ -239,13 +203,13 @@ function AchievementComponent({ achievement }: { achievement: Achievement }) {
 }
 
 type GameRankingRowProps = {
-	player: PlayerGameStats;
+	participant: GameParticipant;
 	position: number;
 	isCurrentUser: boolean;
 };
 
 function GameRankingRowComponent({
-	player,
+	participant: participant,
 	position,
 	isCurrentUser,
 }: GameRankingRowProps) {
@@ -264,9 +228,9 @@ function GameRankingRowComponent({
 						className="w-5 h-5 object-cover border"
 					/>
 				</div>
-				<span>{player.username}</span>
+				<span>{participant.user.username}</span>
 			</div>
-			<span>{player.points}</span>
+			<span>{participant.score}</span>
 		</div>
 	);
 }
@@ -311,7 +275,7 @@ function GameHistoryItem({
 						</span>
 					</div>
 					<span className="font-semibold">
-						{extractDateFromUuid(game.id).toLocaleDateString(
+						{extractDateFromUuid(game.uuid).toLocaleDateString(
 							"en-US",
 							{
 								dateStyle: "long",
@@ -344,7 +308,7 @@ function GameHistoryItem({
 								<Clock width={20} className="text-primary" />
 								<span className="text-gray-500">Duration</span>
 								<span className="font-semibold">
-									{formatDuration(game.durationInSeconds)}
+									{formatDuration(game.duration)}
 								</span>
 							</span>
 							<span className="inline-flex gap-2 items-center text-sm">
@@ -354,7 +318,7 @@ function GameHistoryItem({
 								/>
 								<span className="text-gray-500">Players</span>
 								<span className="font-semibold">
-									{game.players.length}
+									{game.participants.length}
 								</span>
 							</span>
 						</div>
@@ -362,12 +326,14 @@ function GameHistoryItem({
 							Game ranking
 						</h3>
 						<div>
-							{game.players.map((player, index) => (
+							{game.participants.map((participant, index) => (
 								<GameRankingRowComponent
-									key={`${game.id}-${player.id}-${index}`}
-									player={player}
+									key={`${game.uuid}-${participant.userId}-${index}`}
+									participant={participant}
 									position={index + 1}
-									isCurrentUser={player.id === userData.uuid}
+									isCurrentUser={
+										participant.userId === currentUserId
+									}
 								/>
 							))}
 						</div>
@@ -379,10 +345,13 @@ function GameHistoryItem({
 }
 
 export default function UserPage() {
+	const { uuid } = useParams<{ uuid: string }>();
+	const [isLoading, setLoading] = useState(true);
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
 	);
-
+	const [history, setHistory] = useState<GameHistoryEntry[] | null>(null);
+	const [userData, setUserData] = useState<PublicUserDTO | null>(null);
 	const [openedGameId, setOpenedGameId] = useState("");
 
 	const toggleGame = (gameId: string) => {
@@ -390,13 +359,52 @@ export default function UserPage() {
 		else setOpenedGameId(gameId);
 	};
 
+	useEffect(() => {
+		let isMounted = true;
+
+		const fetchData = async () => {
+			if (!uuid) return;
+			try {
+				setLoading(true);
+				const responseHistory = await fetch(
+					`${API_URL}/users/${uuid}/history`,
+				);
+				const responseUser = await fetch(`${API_URL}/users/${uuid}`);
+				if (!responseHistory.ok || !responseUser.ok)
+					throw new Error("HTTP ERROR"); //TODO: Manage errors
+				const resultHistory = await responseHistory.json();
+				const resultUser = await responseUser.json();
+				if (isMounted) {
+					setHistory(resultHistory.history);
+					setUserData(resultUser.user);
+				}
+			} catch (error) {
+				if (isMounted) {
+					console.error(error); //TODO: Redirect + log
+				}
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		};
+		fetchData();
+		return () => {
+			isMounted = false;
+		};
+	}, [uuid]);
+
+	if (userData === null) return <p>Loading...</p>;
+
 	return (
 		<div className="p-5 flex justify-center">
 			<div className="w-full sm:w-4/5">
 				<div className="flex flex-col sm:flex-row gap-3 items-center">
 					<div className="w-32 h-32 shrink-0">
 						<img
-							src="/assets/default_avatar.jpg"
+							src={
+								userData.avatar === null
+									? "/assets/default_avatar.jpg"
+									: userData.avatar.path
+							}
 							width={128}
 							height={128}
 							className="w-full h-full object-cover border"
@@ -467,15 +475,21 @@ export default function UserPage() {
 
 				{tab === "history" && (
 					<div className="flex flex-col gap-2">
-						{fakeHistory.map((game) => (
-							<GameHistoryItem
-								key={game.id}
-								game={game}
-								currentUserId={userData.uuid}
-								isOpen={openedGameId === game.id}
-								onToggle={() => toggleGame(game.id)}
-							/>
-						))}
+						{isLoading ? (
+							<p>Loading...</p>
+						) : history && history.length > 0 ? (
+							history.map((game) => (
+								<GameHistoryItem
+									key={game.uuid}
+									game={game}
+									currentUserId={uuid}
+									isOpen={openedGameId === game.uuid}
+									onToggle={() => toggleGame(game.uuid)}
+								/>
+							))
+						) : (
+							<p>No history found</p>
+						)}
 					</div>
 				)}
 

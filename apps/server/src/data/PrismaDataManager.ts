@@ -273,6 +273,7 @@ export class PrismaDataManager implements DataManager {
 					uuid: game.game.uuid,
 					mode: game.game.mode,
 					finished: game.game.finished,
+					duration: game.game.duration,
 					participants: game.game.participants.map((p) => ({
 						userId: p.userId,
 						score: p.score ?? 0,

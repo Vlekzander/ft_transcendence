@@ -12,5 +12,6 @@ export type GameHistoryEntry = {
 	uuid: string;
 	mode: GameMode;
 	finished: boolean;
+	duration: number;
 	participants: GameParticipant[];
 };

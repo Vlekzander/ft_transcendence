@@ -70,8 +70,9 @@ describe("users.routes", () => {
 
 			expect(history.length).toBe(5);
 			history.forEach((game) => {
-				expect(game.finished).toBe(true);
 				expect(game.mode).toBe("SOLO");
+				expect(game.finished).toBe(true);
+				expect(game.duration).toBe(0);
 				game.participants.forEach((participant) => {
 					expect(participant.userId).toBe(user.uuid);
 					expect(participant.user.uuid).toBe(user.uuid);

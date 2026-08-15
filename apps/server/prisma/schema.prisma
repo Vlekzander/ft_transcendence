@@ -35,6 +35,7 @@ model Game {
 	uuid			String			@id @default(uuid(7)) @db.Uuid
 	mode			GameMode		@default(SOLO)
 	finished		Boolean			@default(false)
+	duration		Int				@default(0)
 	participants	UserOnGame[]
 }
 
