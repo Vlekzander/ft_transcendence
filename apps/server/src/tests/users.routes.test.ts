@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { prisma } from "../lib/prisma.lib";
 import { DataManager, DataManagerSingleton } from "../data/DataManager";
-import { GameHistoryEntry } from "@ft_transcendence/shared";
+import { GameHistoryEntry, PublicUserDTO } from "@ft_transcendence/shared";
 import app from "../app";
 import request from "supertest";
 
@@ -15,6 +15,34 @@ describe("users.routes", () => {
 			prisma.avatar.deleteMany(),
 			prisma.user.deleteMany(),
 		]);
+	});
+
+	describe("/users/:uuid", () => {
+		it("GET Should retrive the user public datas", async () => {
+			const user = await dataManager.createUser({
+				username: "bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const response = await request(app).get(`/users/${user.uuid}`);
+
+			const data: PublicUserDTO = response.body?.user;
+
+			expect(data.uuid).toBe(user.uuid);
+			expect(data.username).toBe(user.username);
+			expect(data.avatar).toBeNull();
+		});
+
+		it("GET Should fail with unknown user", async () => {
+			const response = await request(app).get(
+				`/users/${crypto.randomUUID()}`,
+			);
+
+			expect(response.status).toBe(404);
+			expect(response.body?.error.code).toBe("UnknownUserIdError");
+		});
 	});
 
 	describe("/users/:uuid/history", () => {
