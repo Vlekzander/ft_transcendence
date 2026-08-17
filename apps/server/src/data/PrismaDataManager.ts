@@ -246,6 +246,9 @@ export class PrismaDataManager implements DataManager {
 		try {
 			const result = await prisma.userOnGame.findMany({
 				where: { userId: id },
+				orderBy: {
+					gameId: "desc",
+				},
 				include: {
 					game: {
 						include: {
