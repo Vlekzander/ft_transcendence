@@ -22,8 +22,14 @@ import FriendComponent from "../components/Friend.component";
 import UserStatusComponent from "../components/UserStatus.component";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../components/Progressbar.component";
-import { useParams } from "react-router";
+import { Navigate, useParams } from "react-router";
 import { API_URL } from "../config";
+import ErrorComponent from "../components/ErrorComponent";
+import {
+	PartialProfileError,
+	UserNotFoundError,
+	UserProfileError,
+} from "../errors/UserErrors";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
@@ -256,16 +262,17 @@ function GameHistoryItem({
 export default function UserPage() {
 	const { uuid } = useParams<{ uuid: string }>();
 	const [isLoading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+
+	const [userData, setUserData] = useState<PublicUserDTO | null>(null);
+	const [history, setHistory] = useState<GameHistoryEntry[]>([]);
+	const [stats, setStats] = useState<Stat[]>([]);
+	const [achievements, setAchievements] = useState<Achievement[]>([]);
+	const [friends, setFriends] = useState<FriendDTO[] | null>(null);
+
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
 	);
-	const [history, setHistory] = useState<GameHistoryEntry[] | null>(null);
-	const [userData, setUserData] = useState<PublicUserDTO | null>(null);
-	const [stats, setStats] = useState<Stat[] | null>(null);
-	const [achievements, setAchievements] = useState<Achievement[] | null>(
-		null,
-	);
-	const [friends, setFriends] = useState<FriendDTO[] | null>(null);
 	const [openedGameId, setOpenedGameId] = useState("");
 
 	const toggleGame = (gameId: string) => {
@@ -280,38 +287,55 @@ export default function UserPage() {
 			if (!uuid) return;
 			try {
 				setLoading(true);
+				setError(null);
 				const userEndpoint = `${API_URL}/users/${uuid}`;
-				const responseUser = await fetch(`${userEndpoint}`);
-				const responseHistory = await fetch(`${userEndpoint}/history`);
-				const responseStats = await fetch(`${userEndpoint}/stats`);
-				const responseAchievements = await fetch(
-					`${userEndpoint}/achievements`,
-				);
-				const responseFriends = await fetch(`${userEndpoint}/friends`);
-				if (
-					!responseUser.ok ||
-					!responseHistory.ok ||
-					!responseStats.ok ||
-					!responseAchievements.ok ||
-					!responseFriends.ok
-				)
-					throw new Error("HTTP ERROR"); //TODO: Manage errors
-				const resultUser = await responseUser.json();
-				const resultHistory = await responseHistory.json();
-				const resultStats = await responseStats.json();
-				const resultAchievements = await responseAchievements.json();
-				const resultFriends = await responseFriends.json();
+				const [
+					resUser,
+					resHistory,
+					resStats,
+					resAchievements,
+					resFriends,
+				] = await Promise.all([
+					fetch(`${userEndpoint}`),
+					fetch(`${userEndpoint}/history`),
+					fetch(`${userEndpoint}/stats`),
+					fetch(`${userEndpoint}/achievements`),
+					fetch(`${userEndpoint}/friends`),
+				]);
+				if (!resUser.ok) {
+					if (resUser.status === 404) throw new UserNotFoundError();
+					throw new UserProfileError();
+				}
+
+				const resultUser = await resUser.json();
+				const resultHistory = resHistory.ok
+					? await resHistory.json()
+					: { history: [] };
+				const resultStats = resStats.ok
+					? await resStats.json()
+					: { stats: [] };
+				const resultAchievements = resAchievements.ok
+					? await resAchievements.json()
+					: { achievements: [] };
+				const resultFriends = resFriends.ok
+					? await resFriends.json()
+					: { friends: [] };
 				if (isMounted) {
 					setUserData(resultUser.user);
-					setHistory(resultHistory.history);
-					setStats(resultStats.stats);
-					setAchievements(resultAchievements.achievements);
-					setFriends(resultFriends.friends);
+					setHistory(resultHistory.history || []);
+					setStats(resultStats.stats || []);
+					setAchievements(resultAchievements.achievements || []);
+					setFriends(resultFriends.friends || []);
 				}
+				if (
+					!resHistory.ok ||
+					!resStats.ok ||
+					!resAchievements.ok ||
+					!resFriends.ok
+				)
+					throw new PartialProfileError();
 			} catch (error) {
-				if (isMounted) {
-					console.error(error); //TODO: Redirect + log
-				}
+				if (isMounted) setError(error.message || "An error occured");
 			} finally {
 				if (isMounted) setLoading(false);
 			}
@@ -322,7 +346,24 @@ export default function UserPage() {
 		};
 	}, [uuid]);
 
-	if (userData === null) return <p>Loading...</p>;
+	if (isLoading) {
+		return (
+			<div className="p-10 flex justify-center items-center">
+				<p className="text-2xl">Loading...</p>
+			</div>
+		);
+	}
+
+	if (userData === null) return <Navigate to="/not-found" replace />;
+
+	if (error)
+		return (
+			<ErrorComponent
+				message={error}
+				button_text="Retry"
+				onClick={() => window.location.reload()}
+			/>
+		);
 
 	return (
 		<div className="p-5 flex justify-center">
@@ -407,7 +448,7 @@ export default function UserPage() {
 					<div className="flex flex-col gap-2">
 						{isLoading ? (
 							<p>Loading...</p>
-						) : history && history.length > 0 ? (
+						) : history.length > 0 ? (
 							history.map((game) => (
 								<GameHistoryItem
 									key={game.uuid}
@@ -442,7 +483,7 @@ export default function UserPage() {
 							<UserRoundPlus />
 							Add friend
 						</button>
-						<div className="grid grid-cols-1 sm:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
+						<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
 							{friends.map((friend) => (
 								<FriendComponent
 									key={friend.user.uuid}

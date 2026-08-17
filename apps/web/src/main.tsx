@@ -7,6 +7,7 @@ import { RequireAuth, RequireGuest } from "./RoutesProtections";
 import LoginPage from "./pages/LoginPage";
 import LogoutPage from "./pages/LogoutPage";
 import UserPage from "./pages/UserPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 const router = createBrowserRouter([
 	{
@@ -29,6 +30,14 @@ const router = createBrowserRouter([
 						element: <LoginPage />,
 					},
 				],
+			},
+			{
+				path: "*",
+				element: <NotFoundPage />,
+			},
+			{
+				path: "/not-found",
+				element: <NotFoundPage />,
 			},
 			{
 				path: "/",
