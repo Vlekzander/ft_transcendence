@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
-import { PublicUserDTO, Stat } from "@ft_transcendence/shared";
+import { Achievement, PublicUserDTO, Stat } from "@ft_transcendence/shared";
 import { UnknownUserIdError } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
 
@@ -79,6 +79,39 @@ usersRouter.get("/:uuid/stats", async (_req, res) => {
 	];
 
 	res.json({ stats });
+});
+
+usersRouter.get("/:uuid/achievements", async (_req, res) => {
+	// const uuid = req.params.uuid;
+
+	//WARN: TEMP FAKE ACHIEVEMENTS
+	const achievements: Achievement[] = [
+		{
+			uuid: crypto.randomUUID(),
+			icon: "flame",
+			title: "aaa",
+			description: "bbb",
+			objective: 13,
+			current: 1,
+		},
+		{
+			uuid: crypto.randomUUID(),
+			icon: "zap",
+			title: "ccc",
+			description: "ddd",
+			objective: 100,
+			current: 57,
+		},
+		{
+			uuid: crypto.randomUUID(),
+			icon: "user",
+			title: "Blablablabla",
+			description: "blibliblibli",
+			objective: 38,
+			current: 192,
+		},
+	];
+	res.json({ achievements });
 });
 
 export default usersRouter;

@@ -26,33 +26,6 @@ import ProgressBarComponent from "../components/Progressbar.component";
 import { useParams } from "react-router";
 import { API_URL } from "../config";
 
-const achievements: Achievement[] = [
-	{
-		uuid: crypto.randomUUID(),
-		icon: "flame",
-		title: "aaa",
-		description: "bbb",
-		objective: 13,
-		current: 1,
-	},
-	{
-		uuid: crypto.randomUUID(),
-		icon: "zap",
-		title: "ccc",
-		description: "ddd",
-		objective: 100,
-		current: 57,
-	},
-	{
-		uuid: crypto.randomUUID(),
-		icon: "user",
-		title: "Blablablabla",
-		description: "blibliblibli",
-		objective: 38,
-		current: 192,
-	},
-];
-
 type friend = {
 	user: UserResponseDTO;
 	status: Status;
@@ -323,8 +296,9 @@ export default function UserPage() {
 		"history",
 	);
 	const [history, setHistory] = useState<GameHistoryEntry[] | null>(null);
-	const [stats, setStats] = useState<Stat[] | null>(null);
 	const [userData, setUserData] = useState<PublicUserDTO | null>(null);
+	const [stats, setStats] = useState<Stat[] | null>(null);
+	const [achievements, setAchievements] = useState<Stat[] | null>(null);
 	const [openedGameId, setOpenedGameId] = useState("");
 
 	const toggleGame = (gameId: string) => {
@@ -342,22 +316,26 @@ export default function UserPage() {
 				const userEndpoint = `${API_URL}/users/${uuid}`;
 				const responseUser = await fetch(`${userEndpoint}`);
 				const responseHistory = await fetch(`${userEndpoint}/history`);
-				const responseStats = await fetch(
-					`${API_URL}/users/${uuid}/stats`,
+				const responseStats = await fetch(`${userEndpoint}/stats`);
+				const responseAchievements = await fetch(
+					`${userEndpoint}/achievements`,
 				);
 				if (
 					!responseUser.ok ||
 					!responseHistory.ok ||
-					!responseStats.ok
+					!responseStats.ok ||
+					!responseAchievements.ok
 				)
 					throw new Error("HTTP ERROR"); //TODO: Manage errors
 				const resultUser = await responseUser.json();
 				const resultHistory = await responseHistory.json();
 				const resultStats = await responseStats.json();
+				const resultAchievements = await responseAchievements.json();
 				if (isMounted) {
 					setUserData(resultUser.user);
 					setHistory(resultHistory.history);
 					setStats(resultStats.stats);
+					setAchievements(resultAchievements.achievements);
 				}
 			} catch (error) {
 				if (isMounted) {
