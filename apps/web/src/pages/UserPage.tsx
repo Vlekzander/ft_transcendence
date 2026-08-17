@@ -53,34 +53,6 @@ const achievements: Achievement[] = [
 	},
 ];
 
-const stats: Stat[] = [
-	{
-		icon: "gamepad-2",
-		label: "Game Played",
-		value: "193",
-	},
-	{
-		icon: "trophy",
-		label: "Wins",
-		value: "42",
-	},
-	{
-		icon: "lightbulb",
-		label: "Words Guessed",
-		value: "1247",
-	},
-	{
-		icon: "pencil-line",
-		label: "Drawings",
-		value: "251",
-	},
-	{
-		icon: "star",
-		label: "Best score",
-		value: "520",
-	},
-];
-
 type friend = {
 	user: UserResponseDTO;
 	status: Status;
@@ -351,6 +323,7 @@ export default function UserPage() {
 		"history",
 	);
 	const [history, setHistory] = useState<GameHistoryEntry[] | null>(null);
+	const [stats, setStats] = useState<Stat[] | null>(null);
 	const [userData, setUserData] = useState<PublicUserDTO | null>(null);
 	const [openedGameId, setOpenedGameId] = useState("");
 
@@ -366,17 +339,25 @@ export default function UserPage() {
 			if (!uuid) return;
 			try {
 				setLoading(true);
-				const responseHistory = await fetch(
-					`${API_URL}/users/${uuid}/history`,
+				const userEndpoint = `${API_URL}/users/${uuid}`;
+				const responseUser = await fetch(`${userEndpoint}`);
+				const responseHistory = await fetch(`${userEndpoint}/history`);
+				const responseStats = await fetch(
+					`${API_URL}/users/${uuid}/stats`,
 				);
-				const responseUser = await fetch(`${API_URL}/users/${uuid}`);
-				if (!responseHistory.ok || !responseUser.ok)
+				if (
+					!responseUser.ok ||
+					!responseHistory.ok ||
+					!responseStats.ok
+				)
 					throw new Error("HTTP ERROR"); //TODO: Manage errors
-				const resultHistory = await responseHistory.json();
 				const resultUser = await responseUser.json();
+				const resultHistory = await responseHistory.json();
+				const resultStats = await responseStats.json();
 				if (isMounted) {
-					setHistory(resultHistory.history);
 					setUserData(resultUser.user);
+					setHistory(resultHistory.history);
+					setStats(resultStats.stats);
 				}
 			} catch (error) {
 				if (isMounted) {

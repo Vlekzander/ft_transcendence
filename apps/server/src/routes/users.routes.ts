@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
-import { PublicUserDTO } from "@ft_transcendence/shared";
+import { PublicUserDTO, Stat } from "@ft_transcendence/shared";
 import { UnknownUserIdError } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
 
@@ -44,6 +44,41 @@ usersRouter.get("/:uuid/history", async (req, res) => {
 		await DataManagerSingleton.getInstance().getUserHistory(uuid);
 
 	res.json({ history });
+});
+
+usersRouter.get("/:uuid/stats", async (_req, res) => {
+	// const uuid = req.params.uuid;
+
+	//WARN: TEMP FAKE STATS
+	const stats: Stat[] = [
+		{
+			icon: "gamepad-2",
+			label: "Game Played",
+			value: "193",
+		},
+		{
+			icon: "trophy",
+			label: "Wins",
+			value: "42",
+		},
+		{
+			icon: "lightbulb",
+			label: "Words Guessed",
+			value: "1247",
+		},
+		{
+			icon: "pencil-line",
+			label: "Drawings",
+			value: "251",
+		},
+		{
+			icon: "star",
+			label: "Best score",
+			value: "520",
+		},
+	];
+
+	res.json({ stats });
 });
 
 export default usersRouter;
