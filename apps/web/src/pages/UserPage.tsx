@@ -1,11 +1,10 @@
 import type {
 	Achievement,
+	FriendDTO,
 	GameHistoryEntry,
 	GameParticipant,
 	PublicUserDTO,
 	Stat,
-	Status,
-	UserResponseDTO,
 } from "@ft_transcendence/shared";
 import {
 	Check,
@@ -25,41 +24,6 @@ import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../components/Progressbar.component";
 import { useParams } from "react-router";
 import { API_URL } from "../config";
-
-type friend = {
-	user: UserResponseDTO;
-	status: Status;
-};
-
-const fakeFriendsList: friend[] = [
-	{
-		user: {
-			uuid: crypto.randomUUID(),
-			username: "Another",
-			email: "spongybobby@gmail.com",
-			avatarUuid: null,
-		},
-		status: "in_game",
-	},
-	{
-		user: {
-			uuid: crypto.randomUUID(),
-			username: "Blabla",
-			email: "spongybobby@gmail.com",
-			avatarUuid: null,
-		},
-		status: "online",
-	},
-	{
-		user: {
-			uuid: crypto.randomUUID(),
-			username: "Nobody",
-			email: "spongybobby@gmail.com",
-			avatarUuid: null,
-		},
-		status: "offline",
-	},
-];
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
@@ -298,7 +262,10 @@ export default function UserPage() {
 	const [history, setHistory] = useState<GameHistoryEntry[] | null>(null);
 	const [userData, setUserData] = useState<PublicUserDTO | null>(null);
 	const [stats, setStats] = useState<Stat[] | null>(null);
-	const [achievements, setAchievements] = useState<Stat[] | null>(null);
+	const [achievements, setAchievements] = useState<Achievement[] | null>(
+		null,
+	);
+	const [friends, setFriends] = useState<FriendDTO[] | null>(null);
 	const [openedGameId, setOpenedGameId] = useState("");
 
 	const toggleGame = (gameId: string) => {
@@ -320,22 +287,26 @@ export default function UserPage() {
 				const responseAchievements = await fetch(
 					`${userEndpoint}/achievements`,
 				);
+				const responseFriends = await fetch(`${userEndpoint}/friends`);
 				if (
 					!responseUser.ok ||
 					!responseHistory.ok ||
 					!responseStats.ok ||
-					!responseAchievements.ok
+					!responseAchievements.ok ||
+					!responseFriends.ok
 				)
 					throw new Error("HTTP ERROR"); //TODO: Manage errors
 				const resultUser = await responseUser.json();
 				const resultHistory = await responseHistory.json();
 				const resultStats = await responseStats.json();
 				const resultAchievements = await responseAchievements.json();
+				const resultFriends = await responseFriends.json();
 				if (isMounted) {
 					setUserData(resultUser.user);
 					setHistory(resultHistory.history);
 					setStats(resultStats.stats);
 					setAchievements(resultAchievements.achievements);
+					setFriends(resultFriends.friends);
 				}
 			} catch (error) {
 				if (isMounted) {
@@ -472,7 +443,7 @@ export default function UserPage() {
 							Add friend
 						</button>
 						<div className="grid grid-cols-1 sm:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
-							{fakeFriendsList.map((friend) => (
+							{friends.map((friend) => (
 								<FriendComponent
 									key={friend.user.uuid}
 									user={friend.user}

@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
-import { Achievement, PublicUserDTO, Stat } from "@ft_transcendence/shared";
+import {
+	Achievement,
+	PublicUserDTO,
+	Stat,
+	FriendDTO,
+} from "@ft_transcendence/shared";
 import { UnknownUserIdError } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
 
@@ -112,6 +117,43 @@ usersRouter.get("/:uuid/achievements", async (_req, res) => {
 		},
 	];
 	res.json({ achievements });
+});
+
+usersRouter.get("/:uuid/friends", async (_req, res) => {
+	// const uuid = req.params.uuid;
+
+	//WARN: TEMP FAKE FRIENDSLIST
+	const friends: FriendDTO[] = [
+		{
+			user: {
+				uuid: crypto.randomUUID(),
+				username: "Another",
+				email: "spongybobby@gmail.com",
+				avatarUuid: null,
+			},
+			status: "in_game",
+		},
+		{
+			user: {
+				uuid: crypto.randomUUID(),
+				username: "Blabla",
+				email: "spongybobby@gmail.com",
+				avatarUuid: null,
+			},
+			status: "online",
+		},
+		{
+			user: {
+				uuid: crypto.randomUUID(),
+				username: "Nobody",
+				email: "spongybobby@gmail.com",
+				avatarUuid: null,
+			},
+			status: "offline",
+		},
+	];
+
+	res.json({ friends });
 });
 
 export default usersRouter;
