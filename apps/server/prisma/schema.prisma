@@ -1,6 +1,6 @@
 generator client {
 	provider = "prisma-client"
-	output = "../src/generated/prisma"
+	output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -13,14 +13,42 @@ model User {
 	username	String		@unique
 	password	String
 	createdAt	DateTime	@default(now())
-
 	avatarUuid	String?		@unique @db.Uuid
-	avatar		Avatar?		@relation(fields: [avatarUuid], references: [uuid], onDelete: Cascade)
+
+	avatar		Avatar?		@relation("UserAvatar", fields: [avatarUuid], references: [uuid], onDelete: SetNull)
+	userOnGames	UserOnGame[]
 }
 
 model Avatar {
 	uuid	String	@id @default(uuid()) @db.Uuid
 	path	String
 
-	user	User?
+	user	User?	@relation("UserAvatar")
+}
+
+enum GameMode {
+	SOLO
+	DUO
+}
+
+model Game {
+	uuid			String			@id @default(uuid(7)) @db.Uuid
+	mode			GameMode		@default(SOLO)
+	finished		Boolean			@default(false)
+	duration		Int				@default(0)
+	participants	UserOnGame[]
+}
+
+model UserOnGame {
+	id		Int		@id @default(autoincrement())
+	userId	String	@db.Uuid
+	gameId	String	@db.Uuid
+	score	Int		@default(0)
+
+	user	User	@relation(fields: [userId], references: [uuid])
+	game	Game	@relation(fields: [gameId], references: [uuid])
+
+	@@unique([userId, gameId])
+	@@index([userId])
+	@@index([gameId])
 }
