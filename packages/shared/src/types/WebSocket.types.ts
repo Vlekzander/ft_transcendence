@@ -1,18 +1,22 @@
 import { WebSocket } from "ws";
 
-export type PacketAction = "MESSAGE";
+export type PacketAction = "ERROR";
 
 export interface BasePacket {
 	action: PacketAction;
 }
 
-export interface MessagePacket extends BasePacket {
-	action: "MESSAGE";
+export interface ErrorPacket extends BasePacket {
+	action: "ERROR";
 	text: string;
 }
 
-export type AppPackets = MessagePacket;
+export type AppPackets = ErrorPacket;
 
 export interface AppWebSocket extends WebSocket {
 	uuid?: string;
+}
+
+export function createErrorPacket(text: string): ErrorPacket {
+	return { action: "ERROR", text };
 }
