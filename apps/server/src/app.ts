@@ -6,11 +6,13 @@ import authRouter from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
 import usersRouter from "./routes/users.routes";
 
+const WEB_PORT = process.env.WEB_PORT || 5173;
+
 const app = express();
 
 app.use(
 	cors({
-		origin: "http://localhost:5173",
+		origin: `http://localhost:${WEB_PORT}`,
 		credentials: true,
 	}),
 );
