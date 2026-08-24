@@ -1,6 +1,10 @@
-import { AppWebSocket, createErrorPacket } from "@ft_transcendence/shared";
+import {
+	AppPacket,
+	AppWebSocket,
+	createErrorPacket,
+} from "@ft_transcendence/shared";
 import { Server } from "http";
-import { WebSocketServer } from "ws";
+import { RawData, WebSocketServer } from "ws";
 import { validateAccessToken } from "./utils/jwt.util";
 
 export const setupWebSocketServer = (httpserver: Server) => {
@@ -25,9 +29,9 @@ export const setupWebSocketServer = (httpserver: Server) => {
 		}
 
 		if (ws.uuid) ws.send(`Your uuid: ${ws.uuid}`);
-		ws.on("message", (message) => {
+		ws.on("message", (message: RawData) => {
 			console.log(`Received: ${message}`);
-			ws.send(`Echo: ${message}`);
+			handleMessage(ws, message);
 		});
 
 		ws.on("close", () => {
@@ -37,6 +41,23 @@ export const setupWebSocketServer = (httpserver: Server) => {
 
 	return wss;
 };
+
+function handleMessage(ws: AppWebSocket, data: RawData) {
+	let packet: AppPacket;
+
+	try {
+		packet = JSON.parse(data.toString());
+	} catch (error) {
+		console.error(error);
+		if (error instanceof Error) sendError(ws, error.message);
+		return;
+	}
+
+	switch (packet.type) {
+		default:
+			sendError(ws, `Unknown packet type: ${packet.type}`);
+	}
+}
 
 function sendError(ws: AppWebSocket, text: string) {
 	if (ws.readyState !== WebSocket.OPEN) return;
