@@ -15,6 +15,7 @@ export type AppPacket = ErrorPacket;
 
 export interface AppWebSocket extends WebSocket {
 	uuid?: string;
+	isAlive: boolean;
 }
 
 export function createErrorPacket(text: string): ErrorPacket {
