@@ -71,6 +71,9 @@ function handleMessage(ws: AppWebSocket, data: RawData) {
 	}
 
 	switch (packet.type) {
+		case "MESSAGE":
+			ws.send(`Your message: ${packet.text}`);
+			break;
 		default:
 			sendError(ws, `Unknown packet type: ${packet.type}`);
 	}
