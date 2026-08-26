@@ -20,8 +20,9 @@ export const setupWebSocketServer = (httpserver: Server) => {
 		try {
 			const cookies = req.headers.cookie?.split(";");
 			const token = cookies
-				?.filter((element) => element.startsWith("token="))[0]
-				.replace("token=", "");
+				?.find((element) => element.startsWith("token="))
+				?.replace("token=", "");
+
 			if (token) {
 				const payload = validateAccessToken(token);
 				ws.uuid = payload.sub?.toString();
@@ -31,15 +32,21 @@ export const setupWebSocketServer = (httpserver: Server) => {
 			if (error instanceof Error) sendError(ws, error.message);
 		}
 
-		setInterval(() => {
+		const heartbeatInterval = setInterval(() => {
 			if (ws.isAlive === false) {
 				console.log("Terminating dead connection");
 				ws.send("Terminating connection...");
-				return ws.terminate();
+				ws.terminate();
+				return;
 			}
 			ws.isAlive = false;
 			ws.ping();
 		}, HEARTBEAT_INTERVAL);
+
+		ws.on("close", () => {
+			clearInterval(heartbeatInterval);
+			console.log("Websocket disconnected");
+		});
 
 		if (ws.uuid) ws.send(`Your uuid: ${ws.uuid}`);
 		ws.on("message", (message: RawData) => {
@@ -49,10 +56,6 @@ export const setupWebSocketServer = (httpserver: Server) => {
 
 		ws.on("pong", () => {
 			ws.isAlive = true;
-		});
-
-		ws.on("close", () => {
-			ws.send("Websocket disconnected");
 		});
 	});
 
