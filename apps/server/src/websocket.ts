@@ -2,6 +2,7 @@ import {
 	AppPacket,
 	AppWebSocket,
 	createErrorPacket,
+	createMessagePacket,
 } from "@ft_transcendence/shared";
 import { Server } from "http";
 import { RawData, WebSocketServer } from "ws";
@@ -75,7 +76,11 @@ function handleMessage(ws: AppWebSocket, data: RawData) {
 
 	switch (packet.type) {
 		case "MESSAGE":
-			ws.send(`Your message: ${packet.text}`);
+			ws.send(
+				JSON.stringify(
+					createMessagePacket(`Your message: ${packet.text}`),
+				),
+			);
 			break;
 		default:
 			sendError(ws, `Unknown packet type: ${packet.type}`);

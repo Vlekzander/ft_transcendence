@@ -8,9 +8,13 @@ import {
 	type ReactNode,
 } from "react";
 
+type PacketType = AppPacket["type"];
+type PacketHandler = (packet: AppPacket) => void;
+
 interface WebSocketContextValue {
 	sendPacket: (packet: AppPacket) => void;
 	reconnect: () => void;
+	registerHandler: (type: PacketType, handler: PacketHandler) => () => void;
 }
 
 export const WebSocketContext = createContext<WebSocketContextValue | null>(
@@ -28,6 +32,8 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	const reconnectAttemptsRef = useRef(0);
 
 	const connectRef = useRef<() => void>(() => {});
+
+	const handlersRef = useRef<Map<PacketType, Set<PacketHandler>>>(new Map());
 
 	const clearReconnectTimeout = () => {
 		if (reconnectTimeoutRef.current === null) return;
@@ -52,6 +58,36 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 		}, delay);
 	}, []);
 
+	const registerHandler = useCallback(
+		(type: PacketType, handler: PacketHandler) => {
+			if (!handlersRef.current.has(type))
+				handlersRef.current.set(type, new Set());
+			handlersRef.current.get(type)!.add(handler);
+
+			return () => {
+				const set = handlersRef.current.get(type);
+				if (!set) return;
+				set.delete(handler);
+				if (set.size === 0) handlersRef.current.delete(type);
+			};
+		},
+		[],
+	);
+
+	const handlePacket = useCallback((raw: string) => {
+		let packet: AppPacket;
+		try {
+			packet = JSON.parse(raw);
+		} catch {
+			return;
+		}
+
+		const set = handlersRef.current.get(packet.type);
+		if (!set) return;
+
+		for (const handler of set) handler(packet);
+	}, []);
+
 	const connect = useCallback(() => {
 		if (socketRef.current?.readyState === WebSocket.OPEN) return;
 
@@ -71,8 +107,7 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 		};
 
 		socket.onmessage = (event) => {
-			console.log(event.data);
-			//TODO: HANDLE MESSAGES !!!
+			handlePacket(event.data as string);
 		};
 
 		socketRef.current = socket;
@@ -104,6 +139,7 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	const value: WebSocketContextValue = {
 		sendPacket,
 		reconnect,
+		registerHandler,
 	};
 
 	return (
