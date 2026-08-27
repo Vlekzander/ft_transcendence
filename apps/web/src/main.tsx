@@ -8,6 +8,9 @@ import LoginPage from "./pages/LoginPage";
 import LogoutPage from "./pages/LogoutPage";
 import UserPage from "./pages/UserPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import { WebSocketProvider } from "./contexts/WebSocketContext";
+import { WS_URL } from "./config";
+import TestWsPage from "./pages/TestWsPage";
 
 const router = createBrowserRouter([
 	{
@@ -51,6 +54,11 @@ const router = createBrowserRouter([
 				path: "/user/:uuid",
 				element: <UserPage />,
 			},
+
+			{
+				path: "/testws",
+				element: <TestWsPage />,
+			},
 		],
 	},
 ]);
@@ -59,4 +67,8 @@ const root = document.getElementById("root");
 
 if (!root) throw new Error("root not found in DOM");
 
-ReactDOM.createRoot(root).render(<RouterProvider router={router} />);
+ReactDOM.createRoot(root).render(
+	<WebSocketProvider wsUrl={WS_URL}>
+		<RouterProvider router={router} />
+	</WebSocketProvider>,
+);

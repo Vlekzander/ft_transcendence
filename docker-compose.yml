@@ -10,9 +10,12 @@ services:
             - ./apps/web:/home/node/apps/web
             - ./packages/shared:/home/node/packages/shared
         ports:
-            - 5173:5173
+            - "${WEB_PORT:-5173}:5173"
         environment:
-            VITE_API_URL: "http://localhost:3000"
+            VITE_API_URL: "http://localhost:${API_PORT:-3000}"
+            VITE_WS_URL: "ws://localhost:${API_PORT:-3000}"
+        env_file:
+            - .env
     backend:
         container_name: ft_transcendence-backend
         build:
@@ -25,7 +28,7 @@ services:
         networks:
             - ft_network
         ports:
-            - 3000:3000
+            - "${API_PORT:-3000}:${API_PORT:-3000}"
         secrets:
             - db_username
             - db_password
@@ -33,6 +36,8 @@ services:
         environment:
             DB_HOST: database
             DB_NAME: ft_transcendence
+        env_file:
+            - .env
         depends_on:
             database:
                 condition: service_healthy

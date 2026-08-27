@@ -1,15 +1,23 @@
 import app from "./app";
+import dotenv from "dotenv";
+import { setupWebSocketServer } from "./websocket";
 
-const PORT = process.env.PORT || 3000;
+dotenv.config();
+const API_PORT = process.env.API_PORT || 3000;
 
-const server = app.listen(PORT, () => {
-	console.log(`Server running on port http://localhost:${PORT}`);
+const server = app.listen(API_PORT, () => {
+	console.log(`Express server running on http://localhost:${API_PORT}`);
 });
+
+const wss = setupWebSocketServer(server);
 
 function shutdown() {
 	console.log("Shutdown server...");
 	server.close(function () {
-		console.log("Server closed");
+		console.log("Express server closed");
+	});
+	wss.close(function () {
+		console.log("WebSocket server closed");
 	});
 	process.exit(0);
 }

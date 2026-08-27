@@ -8,6 +8,7 @@ export * from "./types/Game.types";
 export * from "./types/Stat.types";
 export * from "./types/Status.types";
 export * from "./types/User.types";
+export * from "./types/WebSocket.types";
 
 export * from "./validators/user.validators";
 
