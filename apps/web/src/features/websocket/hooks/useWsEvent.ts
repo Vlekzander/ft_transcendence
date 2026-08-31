@@ -1,6 +1,6 @@
 import type { AppPacket } from "@ft_transcendence/shared";
-import { useWebSocket } from "../contexts/WebSocketContext";
 import { useEffect } from "react";
+import { useWebSocket } from "../context/WebSocketContext";
 
 export function useWsEvent<T extends AppPacket>(
 	type: T["type"],

@@ -18,18 +18,18 @@ import {
 	UserRoundPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import FriendComponent from "../components/Friend.component";
-import UserStatusComponent from "../components/UserStatus.component";
+import FriendComponent from "../components/Friend";
+import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
-import ProgressBarComponent from "../components/Progressbar.component";
+import ProgressBarComponent from "../../../shared/components/Progressbar";
 import { Navigate, useParams } from "react-router";
-import { API_URL } from "../config";
-import ErrorComponent from "../components/ErrorComponent";
+import { API_URL } from "../../../config";
 import {
 	PartialProfileError,
 	UserNotFoundError,
 	UserProfileError,
-} from "../errors/UserErrors";
+} from "../../../shared/types/errors";
+import ErrorComponent from "../../../shared/components/ErrorComponent";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(

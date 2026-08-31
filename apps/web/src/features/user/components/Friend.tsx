@@ -1,6 +1,6 @@
 import type { Status, UserResponseDTO } from "@ft_transcendence/shared";
 import { Gamepad2, X } from "lucide-react";
-import UserStatusComponent from "./UserStatus.component";
+import UserStatusComponent from "./UserStatus";
 
 export default function FriendComponent({
 	user,

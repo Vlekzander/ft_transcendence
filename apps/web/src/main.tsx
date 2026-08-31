@@ -1,16 +1,19 @@
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
-import "./style.css";
-import RegisterPage from "./pages/RegisterPage";
-import Layout from "./Layout";
-import { RequireAuth, RequireGuest } from "./RoutesProtections";
-import LoginPage from "./pages/LoginPage";
-import LogoutPage from "./pages/LogoutPage";
-import UserPage from "./pages/UserPage";
-import NotFoundPage from "./pages/NotFoundPage";
-import { WebSocketProvider } from "./contexts/WebSocketContext";
+import "./styles/global.css";
 import { WS_URL } from "./config";
-import TestWsPage from "./pages/TestWsPage";
+import Layout from "./Layout";
+import {
+	RequireAuth,
+	RequireGuest,
+} from "./features/auth/components/AuthGuard";
+import RegisterPage from "./features/auth/pages/RegisterPage";
+import LoginPage from "./features/auth/pages/LoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
+import LogoutPage from "./features/auth/pages/LogoutPage";
+import UserPage from "./features/user/pages/UserPage";
+import TestWsPage from "./features/websocket/pages/TestWsPage";
+import { WebSocketProvider } from "./features/websocket/context/WebSocketContext";
 
 const router = createBrowserRouter([
 	{

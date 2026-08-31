@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { API_URL } from "./config";
-import { DEFAULT_ERROR } from "./utils/api.utils";
+import { API_URL } from "../../../config";
+import { DEFAULT_ERROR } from "../../../shared/utils/api";
 
 export type AuthType = "loading" | "auth" | "guest";
 

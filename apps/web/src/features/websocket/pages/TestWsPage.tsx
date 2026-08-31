@@ -2,8 +2,8 @@ import {
 	createMessagePacket,
 	type MessagePacket,
 } from "@ft_transcendence/shared";
-import { useWebSocket } from "../contexts/WebSocketContext";
 import { useWsEvent } from "../hooks/useWsEvent";
+import { useWebSocket } from "../context/WebSocketContext";
 
 export default function TestWsPage() {
 	const { sendPacket } = useWebSocket();
