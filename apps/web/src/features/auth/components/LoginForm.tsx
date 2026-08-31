@@ -1,37 +1,19 @@
 import { useState } from "react";
-import {
-	parseLoginUserNoThrow,
-	ValidationError,
-} from "@ft_transcendence/shared";
 import { useNavigate } from "react-router-dom";
-import { DEFAULT_ERROR, getApiErrorMessage } from "../../../shared/utils/api";
-import { API_URL } from "../../../config";
-
-const errorFieldMap = {
-	UsernameValidationError: "username",
-	PasswordValidationError: "password",
-} as const;
-
-type ErrorField = (typeof errorFieldMap)[keyof typeof errorFieldMap];
-
-type LoginErrors = Partial<Record<ErrorField, string>>;
-
-function mapValidationErrors(errors: ValidationError[]): LoginErrors {
-	const nextErrors: LoginErrors = {};
-	for (const err of errors) {
-		const field = errorFieldMap[err.name as keyof typeof errorFieldMap];
-		if (field) nextErrors[field] = err.message;
-	}
-	return nextErrors;
-}
+import {
+	loginUser,
+	type AuthErrors,
+	type AuthResult,
+} from "../services/authApi";
+import type { LoginUserDTO } from "@ft_transcendence/shared";
 
 export default function LoginForm() {
 	const navigate = useNavigate();
-	const [formData, setFormData] = useState({
+	const [formData, setFormData] = useState<LoginUserDTO>({
 		username: "",
 		password: "",
 	});
-	const [errors, setErrors] = useState<LoginErrors>({});
+	const [errors, setErrors] = useState<AuthErrors>({});
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -46,29 +28,18 @@ export default function LoginForm() {
 	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		try {
-			setLoading(true);
-			setErrors({});
-			setError("");
-			const result = parseLoginUserNoThrow(formData);
-			if (Array.isArray(result)) {
-				setErrors(mapValidationErrors(result));
-				return;
-			}
+		setLoading(true);
+		setErrors({});
+		setError("");
 
-			const res = await fetch(`${API_URL}/auth/login`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify(result),
-			});
-			if (res.ok) navigate("/", { replace: true });
-			else setError(await getApiErrorMessage(res));
-		} catch (err) {
-			setError(err instanceof Error ? err.message : DEFAULT_ERROR);
-		} finally {
-			setLoading(false);
+		const result: AuthResult = await loginUser(formData);
+
+		if (result.ok === true) navigate("/", { replace: true });
+		else {
+			setError(result.error);
+			if (result.errors) setErrors(result.errors);
 		}
+		setLoading(false);
 	};
 
 	return (
