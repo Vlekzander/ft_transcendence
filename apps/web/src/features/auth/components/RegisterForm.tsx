@@ -1,43 +1,23 @@
 import { useState } from "react";
-import {
-	parseRegisterUserNoThrow,
-	ValidationError,
-} from "@ft_transcendence/shared";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from "../config";
-import { DEFAULT_ERROR, getApiErrorMessage } from "../utils/api.utils";
-
-const errorFieldMap = {
-	UsernameValidationError: "username",
-	EmailValidationError: "email",
-	PasswordValidationError: "password",
-	ConfirmPasswordValidationError: "confirmPassword",
-} as const;
-
-type ErrorField = (typeof errorFieldMap)[keyof typeof errorFieldMap];
-
-type RegisterErrors = Partial<Record<ErrorField, string>>;
-
-function mapValidationErrors(errors: ValidationError[]): RegisterErrors {
-	const nextErrors: RegisterErrors = {};
-	for (const err of errors) {
-		const field = errorFieldMap[err.name as keyof typeof errorFieldMap];
-		if (field) nextErrors[field] = err.message;
-	}
-	return nextErrors;
-}
+import type { RegisterUserDTO } from "@ft_transcendence/shared";
+import {
+	registerUser,
+	type AuthErrors,
+	type AuthResult,
+} from "../services/authApi";
 
 export default function RegisterForm() {
 	const navigate = useNavigate();
-	const [formData, setFormData] = useState({
+	const [formData, setFormData] = useState<RegisterUserDTO>({
 		username: "",
 		email: "",
 		password: "",
 		confirmPassword: "",
 	});
-	const [errors, setErrors] = useState<RegisterErrors>({});
-	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [errors, setErrors] = useState<AuthErrors>({});
+	const [error, setError] = useState("");
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const { name, value } = e.target;
@@ -50,28 +30,18 @@ export default function RegisterForm() {
 	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
 		e.preventDefault();
 
-		try {
-			setLoading(true);
-			setErrors({});
-			setError("");
-			const result = parseRegisterUserNoThrow(formData);
-			if (Array.isArray(result)) {
-				setErrors(mapValidationErrors(result));
-				return;
-			}
-			const res = await fetch(`${API_URL}/auth/register`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				credentials: "include",
-				body: JSON.stringify(result),
-			});
-			if (res.ok) navigate("/", { replace: true });
-			else setError(await getApiErrorMessage(res));
-		} catch (err) {
-			setError(err instanceof Error ? err.message : DEFAULT_ERROR);
-		} finally {
-			setLoading(false);
+		setLoading(true);
+		setErrors({});
+		setError("");
+
+		const result: AuthResult = await registerUser(formData);
+
+		if (result.ok === true) navigate("/", { replace: true });
+		else {
+			setError(result.error);
+			if (result.errors) setErrors(result.errors);
 		}
+		setLoading(false);
 	};
 
 	return (

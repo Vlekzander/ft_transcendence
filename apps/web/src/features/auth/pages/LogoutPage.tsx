@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router";
-import { API_URL } from "../config";
+import { API_URL } from "../../../config";
 
 export default function LogoutPage() {
 	const [done, setDone] = useState(false);
