@@ -1,5 +1,9 @@
 import { AppDomainError, ValidationError } from "@ft_transcendence/shared";
-import { AlreadyAuthError, RequireAuthError } from "./auth.errors";
+import {
+	AlreadyAuthError,
+	CannotEditUserError,
+	RequireAuthError,
+} from "./auth.errors";
 import {
 	DuplicateElementError,
 	InvalidElementError,
@@ -28,6 +32,8 @@ export function mapError(err: Error): ErrorResponse {
 	if (err instanceof ValidationError) return ((error.status = 400), error);
 	if (err instanceof AlreadyAuthError) return ((error.status = 403), error);
 	if (err instanceof RequireAuthError) return ((error.status = 401), error);
+	if (err instanceof CannotEditUserError)
+		return ((error.status = 403), error);
 
 	if (err instanceof AppDomainError) return ((error.status = 400), error);
 	return {

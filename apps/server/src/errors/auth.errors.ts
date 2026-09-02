@@ -20,3 +20,10 @@ export class InvalidCredentialsError extends AppDomainError {
 		this.name = "InvalidCredentialsError";
 	}
 }
+
+export class CannotEditUserError extends AppDomainError {
+	constructor() {
+		super("No permission for edit user");
+		this.name = "CannotEditUserError";
+	}
+}

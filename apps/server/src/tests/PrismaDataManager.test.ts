@@ -283,6 +283,70 @@ describe("PrismaDataManager", () => {
 		});
 	});
 
+	describe("updateUser", () => {
+		it("Return full updated", async () => {
+			const created = await dataManager.createUser({
+				email: "user@example.com",
+				username: "user",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const updated = await dataManager.updateUser(created.uuid, {
+				email: "updated@example.com",
+				username: "updated",
+				password: "secret456",
+			});
+
+			expect(updated).not.toBeNull();
+			expect(updated?.uuid).toBe(created.uuid);
+			expect(updated?.username).not.toBe(created.username);
+			expect(updated?.email).not.toBe(created.email);
+		});
+
+		it("Return email updated", async () => {
+			const created = await dataManager.createUser({
+				email: "user@example.com",
+				username: "user",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const updated = await dataManager.updateUser(created.uuid, {
+				email: "updated@example.com",
+			});
+
+			expect(updated).not.toBeNull();
+			expect(updated?.uuid).toBe(created.uuid);
+			expect(updated?.username).toBe(created.username);
+			expect(updated?.email).not.toBe(created.email);
+		});
+
+		it("Return usernamed updated", async () => {
+			const created = await dataManager.createUser({
+				email: "user@example.com",
+				username: "user",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const updated = await dataManager.updateUser(created.uuid, {
+				username: "updated",
+			});
+
+			expect(updated).not.toBeNull();
+			expect(updated?.uuid).toBe(created.uuid);
+			expect(updated?.username).not.toBe(created.username);
+			expect(updated?.email).toBe(created.email);
+		});
+
+		it("Throw an exception if the user id format is invalid", async () => {
+			await expect(dataManager.updateUser("invalid", {})).rejects.toThrow(
+				InvalidIdError,
+			);
+		});
+	});
+
 	describe("deleteUser", () => {
 		it("Do not throw an error", async () => {
 			const created = await dataManager.createUser({

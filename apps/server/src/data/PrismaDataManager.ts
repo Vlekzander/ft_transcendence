@@ -15,7 +15,7 @@ import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma.lib";
 import { compareHash, generateHash } from "../utils/hash.util";
 import { DataManager } from "./DataManager";
-import { UserEntity } from "./User.data";
+import { UpdateUserInput, UserEntity } from "./User.data";
 
 function getPrismaConstraintFields(
 	error: Prisma.PrismaClientKnownRequestError,
@@ -183,6 +183,27 @@ export class PrismaDataManager implements DataManager {
 			const result = await prisma.user.update({
 				where: { uuid: id },
 				data: { avatar: { connect: { uuid: avatarId } } },
+				select: userDtoSelect,
+			});
+
+			return result;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
+	async updateUser(id: string, data: UpdateUserInput): Promise<UserEntity> {
+		if (data.password !== undefined)
+			data.password = await generateHash(data.password);
+
+		try {
+			const result = await prisma.user.update({
+				where: { uuid: id },
+				data: data,
 				select: userDtoSelect,
 			});
 

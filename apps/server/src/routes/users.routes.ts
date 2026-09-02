@@ -8,6 +8,9 @@ import {
 } from "@ft_transcendence/shared";
 import { UnknownUserIdError } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
+import { requireAuth } from "../middlewares/auth.middleware";
+import { validateAccessToken } from "../utils/jwt.util";
+import { CannotEditUserError } from "../errors/auth.errors";
 
 const usersRouter = Router();
 
@@ -20,6 +23,15 @@ usersRouter.post("/:uuid/history", async (req, res) => {
 		data: { gameId: game.uuid, userId: uuid },
 	});
 	res.json({ game });
+});
+
+usersRouter.patch("/:uuid", requireAuth, async (req, res) => {
+	const { uuid } = req.params;
+	const token = req.cookies?.token;
+	const payload = validateAccessToken(token);
+	if (uuid !== payload.sub) throw new CannotEditUserError();
+	//BATCH EDIT
+	res.json({ ok: true });
 });
 
 usersRouter.get("/:uuid", async (req, res) => {
