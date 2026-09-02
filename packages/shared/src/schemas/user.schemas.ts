@@ -23,12 +23,14 @@ const passwordSchema = z
 	.regex(/[a-z]/, "Password must contain at least one lowercase letter")
 	.regex(/[0-9]/, "Password must contain at least one number");
 
+const confirmPasswordSchema = z.string().min(1, "Please confirm your password");
+
 export const RegisterUserSchema = z
 	.object({
 		email: emailSchema,
 		username: usernameSchema,
 		password: passwordSchema,
-		confirmPassword: z.string().min(1, "Please confirm your password"),
+		confirmPassword: confirmPasswordSchema,
 	})
 	.refine((data) => data.password === data.confirmPassword, {
 		message: "The password and confirmation do not match",
@@ -40,6 +42,37 @@ export const LoginUserSchema = z.object({
 	password: passwordSchema,
 });
 
+export const EditUserSchema = z
+	.object({
+		email: emailSchema,
+		username: usernameSchema,
+		password: z.string().optional(),
+		confirmPassword: z.string().optional(),
+		currentPassword: passwordSchema,
+	})
+	.refine(
+		(data) => {
+			if (!data.password) return true;
+			return passwordSchema.safeParse(data.password).success;
+		},
+		{
+			message:
+				"Password must be at least 8 characters, include uppercase, lowercase and a number",
+			path: ["password"],
+		},
+	)
+	.refine(
+		(data) => {
+			if (!data.password && !data.confirmPassword) return true;
+			return data.password === data.confirmPassword;
+		},
+		{
+			message: "The password and confirmation do not match",
+			path: ["confirmPassword"],
+		},
+	);
+
 export type UserResponseDTO = z.infer<typeof UserResponseSchema>;
 export type RegisterUserDTO = z.infer<typeof RegisterUserSchema>;
 export type LoginUserDTO = z.infer<typeof LoginUserSchema>;
+export type EditUserDTO = z.infer<typeof EditUserSchema>;

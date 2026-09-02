@@ -15,6 +15,7 @@ import UserPage from "./features/user/pages/UserPage";
 import TestWsPage from "./features/websocket/pages/TestWsPage";
 import { WebSocketProvider } from "./features/websocket/context/WebSocketContext";
 import { AuthProvider } from "./features/auth/context/AuthContext";
+import AccountPage from "./features/user/pages/AccountPage";
 
 const router = createBrowserRouter([
 	{
@@ -23,7 +24,12 @@ const router = createBrowserRouter([
 		children: [
 			{
 				element: <RequireAuth />,
-				children: [],
+				children: [
+					{
+						path: "/account",
+						element: <AccountPage />,
+					},
+				],
 			},
 			{
 				element: <RequireGuest />,
