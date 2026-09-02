@@ -3,34 +3,17 @@ import {
 	parseRegisterUserNoThrow,
 	type LoginUserDTO,
 	type RegisterUserDTO,
-	type ValidationError,
 } from "@ft_transcendence/shared";
 import { API_URL } from "../../../config";
 import { DEFAULT_ERROR, getApiErrorMessage } from "../../../shared/utils/api";
-
-const errorFieldMap = {
-	UsernameValidationError: "username",
-	EmailValidationError: "email",
-	PasswordValidationError: "password",
-	ConfirmPasswordValidationError: "confirmPassword",
-} as const;
-
-type ErrorField = (typeof errorFieldMap)[keyof typeof errorFieldMap];
-
-export type AuthErrors = Partial<Record<ErrorField, string>>;
-
-function mapValidationErrors(errors: ValidationError[]): AuthErrors {
-	const nextErrors: AuthErrors = {};
-	for (const err of errors) {
-		const field = errorFieldMap[err.name as keyof typeof errorFieldMap];
-		if (field) nextErrors[field] = err.message;
-	}
-	return nextErrors;
-}
+import {
+	mapValidationErrors,
+	type ValidationErrors,
+} from "../../../shared/types/ValidationTypes";
 
 export type AuthResult =
 	| { ok: true }
-	| { ok: false; error: string; errors?: AuthErrors };
+	| { ok: false; error: string; errors?: ValidationErrors };
 
 async function authUser(
 	input: RegisterUserDTO | LoginUserDTO,

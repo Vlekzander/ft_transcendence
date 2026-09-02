@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-	loginUser,
-	type AuthErrors,
-	type AuthResult,
-} from "../services/authApi";
+import { loginUser, type AuthResult } from "../services/authApi";
 import type { LoginUserDTO } from "@ft_transcendence/shared";
 import { useAuth } from "../context/AuthContext";
+import type { ValidationErrors } from "../../../shared/types/ValidationTypes";
 
 export default function LoginForm() {
 	const { refreshUser } = useAuth();
@@ -15,7 +12,7 @@ export default function LoginForm() {
 		username: "",
 		password: "",
 	});
-	const [errors, setErrors] = useState<AuthErrors>({});
+	const [errors, setErrors] = useState<ValidationErrors>({});
 	const [error, setError] = useState("");
 	const [loading, setLoading] = useState(false);
 
@@ -51,7 +48,7 @@ export default function LoginForm() {
 			<h2>Login</h2>
 			<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
 			<div>
-				<label htmlFor="username">Username </label>
+				<label htmlFor="username">Username</label>
 				<input
 					id="username"
 					name="username"
@@ -65,7 +62,7 @@ export default function LoginForm() {
 				</p>
 			</div>
 			<div>
-				<label htmlFor="password">Password </label>
+				<label htmlFor="password">Password</label>
 				<input
 					id="password"
 					name="password"
@@ -79,7 +76,7 @@ export default function LoginForm() {
 				</p>
 			</div>
 			<button type="submit" disabled={loading}>
-				{loading ? "Login..." : "Login"}
+				{loading ? "Logging in..." : "Login"}
 			</button>
 		</form>
 	);

@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { RegisterUserDTO } from "@ft_transcendence/shared";
-import {
-	registerUser,
-	type AuthErrors,
-	type AuthResult,
-} from "../services/authApi";
+import { registerUser, type AuthResult } from "../services/authApi";
 import { useAuth } from "../context/AuthContext";
+import type { ValidationErrors } from "../../../shared/types/ValidationTypes";
 
 export default function RegisterForm() {
 	const { refreshUser } = useAuth();
@@ -18,7 +15,7 @@ export default function RegisterForm() {
 		confirmPassword: "",
 	});
 	const [loading, setLoading] = useState(false);
-	const [errors, setErrors] = useState<AuthErrors>({});
+	const [errors, setErrors] = useState<ValidationErrors>({});
 	const [error, setError] = useState("");
 
 	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +50,7 @@ export default function RegisterForm() {
 			<h2>Register</h2>
 			<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
 			<div>
-				<label htmlFor="username">Username </label>
+				<label htmlFor="username">Username</label>
 				<input
 					id="username"
 					name="username"
@@ -67,7 +64,7 @@ export default function RegisterForm() {
 				</p>
 			</div>
 			<div>
-				<label htmlFor="email">Email </label>
+				<label htmlFor="email">Email</label>
 				<input
 					id="email"
 					name="email"
@@ -82,7 +79,7 @@ export default function RegisterForm() {
 				</p>
 			</div>
 			<div>
-				<label htmlFor="password">Password </label>
+				<label htmlFor="password">Password</label>
 				<input
 					id="password"
 					name="password"
@@ -96,7 +93,7 @@ export default function RegisterForm() {
 				</p>
 			</div>
 			<div>
-				<label htmlFor="confirmPassword">Confirm password </label>
+				<label htmlFor="confirmPassword">Confirm password</label>
 				<input
 					id="confirmPassword"
 					name="confirmPassword"
@@ -110,7 +107,7 @@ export default function RegisterForm() {
 				</p>
 			</div>
 			<button type="submit" disabled={loading}>
-				{loading ? "Register..." : "Register"}
+				{loading ? "Registering..." : "Register"}
 			</button>
 		</form>
 	);
