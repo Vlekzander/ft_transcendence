@@ -1,82 +1,82 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser, type AuthResult } from "../services/authApi";
-import type { LoginUserDTO } from "@ft_transcendence/shared";
 import { useAuth } from "../context/AuthContext";
-import type { ValidationErrors } from "../../../shared/types/ValidationTypes";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { LoginUserSchema, type LoginUserDTO } from "@ft_transcendence/shared";
 
 export default function LoginForm() {
 	const { refreshUser } = useAuth();
 	const navigate = useNavigate();
-	const [formData, setFormData] = useState<LoginUserDTO>({
-		username: "",
-		password: "",
+
+	const [serverError, setServerError] = useState("");
+
+	const {
+		register,
+		handleSubmit,
+		setError,
+		formState: { errors, isSubmitting },
+	} = useForm<LoginUserDTO>({
+		resolver: zodResolver(LoginUserSchema),
+		defaultValues: {
+			username: "",
+			password: "",
+		},
 	});
-	const [errors, setErrors] = useState<ValidationErrors>({});
-	const [error, setError] = useState("");
-	const [loading, setLoading] = useState(false);
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
-			[name]: value,
-		}));
-	};
+	const onSubmit = async (data: LoginUserDTO) => {
+		setServerError("");
 
-	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-		e.preventDefault();
-
-		setLoading(true);
-		setErrors({});
-		setError("");
-
-		const result: AuthResult = await loginUser(formData);
+		const result: AuthResult = await loginUser(data);
 
 		if (result.ok === true) {
 			await refreshUser();
 			navigate("/", { replace: true });
-		} else {
-			setError(result.error);
-			if (result.errors) setErrors(result.errors);
+			return;
 		}
-		setLoading(false);
+
+		setServerError(result.error);
+
+		if (result.errors) {
+			for (const [field, message] of Object.entries(result.errors)) {
+				if (field in data && typeof message === "string") {
+					setError(field as keyof LoginUserDTO, {
+						type: "server",
+						message,
+					});
+				}
+			}
+		}
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="border flex flex-col">
+		<form
+			onSubmit={handleSubmit(onSubmit)}
+			className="border flex flex-col"
+		>
 			<h2>Login</h2>
-			<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
+			<p className="min-h-5 text-sm text-red-500">{serverError || " "}</p>
 			<div>
 				<label htmlFor="username">Username</label>
-				<input
-					id="username"
-					name="username"
-					type="text"
-					required
-					value={formData.username}
-					onChange={handleChange}
-				/>
+				<input id="username" {...register("username")} />
 				<p className="min-h-5 text-sm text-red-500">
-					{errors.username || " "}
+					{errors.username?.message || " "}
 				</p>
 			</div>
 			<div>
 				<label htmlFor="password">Password</label>
 				<input
 					id="password"
-					name="password"
 					type="password"
-					required
-					value={formData.password}
-					onChange={handleChange}
+					{...register("password")}
 				/>
 				<p className="min-h-5 text-sm text-red-500">
-					{errors.password || " "}
+					{errors.password?.message || " "}
 				</p>
 			</div>
-			<button type="submit" disabled={loading}>
-				{loading ? "Logging in..." : "Login"}
+			<button type="submit" disabled={isSubmitting}>
+				{isSubmitting ? "Logging in..." : "Login"}
 			</button>
 		</form>
 	);

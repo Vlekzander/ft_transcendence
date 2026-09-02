@@ -29,13 +29,15 @@
 		"prettier": "^3.8.3"
 	},
 	"dependencies": {
+		"@hookform/resolvers": "^5.9.1",
 		"bcryptjs": "^3.0.3",
 		"dotenv": "^17.4.2",
 		"husky": "^9.1.7",
 		"lint-staged": "^17.0.8",
+		"react-hook-form": "^7.87.0",
 		"uuid": "^14.0.1",
 		"ws": "^8.21.3",
-		"zod": "^4.4.3"
+		"zod": "^4.5.4"
 	},
 	"lint-staged": {
 		"*.{js,jsx,ts,tsx}": [

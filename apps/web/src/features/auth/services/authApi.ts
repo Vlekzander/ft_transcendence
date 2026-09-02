@@ -1,19 +1,15 @@
 import {
-	parseLoginUserNoThrow,
-	parseRegisterUserNoThrow,
 	type LoginUserDTO,
 	type RegisterUserDTO,
 } from "@ft_transcendence/shared";
 import { API_URL } from "../../../config";
 import { DEFAULT_ERROR, getApiErrorMessage } from "../../../shared/utils/api";
-import {
-	mapValidationErrors,
-	type ValidationErrors,
-} from "../../../shared/types/ValidationTypes";
 
-export type AuthResult =
+export type AuthResult<
+	T extends Record<string, unknown> = Record<string, unknown>,
+> =
 	| { ok: true }
-	| { ok: false; error: string; errors?: ValidationErrors };
+	| { ok: false; error: string; errors?: Partial<Record<keyof T, string>> };
 
 async function authUser(
 	input: RegisterUserDTO | LoginUserDTO,
@@ -42,17 +38,9 @@ async function authUser(
 export async function registerUser(
 	input: RegisterUserDTO,
 ): Promise<AuthResult> {
-	const parsed = parseRegisterUserNoThrow(input);
-
-	if (Array.isArray(parsed))
-		return { ok: false, error: "", errors: mapValidationErrors(parsed) };
-	return authUser(parsed, "register");
+	return authUser(input, "register");
 }
 
 export async function loginUser(input: LoginUserDTO): Promise<AuthResult> {
-	const parsed = parseLoginUserNoThrow(input);
-
-	if (Array.isArray(parsed))
-		return { ok: false, error: "", errors: mapValidationErrors(parsed) };
-	return authUser(parsed, "login");
+	return authUser(input, "login");
 }

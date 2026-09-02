@@ -28,7 +28,7 @@ export const RegisterUserSchema = z
 		email: emailSchema,
 		username: usernameSchema,
 		password: passwordSchema,
-		confirmPassword: z.string(),
+		confirmPassword: z.string().min(1, "Please confirm your password"),
 	})
 	.refine((data) => data.password === data.confirmPassword, {
 		message: "The password and confirmation do not match",
