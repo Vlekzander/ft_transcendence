@@ -212,6 +212,15 @@ export class PrismaDataManager implements DataManager {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();
 				if (error.code === "P2025") throw new UnknownUserIdError();
+				if (error.code === "P2002") {
+					const fields = getPrismaConstraintFields(error);
+					if (fields.includes("email"))
+						throw new DuplicateEmailError();
+					if (fields.includes("username"))
+						throw new DuplicateUsernameError();
+					if (fields) throw new DuplicateElementError(fields[0]);
+					throw new DuplicateElementError("Unknown");
+				}
 			}
 			throw error;
 		}

@@ -4,6 +4,7 @@ import { DataManager, DataManagerSingleton } from "../data/DataManager";
 import { GameHistoryEntry, PublicUserDTO } from "@ft_transcendence/shared";
 import app from "../app";
 import request from "supertest";
+import { generateAccessToken } from "../utils/jwt.util";
 
 describe("users.routes", () => {
 	const dataManager: DataManager = DataManagerSingleton.getInstance();
@@ -42,6 +43,26 @@ describe("users.routes", () => {
 
 			expect(response.status).toBe(404);
 			expect(response.body?.error.code).toBe("UnknownUserIdError");
+		});
+
+		it("PATCH Should update user", async () => {
+			const user = await dataManager.createUser({
+				username: "bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const token = generateAccessToken(user.uuid);
+			const response = await request(app)
+				.patch(`/users/${user.uuid}`)
+				.send({ username: "patrick", email: "patrick@email.com" })
+				.set("Accept", "application/json")
+				.set("Cookie", [`token=${token}`]);
+			expect(response.status).toBe(200);
+			expect(response.body?.user?.uuid).toBe(user.uuid);
+			expect(response.body?.user?.username).toBe("patrick");
+			expect(response.body?.user?.email).toBe("patrick@email.com");
 		});
 	});
 

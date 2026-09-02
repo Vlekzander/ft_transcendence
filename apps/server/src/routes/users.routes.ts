@@ -11,6 +11,7 @@ import { prisma } from "../lib/prisma.lib";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { validateAccessToken } from "../utils/jwt.util";
 import { CannotEditUserError } from "../errors/auth.errors";
+import { toUserResponseDTO } from "../data/User.data";
 
 const usersRouter = Router();
 
@@ -30,8 +31,15 @@ usersRouter.patch("/:uuid", requireAuth, async (req, res) => {
 	const token = req.cookies?.token;
 	const payload = validateAccessToken(token);
 	if (uuid !== payload.sub) throw new CannotEditUserError();
-	//BATCH EDIT
-	res.json({ ok: true });
+
+	const data = await DataManagerSingleton.getInstance().updateUser(
+		uuid,
+		req.body || {},
+	);
+	if (data === null) throw new UnknownUserIdError();
+	const user = toUserResponseDTO(data);
+
+	res.json({ user });
 });
 
 usersRouter.get("/:uuid", async (req, res) => {
