@@ -6,8 +6,10 @@ import {
 	type AuthErrors,
 	type AuthResult,
 } from "../services/authApi";
+import { useAuth } from "../context/AuthContext";
 
 export default function RegisterForm() {
+	const { refreshUser } = useAuth();
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState<RegisterUserDTO>({
 		username: "",
@@ -36,8 +38,10 @@ export default function RegisterForm() {
 
 		const result: AuthResult = await registerUser(formData);
 
-		if (result.ok === true) navigate("/", { replace: true });
-		else {
+		if (result.ok === true) {
+			await refreshUser();
+			navigate("/", { replace: true });
+		} else {
 			setError(result.error);
 			if (result.errors) setErrors(result.errors);
 		}

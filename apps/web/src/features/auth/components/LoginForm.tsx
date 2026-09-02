@@ -6,8 +6,10 @@ import {
 	type AuthResult,
 } from "../services/authApi";
 import type { LoginUserDTO } from "@ft_transcendence/shared";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginForm() {
+	const { refreshUser } = useAuth();
 	const navigate = useNavigate();
 	const [formData, setFormData] = useState<LoginUserDTO>({
 		username: "",
@@ -34,8 +36,10 @@ export default function LoginForm() {
 
 		const result: AuthResult = await loginUser(formData);
 
-		if (result.ok === true) navigate("/", { replace: true });
-		else {
+		if (result.ok === true) {
+			await refreshUser();
+			navigate("/", { replace: true });
+		} else {
 			setError(result.error);
 			if (result.errors) setErrors(result.errors);
 		}
