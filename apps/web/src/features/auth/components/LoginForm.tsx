@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser, type AuthResult } from "../services/authApi";
+import { loginUser } from "../services/authApi";
 import { useAuth } from "../context/AuthContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { LoginUserSchema, type LoginUserDTO } from "@ft_transcendence/shared";
+import type { ApiResult } from "../../../shared/types/api";
 
 export default function LoginForm() {
 	const { refreshUser } = useAuth();
@@ -28,7 +29,7 @@ export default function LoginForm() {
 	const onSubmit = async (data: LoginUserDTO) => {
 		setServerError("");
 
-		const result: AuthResult = await loginUser(data);
+		const result: ApiResult = await loginUser(data);
 
 		if (result.ok === true) {
 			await refreshUser();

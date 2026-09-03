@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { registerUser, type AuthResult } from "../services/authApi";
+import { registerUser } from "../services/authApi";
 import { useAuth } from "../context/AuthContext";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,6 +8,7 @@ import {
 	RegisterUserSchema,
 	type RegisterUserDTO,
 } from "@ft_transcendence/shared";
+import type { ApiResult } from "../../../shared/types/api";
 
 export default function RegisterForm() {
 	const { refreshUser } = useAuth();
@@ -33,7 +34,7 @@ export default function RegisterForm() {
 	const onSubmit = async (data: RegisterUserDTO) => {
 		setServerError("");
 
-		const result: AuthResult = await registerUser(data);
+		const result: ApiResult = await registerUser(data);
 
 		if (result.ok === true) {
 			await refreshUser();
