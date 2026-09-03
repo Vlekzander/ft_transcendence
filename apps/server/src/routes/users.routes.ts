@@ -5,12 +5,15 @@ import {
 	PublicUserDTO,
 	Stat,
 	FriendDTO,
+	parseEditUser,
 } from "@ft_transcendence/shared";
 import { UnknownUserIdError } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
-import { requireAuth } from "../middlewares/auth.middleware";
-import { validateAccessToken } from "../utils/jwt.util";
-import { CannotEditUserError } from "../errors/auth.errors";
+import {
+	requireAuth,
+	requireUserOwnership,
+} from "../middlewares/auth.middleware";
+import { InvalidCredentialsError } from "../errors/auth.errors";
 import { toUserResponseDTO } from "../data/User.data";
 
 const usersRouter = Router();
@@ -26,21 +29,36 @@ usersRouter.post("/:uuid/history", async (req, res) => {
 	res.json({ game });
 });
 
-usersRouter.patch("/:uuid", requireAuth, async (req, res) => {
-	const { uuid } = req.params;
-	const token = req.cookies?.token;
-	const payload = validateAccessToken(token);
-	if (uuid !== payload.sub) throw new CannotEditUserError();
+usersRouter.patch(
+	"/:uuid",
+	requireAuth,
+	requireUserOwnership,
+	async (req, res) => {
+		const { uuid } = req.params;
+		const {
+			currentPassword,
+			confirmPassword: _confirmPassword,
+			...userUpdates
+		} = parseEditUser(req.body);
 
-	const data = await DataManagerSingleton.getInstance().updateUser(
-		uuid,
-		req.body || {},
-	);
-	if (data === null) throw new UnknownUserIdError();
-	const user = toUserResponseDTO(data);
+		if (typeof uuid !== "string") throw new UnknownUserIdError();
 
-	res.json({ user });
-});
+		const dataManager = DataManagerSingleton.getInstance();
+
+		const isPasswordValid = await dataManager.validateUserPassword(
+			uuid,
+			currentPassword,
+		);
+		if (!isPasswordValid) throw new InvalidCredentialsError();
+
+		const user = await DataManagerSingleton.getInstance().updateUser(
+			uuid,
+			userUpdates,
+		);
+		if (!user) throw new UnknownUserIdError();
+		res.json({ user: toUserResponseDTO(user) });
+	},
+);
 
 usersRouter.get("/:uuid", async (req, res) => {
 	const uuid = req.params.uuid;

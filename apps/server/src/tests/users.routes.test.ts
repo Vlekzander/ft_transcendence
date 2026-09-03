@@ -56,13 +56,61 @@ describe("users.routes", () => {
 			const token = generateAccessToken(user.uuid);
 			const response = await request(app)
 				.patch(`/users/${user.uuid}`)
-				.send({ username: "patrick", email: "patrick@email.com" })
+				.send({
+					username: "patrick",
+					email: "patrick@email.com",
+					currentPassword: "secret123",
+				})
 				.set("Accept", "application/json")
 				.set("Cookie", [`token=${token}`]);
 			expect(response.status).toBe(200);
 			expect(response.body?.user?.uuid).toBe(user.uuid);
 			expect(response.body?.user?.username).toBe("patrick");
 			expect(response.body?.user?.email).toBe("patrick@email.com");
+		});
+
+		it("PATCH Should throw an exception if no ownership", async () => {
+			const user = await dataManager.createUser({
+				username: "bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const token = generateAccessToken(crypto.randomUUID());
+			const response = await request(app)
+				.patch(`/users/${user.uuid}`)
+				.send({
+					username: "patrick",
+					email: "patrick@email.com",
+					currentPassword: "secret123",
+				})
+				.set("Accept", "application/json")
+				.set("Cookie", [`token=${token}`]);
+
+			expect(response.status).toBe(403);
+			expect(response.body?.error.code).toBe("CannotEditUserError");
+		});
+
+		it("PATCH Should throw an exception if no token", async () => {
+			const user = await dataManager.createUser({
+				username: "bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const response = await request(app)
+				.patch(`/users/${user.uuid}`)
+				.send({
+					username: "patrick",
+					email: "patrick@email.com",
+					currentPassword: "secret123",
+				})
+				.set("Accept", "application/json");
+
+			expect(response.status).toBe(401);
+			expect(response.body?.error.code).toBe("RequireAuthError");
 		});
 	});
 

@@ -1,5 +1,7 @@
 import { ValidationError } from "../errors/validation.errors";
 import {
+	EditUserDTO,
+	EditUserSchema,
 	LoginUserDTO,
 	LoginUserSchema,
 	RegisterUserDTO,
@@ -61,6 +63,25 @@ export function parseLoginUser(input: unknown): LoginUserDTO {
 	const field = issue?.path[0];
 
 	if (field === "username" || field === "password")
+		throw new ValidationError(field, issue.message);
+	throw new ValidationError("Input", "Invalid registration data");
+}
+
+export function parseEditUser(input: unknown): EditUserDTO {
+	const result = EditUserSchema.safeParse(input);
+
+	if (result.success) return result.data;
+
+	const issue = result.error.issues[0];
+	const field = issue?.path[0];
+
+	if (
+		field === "email" ||
+		field === "username" ||
+		field === "password" ||
+		field === "confirmPassword" ||
+		field === "currentPassword"
+	)
 		throw new ValidationError(field, issue.message);
 	throw new ValidationError("Input", "Invalid registration data");
 }

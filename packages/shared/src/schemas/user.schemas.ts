@@ -44,11 +44,11 @@ export const LoginUserSchema = z.object({
 
 export const EditUserSchema = z
 	.object({
-		email: emailSchema,
-		username: usernameSchema,
+		email: emailSchema.optional(),
+		username: usernameSchema.optional(),
 		password: z.string().optional(),
 		confirmPassword: z.string().optional(),
-		currentPassword: passwordSchema,
+		currentPassword: z.string("Current password is missing"),
 	})
 	.refine(
 		(data) => {
