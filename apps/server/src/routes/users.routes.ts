@@ -17,6 +17,7 @@ import { InvalidCredentialsError } from "../errors/auth.errors";
 import { toUserResponseDTO } from "../data/User.data";
 import { NoFileUploadError } from "../errors/upload.errors";
 import { uploadAvatar } from "../middlewares/upload.middleware";
+import { UPLOAD_DIR } from "../config/upload.config";
 
 const usersRouter = Router();
 
@@ -87,9 +88,12 @@ usersRouter.post(
 
 		if (typeof uuid !== "string") throw new UnknownUserIdError();
 		if (!req.file) throw new NoFileUploadError();
+
+		const path = req.file.path.replace(UPLOAD_DIR, "");
+
 		res.json({
 			filename: req.file.filename,
-			path: req.file.path,
+			path: path,
 			mimetpye: req.file.mimetype,
 			size: req.file.size,
 		});

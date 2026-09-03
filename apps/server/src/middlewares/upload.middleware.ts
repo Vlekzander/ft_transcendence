@@ -5,12 +5,12 @@ import {
 	InvalidFileTypeError,
 } from "../errors/upload.errors";
 import { NextFunction, Request, Response } from "express";
-import { UPLOAD_DIR } from "../config/upload.config";
 import path from "node:path";
+import { AVATAR_DIR } from "../config/upload.config";
 
 const MAX_FILE_SIZE_MB = 5;
 
-const fileFilter = (
+const avatarFilter = (
 	_req: Request,
 	file: Express.Multer.File,
 	cb: FileFilterCallback,
@@ -19,9 +19,9 @@ const fileFilter = (
 	else cb(new InvalidFileTypeError());
 };
 
-const storage = multer.diskStorage({
+const storageAvatar = multer.diskStorage({
 	destination: (_req, _file, cb) => {
-		cb(null, UPLOAD_DIR);
+		cb(null, AVATAR_DIR);
 	},
 	filename: (_req, file, cb) => {
 		const ext = path.extname(file.originalname);
@@ -30,14 +30,14 @@ const storage = multer.diskStorage({
 	},
 });
 
-const upload = multer({
-	storage,
-	fileFilter,
+const avatar = multer({
+	storage: storageAvatar,
+	fileFilter: avatarFilter,
 	limits: { fileSize: MAX_FILE_SIZE_MB * 1024 * 1024 },
 });
 
 export function uploadAvatar(req: Request, res: Response, next: NextFunction) {
-	upload.single("file")(req, res, (err: unknown) => {
+	avatar.single("file")(req, res, (err: unknown) => {
 		if (err instanceof multer.MulterError) {
 			if (err.code === "LIMIT_FILE_SIZE")
 				return next(new InvalidFileSizeError(MAX_FILE_SIZE_MB));
