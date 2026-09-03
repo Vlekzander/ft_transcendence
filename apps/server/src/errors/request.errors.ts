@@ -36,6 +36,7 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 403), error);
 
 	if (err instanceof AppDomainError) return ((error.status = 400), error);
+	if (err instanceof SyntaxError) return ((error.status = 400), error);
 	return {
 		status: 500,
 		code: "InternalServerError",
