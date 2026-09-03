@@ -46,21 +46,10 @@ export const EditUserSchema = z
 	.object({
 		email: emailSchema.optional(),
 		username: usernameSchema.optional(),
-		password: z.string().optional(),
+		password: passwordSchema.optional(),
 		confirmPassword: z.string().optional(),
 		currentPassword: z.string("Current password is missing"),
 	})
-	.refine(
-		(data) => {
-			if (!data.password) return true;
-			return passwordSchema.safeParse(data.password).success;
-		},
-		{
-			message:
-				"Password must be at least 8 characters, include uppercase, lowercase and a number",
-			path: ["password"],
-		},
-	)
 	.refine(
 		(data) => {
 			if (!data.password && !data.confirmPassword) return true;

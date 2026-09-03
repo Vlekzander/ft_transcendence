@@ -3,9 +3,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EditUserSchema, type EditUserDTO } from "@ft_transcendence/shared";
 import { useAuth } from "../../auth/context/AuthContext";
+import { editUser } from "../services/editApi";
+import type { ApiResult } from "../../../shared/types/api";
 
 export default function EditAccountForm() {
-	const { user } = useAuth();
+	const { user, refreshUser } = useAuth();
 
 	const [serverError, setServerError] = useState("");
 
@@ -27,7 +29,34 @@ export default function EditAccountForm() {
 
 	const onSubmit = async (data: EditUserDTO) => {
 		setServerError("");
-		console.log(data, setError);
+
+		if (
+			data.username === user.username &&
+			data.email === user.email &&
+			data.password === ""
+		)
+			return setServerError("No changes to save");
+		if (data.username === user.username) delete data["username"];
+		if (data.email === user.email) delete data["email"];
+		const result: ApiResult = await editUser(user.uuid, data);
+
+		if (result.ok === true) {
+			await refreshUser();
+			return;
+		}
+
+		setServerError(result.error);
+
+		if (result.errors) {
+			for (const [field, message] of Object.entries(result.errors)) {
+				if (field in data && typeof message === "string") {
+					setError(field as keyof EditUserDTO, {
+						type: "server",
+						message,
+					});
+				}
+			}
+		}
 	};
 
 	return (
