@@ -7,10 +7,7 @@ import { DataManagerSingleton } from "../data/DataManager";
 
 describe("auth.routes", () => {
 	beforeEach(async () => {
-		await prisma.$transaction([
-			prisma.avatar.deleteMany(),
-			prisma.user.deleteMany(),
-		]);
+		await prisma.$transaction([prisma.user.deleteMany()]);
 	});
 
 	describe("/auth/register", () => {
@@ -117,7 +114,7 @@ describe("auth.routes", () => {
 			expect(response.status).toBe(201);
 			expect(response.body.data?.username).toBe(data.username);
 			expect(response.body.data?.email).toBe(data.email);
-			expect(response.body.data?.avatarUuid).toBeNull();
+			expect(response.body.data?.avatarPath).toBeNull();
 		});
 
 		it("POST should fail when already authenticated", async () => {

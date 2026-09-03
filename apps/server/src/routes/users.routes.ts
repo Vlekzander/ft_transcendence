@@ -2,9 +2,9 @@ import { Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
 import {
 	Achievement,
+	FriendDTO,
 	PublicUserDTO,
 	Stat,
-	FriendDTO,
 	parseEditUser,
 } from "@ft_transcendence/shared";
 import { UnknownUserIdError } from "../errors/data-manager.errors";
@@ -65,16 +65,11 @@ usersRouter.get("/:uuid", async (req, res) => {
 
 	const data = await DataManagerSingleton.getInstance().getUserById(uuid);
 	if (data === null) throw new UnknownUserIdError();
-	let avatar = null;
-	if (data?.avatarUuid !== null)
-		avatar = await DataManagerSingleton.getInstance().getAvatarById(
-			data.avatarUuid,
-		);
 
 	const user: PublicUserDTO = {
 		uuid: data?.uuid,
 		username: data?.username,
-		avatar: avatar,
+		avatarPath: data?.avatarPath,
 	};
 
 	res.json({ user });
@@ -167,7 +162,7 @@ usersRouter.get("/:uuid/friends", async (_req, res) => {
 				uuid: crypto.randomUUID(),
 				username: "Another",
 				email: "spongybobby@gmail.com",
-				avatarUuid: null,
+				avatarPath: null,
 			},
 			status: "in_game",
 		},
@@ -176,7 +171,7 @@ usersRouter.get("/:uuid/friends", async (_req, res) => {
 				uuid: crypto.randomUUID(),
 				username: "Blabla",
 				email: "spongybobby@gmail.com",
-				avatarUuid: null,
+				avatarPath: null,
 			},
 			status: "online",
 		},
@@ -185,7 +180,7 @@ usersRouter.get("/:uuid/friends", async (_req, res) => {
 				uuid: crypto.randomUUID(),
 				username: "Nobody",
 				email: "spongybobby@gmail.com",
-				avatarUuid: null,
+				avatarPath: null,
 			},
 			status: "offline",
 		},

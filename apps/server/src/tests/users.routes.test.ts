@@ -13,13 +13,12 @@ describe("users.routes", () => {
 		await prisma.$transaction([
 			prisma.userOnGame.deleteMany(),
 			prisma.game.deleteMany(),
-			prisma.avatar.deleteMany(),
 			prisma.user.deleteMany(),
 		]);
 	});
 
 	describe("/users/:uuid", () => {
-		it("GET Should retrive the user public datas", async () => {
+		it("GET Should retrieve the user public datas", async () => {
 			const user = await dataManager.createUser({
 				username: "bob",
 				email: "sponge@email.com",
@@ -33,7 +32,7 @@ describe("users.routes", () => {
 
 			expect(data.uuid).toBe(user.uuid);
 			expect(data.username).toBe(user.username);
-			expect(data.avatar).toBeNull();
+			expect(data.avatarPath).toBeNull();
 		});
 
 		it("GET Should fail with unknown user", async () => {
@@ -146,7 +145,7 @@ describe("users.routes", () => {
 					expect(participant.userId).toBe(user.uuid);
 					expect(participant.user.uuid).toBe(user.uuid);
 					expect(participant.user.username).toBe(user.username);
-					expect(participant.user.avatar).toBeNull();
+					expect(participant.user.avatarPath).toBeNull();
 				});
 			});
 		});

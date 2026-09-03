@@ -1,14 +1,9 @@
-import {
-	AvatarDTO,
-	GameHistoryEntry,
-	RegisterUserDTO,
-} from "@ft_transcendence/shared";
+import { GameHistoryEntry, RegisterUserDTO } from "@ft_transcendence/shared";
 import {
 	DuplicateElementError,
 	DuplicateEmailError,
 	DuplicateUsernameError,
 	InvalidIdError,
-	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
 import { Prisma } from "../generated/prisma/client";
@@ -28,7 +23,7 @@ const userDtoSelect = {
 	uuid: true,
 	email: true,
 	username: true,
-	avatarUuid: true,
+	avatarPath: true,
 	createdAt: true,
 } as const;
 
@@ -60,19 +55,6 @@ export class PrismaDataManager implements DataManager {
 			}
 			throw error;
 		}
-	}
-
-	async createAvatar(path: string): Promise<AvatarDTO> {
-		const result = await prisma.avatar.create({
-			data: {
-				path: path,
-			},
-		});
-
-		return {
-			uuid: result.uuid,
-			path: result.path,
-		};
 	}
 
 	async getUserById(id: string): Promise<UserEntity | null> {
@@ -112,18 +94,6 @@ export class PrismaDataManager implements DataManager {
 		return result;
 	}
 
-	async getAvatarById(id: string): Promise<AvatarDTO | null> {
-		const result = await prisma.avatar.findUnique({
-			where: { uuid: id },
-		});
-
-		if (!result) return null;
-		return {
-			uuid: result.uuid,
-			path: result.path,
-		};
-	}
-
 	async updateUserEmail(id: string, email: string): Promise<UserEntity> {
 		try {
 			const result = await prisma.user.update({
@@ -151,38 +121,6 @@ export class PrismaDataManager implements DataManager {
 			const result = await prisma.user.update({
 				where: { uuid: id },
 				data: { password: hashedPassword },
-				select: userDtoSelect,
-			});
-
-			return result;
-		} catch (error) {
-			if (error instanceof Prisma.PrismaClientKnownRequestError) {
-				if (error.code === "P2007") throw new InvalidIdError();
-				if (error.code === "P2025") throw new UnknownUserIdError();
-			}
-			throw error;
-		}
-	}
-
-	async updateUserAvatar(id: string, avatarId: string): Promise<UserEntity> {
-		try {
-			const [user, avatar] = await Promise.all([
-				prisma.user.findUnique({
-					where: { uuid: id },
-					select: { uuid: true },
-				}),
-				prisma.avatar.findUnique({
-					where: { uuid: avatarId },
-					select: { uuid: true },
-				}),
-			]);
-
-			if (!user) throw new UnknownUserIdError();
-			if (!avatar) throw new UnknownAvatarIdError();
-
-			const result = await prisma.user.update({
-				where: { uuid: id },
-				data: { avatar: { connect: { uuid: avatarId } } },
 				select: userDtoSelect,
 			});
 
@@ -238,18 +176,6 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async deleteAvatar(id: string): Promise<void> {
-		try {
-			await prisma.avatar.delete({ where: { uuid: id } });
-		} catch (error) {
-			if (error instanceof Prisma.PrismaClientKnownRequestError) {
-				if (error.code === "P2007") throw new InvalidIdError();
-				if (error.code === "P2025") throw new UnknownAvatarIdError();
-			}
-			throw error;
-		}
-	}
-
 	async validateUserPassword(
 		userId: string,
 		password: string,
@@ -290,7 +216,7 @@ export class PrismaDataManager implements DataManager {
 										select: {
 											uuid: true,
 											username: true,
-											avatar: true,
+											avatarPath: true,
 										},
 									},
 								},
@@ -313,7 +239,7 @@ export class PrismaDataManager implements DataManager {
 						user: {
 							uuid: p.user.uuid,
 							username: p.user.username,
-							avatar: p.user.avatar,
+							avatarPath: p.user.avatarPath,
 						},
 					})),
 				}));

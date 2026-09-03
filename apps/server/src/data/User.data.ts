@@ -4,7 +4,7 @@ export type UserEntity = {
 	uuid: string;
 	email: string;
 	username: string;
-	avatarUuid: string | null;
+	avatarPath: string | null;
 	createdAt: Date;
 };
 
@@ -19,6 +19,6 @@ export function toUserResponseDTO(user: UserEntity): UserResponseDTO {
 		uuid: user.uuid,
 		email: user.email,
 		username: user.username,
-		avatarUuid: user.avatarUuid,
+		avatarPath: user.avatarPath,
 	};
 }

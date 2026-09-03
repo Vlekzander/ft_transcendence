@@ -372,9 +372,9 @@ export default function UserPage() {
 					<div className="w-32 h-32 shrink-0">
 						<img
 							src={
-								userData.avatar === null
+								userData.avatarPath === null
 									? "/assets/default_avatar.jpg"
-									: userData.avatar.path
+									: userData.avatarPath
 							}
 							width={128}
 							height={128}

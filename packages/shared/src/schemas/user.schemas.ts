@@ -4,7 +4,7 @@ export const UserResponseSchema = z.object({
 	uuid: z.string(),
 	email: z.email(),
 	username: z.string(),
-	avatarUuid: z.string().nullable(),
+	avatarPath: z.string().nullable(),
 });
 
 const emailSchema = z.email("Invalid email address");

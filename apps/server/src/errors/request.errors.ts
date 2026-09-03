@@ -7,7 +7,6 @@ import {
 import {
 	DuplicateElementError,
 	InvalidElementError,
-	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "./data-manager.errors";
 
@@ -24,11 +23,7 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 409), error);
 	if (err instanceof InvalidElementError)
 		return ((error.status = 400), error);
-	if (
-		err instanceof UnknownUserIdError ||
-		err instanceof UnknownAvatarIdError
-	)
-		return ((error.status = 404), error);
+	if (err instanceof UnknownUserIdError) return ((error.status = 404), error);
 	if (err instanceof ValidationError) return ((error.status = 400), error);
 	if (err instanceof AlreadyAuthError) return ((error.status = 403), error);
 	if (err instanceof RequireAuthError) return ((error.status = 401), error);
