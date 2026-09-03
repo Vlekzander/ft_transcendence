@@ -15,6 +15,8 @@ import {
 } from "../middlewares/auth.middleware";
 import { InvalidCredentialsError } from "../errors/auth.errors";
 import { toUserResponseDTO } from "../data/User.data";
+import { NoFileUploadError } from "../errors/upload.errors";
+import { uploadAvatar } from "../middlewares/upload.middleware";
 
 const usersRouter = Router();
 
@@ -27,6 +29,21 @@ usersRouter.post("/:uuid/history", async (req, res) => {
 		data: { gameId: game.uuid, userId: uuid },
 	});
 	res.json({ game });
+});
+
+usersRouter.get("/:uuid", async (req, res) => {
+	const uuid = req.params.uuid;
+
+	const data = await DataManagerSingleton.getInstance().getUserById(uuid);
+	if (data === null) throw new UnknownUserIdError();
+
+	const user: PublicUserDTO = {
+		uuid: data?.uuid,
+		username: data?.username,
+		avatarPath: data?.avatarPath,
+	};
+
+	res.json({ user });
 });
 
 usersRouter.patch(
@@ -60,20 +77,24 @@ usersRouter.patch(
 	},
 );
 
-usersRouter.get("/:uuid", async (req, res) => {
-	const uuid = req.params.uuid;
+usersRouter.post(
+	"/:uuid",
+	requireAuth,
+	requireUserOwnership,
+	uploadAvatar,
+	(req, res) => {
+		const { uuid } = req.params;
 
-	const data = await DataManagerSingleton.getInstance().getUserById(uuid);
-	if (data === null) throw new UnknownUserIdError();
-
-	const user: PublicUserDTO = {
-		uuid: data?.uuid,
-		username: data?.username,
-		avatarPath: data?.avatarPath,
-	};
-
-	res.json({ user });
-});
+		if (typeof uuid !== "string") throw new UnknownUserIdError();
+		if (!req.file) throw new NoFileUploadError();
+		res.json({
+			filename: req.file.filename,
+			path: req.file.path,
+			mimetpye: req.file.mimetype,
+			size: req.file.size,
+		});
+	},
+);
 
 usersRouter.get("/:uuid/history", async (req, res) => {
 	const uuid = req.params.uuid;

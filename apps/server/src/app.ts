@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import authRouter from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
 import usersRouter from "./routes/users.routes";
+import { UPLOAD_DIR } from "./config/upload.config";
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
 
@@ -25,6 +26,15 @@ app.use("/users", usersRouter);
 app.get("/", (_req, res) => {
 	res.json({ message: hello("API") });
 });
+
+app.use(
+	"/uploads",
+	express.static(UPLOAD_DIR, {
+		dotfiles: "deny",
+		index: false,
+		maxAge: "7d",
+	}),
+);
 
 app.use(errorHandler);
 export default app;
