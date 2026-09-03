@@ -94,6 +94,24 @@ export class PrismaDataManager implements DataManager {
 		return result;
 	}
 
+	async getUserAvatarPath(uuid: string): Promise<string | null> {
+		try {
+			const result = await prisma.user.findUnique({
+				where: { uuid: uuid },
+				select: { avatarPath: true },
+			});
+
+			if (!result?.avatarPath) return null;
+			return result.avatarPath;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
 	async updateUserEmail(id: string, email: string): Promise<UserEntity> {
 		try {
 			const result = await prisma.user.update({
@@ -159,6 +177,24 @@ export class PrismaDataManager implements DataManager {
 					if (fields) throw new DuplicateElementError(fields[0]);
 					throw new DuplicateElementError("Unknown");
 				}
+			}
+			throw error;
+		}
+	}
+
+	async updateUserAvatarPath(id: string, path: string): Promise<UserEntity> {
+		try {
+			const result = await prisma.user.update({
+				where: { uuid: id },
+				data: { avatarPath: path },
+				select: userDtoSelect,
+			});
+
+			return result;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
 			}
 			throw error;
 		}

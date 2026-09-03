@@ -136,7 +136,11 @@ function GameRankingRowComponent({
 			<div className="flex items-center gap-5">
 				<div className="w-5 h-5">
 					<img
-						src="/assets/default_avatar.jpg"
+						src={
+							participant.user.avatarPath === null
+								? "/assets/default_avatar.jpg"
+								: API_URL + participant.user.avatarPath
+						}
 						alt=""
 						width={20}
 						height={20}
@@ -374,7 +378,7 @@ export default function UserPage() {
 							src={
 								userData.avatarPath === null
 									? "/assets/default_avatar.jpg"
-									: userData.avatarPath
+									: API_URL + userData.avatarPath
 							}
 							width={128}
 							height={128}

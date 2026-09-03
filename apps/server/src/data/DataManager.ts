@@ -7,9 +7,11 @@ export interface DataManager {
 	getUserById(id: string): Promise<UserEntity | null>;
 	getUserByEmail(email: string): Promise<UserEntity | null>;
 	getUserByUsername(username: string): Promise<UserEntity | null>;
+	getUserAvatarPath(uuid: string): Promise<string | null>;
 	updateUserEmail(id: string, email: string): Promise<UserEntity>;
 	updateUserPassword(id: string, password: string): Promise<UserEntity>;
 	updateUser(id: string, data: UpdateUserInput): Promise<UserEntity>;
+	updateUserAvatarPath(id: string, path: string): Promise<UserEntity>;
 	deleteUser(id: string): Promise<void>;
 	validateUserPassword(userId: string, password: string): Promise<boolean>;
 	getUserHistory(id: string): Promise<GameHistoryEntry[]>;

@@ -18,6 +18,7 @@ import { toUserResponseDTO } from "../data/User.data";
 import { NoFileUploadError } from "../errors/upload.errors";
 import { uploadAvatar } from "../middlewares/upload.middleware";
 import { UPLOAD_DIR } from "../config/upload.config";
+import fs from "node:fs";
 
 const usersRouter = Router();
 
@@ -83,20 +84,30 @@ usersRouter.post(
 	requireAuth,
 	requireUserOwnership,
 	uploadAvatar,
-	(req, res) => {
+	async (req, res) => {
 		const { uuid } = req.params;
 
 		if (typeof uuid !== "string") throw new UnknownUserIdError();
 		if (!req.file) throw new NoFileUploadError();
 
 		const path = req.file.path.replace(UPLOAD_DIR, "");
+		const currentPath =
+			await DataManagerSingleton.getInstance().getUserAvatarPath(uuid);
 
-		res.json({
-			filename: req.file.filename,
-			path: path,
-			mimetpye: req.file.mimetype,
-			size: req.file.size,
-		});
+		if (currentPath) {
+			try {
+				fs.unlinkSync(UPLOAD_DIR + "/" + currentPath);
+			} catch (err) {
+				console.error("unlink error:", err);
+			}
+		}
+		const user =
+			await DataManagerSingleton.getInstance().updateUserAvatarPath(
+				uuid,
+				path,
+			);
+
+		res.json({ user: toUserResponseDTO(user) });
 	},
 );
 
