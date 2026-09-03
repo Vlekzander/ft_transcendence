@@ -1,10 +1,11 @@
 import {
 	AvatarDTO,
+	EditUserDTO,
 	GameHistoryEntry,
 	RegisterUserDTO,
 } from "@ft_transcendence/shared";
 import { PrismaDataManager } from "./PrismaDataManager";
-import { UpdateUserInput, UserEntity } from "./User.data";
+import { UserEntity } from "./User.data";
 
 export interface DataManager {
 	createUser(data: RegisterUserDTO): Promise<UserEntity>;
@@ -16,7 +17,7 @@ export interface DataManager {
 	updateUserEmail(id: string, email: string): Promise<UserEntity>;
 	updateUserPassword(id: string, password: string): Promise<UserEntity>;
 	updateUserAvatar(id: string, avatarId: string): Promise<UserEntity>;
-	updateUser(id: string, data: UpdateUserInput): Promise<UserEntity>;
+	updateUser(id: string, data: EditUserDTO): Promise<UserEntity>;
 	deleteUser(id: string): Promise<void>;
 	deleteAvatar(id: string): Promise<void>;
 	validateUserPassword(userId: string, password: string): Promise<boolean>;

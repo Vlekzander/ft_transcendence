@@ -8,12 +8,6 @@ export type UserEntity = {
 	createdAt: Date;
 };
 
-export interface UpdateUserInput {
-	email?: string;
-	username?: string;
-	password?: string;
-}
-
 export function toUserResponseDTO(user: UserEntity): UserResponseDTO {
 	return {
 		uuid: user.uuid,

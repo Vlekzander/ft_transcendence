@@ -1,5 +1,6 @@
 import {
 	AvatarDTO,
+	EditUserDTO,
 	GameHistoryEntry,
 	RegisterUserDTO,
 } from "@ft_transcendence/shared";
@@ -15,7 +16,7 @@ import { Prisma } from "../generated/prisma/client";
 import { prisma } from "../lib/prisma.lib";
 import { compareHash, generateHash } from "../utils/hash.util";
 import { DataManager } from "./DataManager";
-import { UpdateUserInput, UserEntity } from "./User.data";
+import { UserEntity } from "./User.data";
 
 function getPrismaConstraintFields(
 	error: Prisma.PrismaClientKnownRequestError,
@@ -196,7 +197,7 @@ export class PrismaDataManager implements DataManager {
 		}
 	}
 
-	async updateUser(id: string, data: UpdateUserInput): Promise<UserEntity> {
+	async updateUser(id: string, data: EditUserDTO): Promise<UserEntity> {
 		if (data.password !== undefined)
 			data.password = await generateHash(data.password);
 
