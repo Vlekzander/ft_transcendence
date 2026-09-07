@@ -93,7 +93,11 @@ usersRouter.post(
 		const path = req.file.path.replace(`${AVATAR_DIR}/`, "");
 		const currentPath =
 			await DataManagerSingleton.getInstance().getUserAvatarPath(uuid);
-
+		const user =
+			await DataManagerSingleton.getInstance().updateUserAvatarPath(
+				uuid,
+				path,
+			);
 		if (currentPath) {
 			try {
 				fs.unlinkSync(`${AVATAR_DIR}/${currentPath}`);
@@ -101,12 +105,6 @@ usersRouter.post(
 				console.error("unlink avatar error:", err);
 			}
 		}
-		const user =
-			await DataManagerSingleton.getInstance().updateUserAvatarPath(
-				uuid,
-				path,
-			);
-
 		res.json({ user: toUserResponseDTO(user) });
 	},
 );
