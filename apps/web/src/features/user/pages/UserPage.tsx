@@ -23,7 +23,7 @@ import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
 import { Navigate, useParams } from "react-router";
-import { API_URL } from "../../../config";
+import { API_URL, AVATARS_PATH } from "../../../config";
 import {
 	PartialProfileError,
 	UserNotFoundError,
@@ -378,7 +378,7 @@ export default function UserPage() {
 							src={
 								userData.avatarPath === null
 									? "/assets/default_avatar.jpg"
-									: API_URL + userData.avatarPath
+									: AVATARS_PATH + userData.avatarPath
 							}
 							width={128}
 							height={128}

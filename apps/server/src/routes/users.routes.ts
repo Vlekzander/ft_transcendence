@@ -17,7 +17,7 @@ import { InvalidCredentialsError } from "../errors/auth.errors";
 import { toUserResponseDTO } from "../data/User.data";
 import { NoFileUploadError } from "../errors/upload.errors";
 import { uploadAvatar } from "../middlewares/upload.middleware";
-import { UPLOAD_DIR } from "../config/upload.config";
+import { AVATAR_DIR } from "../config/upload.config";
 import fs from "node:fs";
 
 const usersRouter = Router();
@@ -90,15 +90,15 @@ usersRouter.post(
 		if (typeof uuid !== "string") throw new UnknownUserIdError();
 		if (!req.file) throw new NoFileUploadError();
 
-		const path = req.file.path.replace(UPLOAD_DIR, "");
+		const path = req.file.path.replace(`${AVATAR_DIR}/`, "");
 		const currentPath =
 			await DataManagerSingleton.getInstance().getUserAvatarPath(uuid);
 
 		if (currentPath) {
 			try {
-				fs.unlinkSync(UPLOAD_DIR + "/" + currentPath);
+				fs.unlinkSync(`${AVATAR_DIR}/${currentPath}`);
 			} catch (err) {
-				console.error("unlink error:", err);
+				console.error("unlink avatar error:", err);
 			}
 		}
 		const user =
