@@ -46,10 +46,22 @@ export const EditUserSchema = z
 	.object({
 		email: emailSchema.optional(),
 		username: usernameSchema.optional(),
-		password: passwordSchema.optional(),
+		password: z.string().optional(),
 		confirmPassword: z.string().optional(),
 		currentPassword: z.string("Current password is missing"),
 	})
+	.refine(
+		(data) => {
+			if (!data.password) return true;
+			const result = passwordSchema.safeParse(data.password);
+			return result.success;
+		},
+		{
+			message:
+				"Minimum 8 characters: 1 uppercase, 1 lowercase, and 1 number required",
+			path: ["password"],
+		},
+	)
 	.refine(
 		(data) => {
 			if (!data.password && !data.confirmPassword) return true;
