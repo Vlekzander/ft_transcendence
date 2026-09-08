@@ -29,3 +29,30 @@ export async function editUser(
 		};
 	}
 }
+
+export async function uploadAvatar(
+	uuid: string,
+	avatar: File,
+): Promise<ApiResult> {
+	const formData = new FormData();
+
+	formData.append("file", avatar);
+
+	try {
+		const res = await fetch(`${API_URL}/users/${uuid}`, {
+			method: "POST",
+			body: formData,
+			credentials: "include",
+		});
+
+		if (res.ok) return { ok: true };
+
+		const error = await getApiErrorMessage(res);
+		return { ok: false, error };
+	} catch (err) {
+		return {
+			ok: false,
+			error: err instanceof Error ? err.message : DEFAULT_ERROR,
+		};
+	}
+}
