@@ -139,7 +139,7 @@ function GameRankingRowComponent({
 						src={
 							participant.user.avatarPath === null
 								? "/assets/default_avatar.jpg"
-								: API_URL + participant.user.avatarPath
+								: AVATARS_PATH + participant.user.avatarPath
 						}
 						alt=""
 						width={20}
