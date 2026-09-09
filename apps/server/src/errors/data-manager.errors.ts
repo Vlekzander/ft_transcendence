@@ -41,10 +41,3 @@ export class UnknownUserIdError extends AppDomainError {
 		this.name = "UnknownUserIdError";
 	}
 }
-
-export class UnknownAvatarIdError extends AppDomainError {
-	constructor() {
-		super("Unknown avatar id");
-		this.name = "UnknownAvatarIdError";
-	}
-}

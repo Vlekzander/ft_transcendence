@@ -14,6 +14,8 @@ import LogoutPage from "./features/auth/pages/LogoutPage";
 import UserPage from "./features/user/pages/UserPage";
 import TestWsPage from "./features/websocket/pages/TestWsPage";
 import { WebSocketProvider } from "./features/websocket/context/WebSocketContext";
+import { AuthProvider } from "./features/auth/context/AuthContext";
+import AccountPage from "./features/user/pages/AccountPage";
 
 const router = createBrowserRouter([
 	{
@@ -22,7 +24,12 @@ const router = createBrowserRouter([
 		children: [
 			{
 				element: <RequireAuth />,
-				children: [],
+				children: [
+					{
+						path: "/account",
+						element: <AccountPage />,
+					},
+				],
 			},
 			{
 				element: <RequireGuest />,
@@ -71,7 +78,9 @@ const root = document.getElementById("root");
 if (!root) throw new Error("root not found in DOM");
 
 ReactDOM.createRoot(root).render(
-	<WebSocketProvider wsUrl={WS_URL}>
-		<RouterProvider router={router} />
-	</WebSocketProvider>,
+	<AuthProvider>
+		<WebSocketProvider wsUrl={WS_URL}>
+			<RouterProvider router={router} />
+		</WebSocketProvider>
+	</AuthProvider>,
 );

@@ -1,112 +1,106 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import type { RegisterUserDTO } from "@ft_transcendence/shared";
+import { registerUser } from "../services/authApi";
+import { useAuth } from "../context/AuthContext";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
-	registerUser,
-	type AuthErrors,
-	type AuthResult,
-} from "../services/authApi";
+	RegisterUserSchema,
+	type RegisterUserDTO,
+} from "@ft_transcendence/shared";
+import type { ApiResult } from "../../../shared/types/api";
 
 export default function RegisterForm() {
+	const { refreshUser } = useAuth();
 	const navigate = useNavigate();
-	const [formData, setFormData] = useState<RegisterUserDTO>({
-		username: "",
-		email: "",
-		password: "",
-		confirmPassword: "",
+
+	const [serverError, setServerError] = useState("");
+
+	const {
+		register,
+		handleSubmit,
+		setError,
+		formState: { errors, isSubmitting },
+	} = useForm<RegisterUserDTO>({
+		resolver: zodResolver(RegisterUserSchema),
+		defaultValues: {
+			username: "",
+			email: "",
+			password: "",
+			confirmPassword: "",
+		},
 	});
-	const [loading, setLoading] = useState(false);
-	const [errors, setErrors] = useState<AuthErrors>({});
-	const [error, setError] = useState("");
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const { name, value } = e.target;
-		setFormData((prev) => ({
-			...prev,
-			[name]: value,
-		}));
-	};
+	const onSubmit = async (data: RegisterUserDTO) => {
+		setServerError("");
 
-	const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-		e.preventDefault();
+		const result: ApiResult = await registerUser(data);
 
-		setLoading(true);
-		setErrors({});
-		setError("");
-
-		const result: AuthResult = await registerUser(formData);
-
-		if (result.ok === true) navigate("/", { replace: true });
-		else {
-			setError(result.error);
-			if (result.errors) setErrors(result.errors);
+		if (result.ok === true) {
+			await refreshUser();
+			navigate("/", { replace: true });
+			return;
 		}
-		setLoading(false);
+
+		setServerError(result.error);
+
+		if (result.errors) {
+			for (const [field, message] of Object.entries(result.errors)) {
+				if (field in data && typeof message === "string") {
+					setError(field as keyof RegisterUserDTO, {
+						type: "server",
+						message,
+					});
+				}
+			}
+		}
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="border flex flex-col">
+		<form
+			onSubmit={handleSubmit(onSubmit)}
+			className="border flex flex-col"
+		>
 			<h2>Register</h2>
-			<p className="min-h-5 text-sm text-red-500">{error || " "}</p>
+			<p className="min-h-5 text-sm text-red-500">{serverError || " "}</p>
 			<div>
-				<label htmlFor="username">Username </label>
-				<input
-					id="username"
-					name="username"
-					type="text"
-					required
-					value={formData.username}
-					onChange={handleChange}
-				/>
+				<label htmlFor="username">Username</label>
+				<input id="username" {...register("username")} />
 				<p className="min-h-5 text-sm text-red-500">
-					{errors.username || " "}
+					{errors.username?.message || " "}
 				</p>
 			</div>
 			<div>
-				<label htmlFor="email">Email </label>
-				<input
-					id="email"
-					name="email"
-					type="email"
-					autoComplete="email"
-					required
-					value={formData.email}
-					onChange={handleChange}
-				/>
+				<label htmlFor="email">Email</label>
+				<input id="email" type="email" {...register("email")} />
 				<p className="min-h-5 text-sm text-red-500">
-					{errors.email || " "}
+					{errors.email?.message || " "}
 				</p>
 			</div>
 			<div>
-				<label htmlFor="password">Password </label>
+				<label htmlFor="password">Password</label>
 				<input
 					id="password"
-					name="password"
 					type="password"
-					required
-					value={formData.password}
-					onChange={handleChange}
+					{...register("password")}
 				/>
 				<p className="min-h-5 text-sm text-red-500">
-					{errors.password || " "}
+					{errors.password?.message || " "}
 				</p>
 			</div>
 			<div>
-				<label htmlFor="confirmPassword">Confirm password </label>
+				<label htmlFor="confirmPassword">Confirm password</label>
 				<input
 					id="confirmPassword"
-					name="confirmPassword"
 					type="password"
-					required
-					value={formData.confirmPassword}
-					onChange={handleChange}
+					{...register("confirmPassword")}
 				/>
 				<p className="min-h-5 text-sm text-red-500">
-					{errors.confirmPassword || " "}
+					{errors.confirmPassword?.message || " "}
 				</p>
 			</div>
-			<button type="submit" disabled={loading}>
-				{loading ? "Register..." : "Register"}
+			<button type="submit" disabled={isSubmitting}>
+				{isSubmitting ? "Registering..." : "Register"}
 			</button>
 		</form>
 	);

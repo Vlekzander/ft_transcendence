@@ -3,7 +3,6 @@ import {
 	DuplicateEmailError,
 	DuplicateUsernameError,
 	InvalidIdError,
-	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
@@ -16,7 +15,6 @@ describe("PrismaDataManager", () => {
 		await prisma.$transaction([
 			prisma.userOnGame.deleteMany(),
 			prisma.game.deleteMany(),
-			prisma.avatar.deleteMany(),
 			prisma.user.deleteMany(),
 		]);
 	});
@@ -33,7 +31,7 @@ describe("PrismaDataManager", () => {
 			expect(user.uuid).toBeTypeOf("string");
 			expect(user.email).toBe("john@example.com");
 			expect(user.username).toBe("john");
-			expect(user.avatarUuid).toBeNull();
+			expect(user.avatarPath).toBeNull();
 			expect(user.createdAt).toBeInstanceOf(Date);
 			expect(user).not.toHaveProperty("passwordHash");
 		});
@@ -72,15 +70,6 @@ describe("PrismaDataManager", () => {
 					confirmPassword: "secret456",
 				}),
 			).rejects.toThrow(DuplicateUsernameError);
-		});
-	});
-
-	describe("createAvatar", () => {
-		it("Create an avatar to the database", async () => {
-			const avatar = await dataManager.createAvatar("/avatars/cat.png");
-
-			expect(avatar.uuid).toBeTypeOf("string");
-			expect(avatar.path).toBe("/avatars/cat.png");
 		});
 	});
 
@@ -166,22 +155,6 @@ describe("PrismaDataManager", () => {
 		});
 	});
 
-	describe("getAvatarById", () => {
-		it("Returns the avatar by id", async () => {
-			const created = await dataManager.createAvatar("/avatars/dog.png");
-
-			const avatar = await dataManager.getAvatarById(created.uuid);
-
-			expect(avatar).toEqual(created);
-		});
-
-		it("Returns null if avatar does not exist", async () => {
-			const avatar = await dataManager.getAvatarById(crypto.randomUUID());
-
-			expect(avatar).toBeNull();
-		});
-	});
-
 	describe("updateUserEmail", () => {
 		it("Return updated user", async () => {
 			const created = await dataManager.createUser({
@@ -248,8 +221,8 @@ describe("PrismaDataManager", () => {
 		});
 	});
 
-	describe("updateUserAvatar", () => {
-		it("Return updated", async () => {
+	describe("updateUser", () => {
+		it("Return full updated", async () => {
 			const created = await dataManager.createUser({
 				email: "user@example.com",
 				username: "user",
@@ -257,29 +230,58 @@ describe("PrismaDataManager", () => {
 				confirmPassword: "secret123",
 			});
 
-			const avatar = await dataManager.createAvatar("/avatars/cat.png");
-			const updated = await dataManager.updateUserAvatar(
-				created.uuid,
-				avatar.uuid,
-			);
+			const updated = await dataManager.updateUser(created.uuid, {
+				email: "updated@example.com",
+				username: "updated",
+				password: "secret456",
+			});
 
 			expect(updated).not.toBeNull();
-			expect(updated?.avatarUuid).toBe(avatar.uuid);
+			expect(updated?.uuid).toBe(created.uuid);
+			expect(updated?.username).not.toBe(created.username);
+			expect(updated?.email).not.toBe(created.email);
 		});
 
-		it("Throw an exception if the id is invalid", async () => {
-			await expect(
-				dataManager.updateUserAvatar(
-					crypto.randomUUID(),
-					crypto.randomUUID(),
-				),
-			).rejects.toThrow(UnknownUserIdError);
+		it("Return email updated", async () => {
+			const created = await dataManager.createUser({
+				email: "user@example.com",
+				username: "user",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const updated = await dataManager.updateUser(created.uuid, {
+				email: "updated@example.com",
+			});
+
+			expect(updated).not.toBeNull();
+			expect(updated?.uuid).toBe(created.uuid);
+			expect(updated?.username).toBe(created.username);
+			expect(updated?.email).not.toBe(created.email);
+		});
+
+		it("Return usernamed updated", async () => {
+			const created = await dataManager.createUser({
+				email: "user@example.com",
+				username: "user",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const updated = await dataManager.updateUser(created.uuid, {
+				username: "updated",
+			});
+
+			expect(updated).not.toBeNull();
+			expect(updated?.uuid).toBe(created.uuid);
+			expect(updated?.username).not.toBe(created.username);
+			expect(updated?.email).toBe(created.email);
 		});
 
 		it("Throw an exception if the user id format is invalid", async () => {
-			await expect(
-				dataManager.updateUserAvatar("invalid", crypto.randomUUID()),
-			).rejects.toThrow(InvalidIdError);
+			await expect(dataManager.updateUser("invalid", {})).rejects.toThrow(
+				InvalidIdError,
+			);
 		});
 	});
 
@@ -306,29 +308,6 @@ describe("PrismaDataManager", () => {
 
 		it("Throw an exception if the id format is invalid", async () => {
 			await expect(dataManager.deleteUser("invalid")).rejects.toThrow(
-				InvalidIdError,
-			);
-		});
-	});
-
-	describe("deleteAvatar", () => {
-		it("Do not throw an error", async () => {
-			const avatar = await dataManager.createAvatar("/avatars/cat.png");
-
-			await dataManager.deleteAvatar(avatar.uuid);
-			const deleted = await dataManager.getAvatarById(avatar.uuid);
-
-			expect(deleted).toBeNull();
-		});
-
-		it("Throw an exception if the id is invalid", async () => {
-			await expect(
-				dataManager.deleteAvatar(crypto.randomUUID()),
-			).rejects.toThrow(UnknownAvatarIdError);
-		});
-
-		it("Throw an exception if the id format is invalid", async () => {
-			await expect(dataManager.deleteAvatar("invalid")).rejects.toThrow(
 				InvalidIdError,
 			);
 		});
@@ -397,7 +376,7 @@ describe("PrismaDataManager", () => {
 					expect(participant.userId).toBe(user.uuid);
 					expect(participant.user.uuid).toBe(user.uuid);
 					expect(participant.user.username).toBe(user.username);
-					expect(participant.user.avatar).toBeNull();
+					expect(participant.user.avatarPath).toBeNull();
 				});
 			});
 		});
@@ -429,7 +408,7 @@ describe("PrismaDataManager", () => {
 					expect(participant.userId).toBe(user.uuid);
 					expect(participant.user.uuid).toBe(user.uuid);
 					expect(participant.user.username).toBe(user.username);
-					expect(participant.user.avatar).toBeNull();
+					expect(participant.user.avatarPath).toBeNull();
 				});
 			});
 		});

@@ -5,3 +5,4 @@ dist
 secrets
 
 apps/server/src/generated
+apps/server/uploads

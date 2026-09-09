@@ -4,6 +4,7 @@ import { DataManager, DataManagerSingleton } from "../data/DataManager";
 import { GameHistoryEntry, PublicUserDTO } from "@ft_transcendence/shared";
 import app from "../app";
 import request from "supertest";
+import { generateAccessToken } from "../utils/jwt.util";
 
 describe("users.routes", () => {
 	const dataManager: DataManager = DataManagerSingleton.getInstance();
@@ -12,13 +13,12 @@ describe("users.routes", () => {
 		await prisma.$transaction([
 			prisma.userOnGame.deleteMany(),
 			prisma.game.deleteMany(),
-			prisma.avatar.deleteMany(),
 			prisma.user.deleteMany(),
 		]);
 	});
 
 	describe("/users/:uuid", () => {
-		it("GET Should retrive the user public datas", async () => {
+		it("GET Should retrieve the user public datas", async () => {
 			const user = await dataManager.createUser({
 				username: "bob",
 				email: "sponge@email.com",
@@ -32,7 +32,7 @@ describe("users.routes", () => {
 
 			expect(data.uuid).toBe(user.uuid);
 			expect(data.username).toBe(user.username);
-			expect(data.avatar).toBeNull();
+			expect(data.avatarPath).toBeNull();
 		});
 
 		it("GET Should fail with unknown user", async () => {
@@ -42,6 +42,74 @@ describe("users.routes", () => {
 
 			expect(response.status).toBe(404);
 			expect(response.body?.error.code).toBe("UnknownUserIdError");
+		});
+
+		it("PATCH Should update user", async () => {
+			const user = await dataManager.createUser({
+				username: "bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const token = generateAccessToken(user.uuid);
+			const response = await request(app)
+				.patch(`/users/${user.uuid}`)
+				.send({
+					username: "patrick",
+					email: "patrick@email.com",
+					currentPassword: "secret123",
+				})
+				.set("Accept", "application/json")
+				.set("Cookie", [`token=${token}`]);
+			expect(response.status).toBe(200);
+			expect(response.body?.user?.uuid).toBe(user.uuid);
+			expect(response.body?.user?.username).toBe("patrick");
+			expect(response.body?.user?.email).toBe("patrick@email.com");
+		});
+
+		it("PATCH Should throw an exception if no ownership", async () => {
+			const user = await dataManager.createUser({
+				username: "bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const token = generateAccessToken(crypto.randomUUID());
+			const response = await request(app)
+				.patch(`/users/${user.uuid}`)
+				.send({
+					username: "patrick",
+					email: "patrick@email.com",
+					currentPassword: "secret123",
+				})
+				.set("Accept", "application/json")
+				.set("Cookie", [`token=${token}`]);
+
+			expect(response.status).toBe(403);
+			expect(response.body?.error.code).toBe("CannotEditUserError");
+		});
+
+		it("PATCH Should throw an exception if no token", async () => {
+			const user = await dataManager.createUser({
+				username: "bob",
+				email: "sponge@email.com",
+				password: "secret123",
+				confirmPassword: "secret123",
+			});
+
+			const response = await request(app)
+				.patch(`/users/${user.uuid}`)
+				.send({
+					username: "patrick",
+					email: "patrick@email.com",
+					currentPassword: "secret123",
+				})
+				.set("Accept", "application/json");
+
+			expect(response.status).toBe(401);
+			expect(response.body?.error.code).toBe("RequireAuthError");
 		});
 	});
 
@@ -77,7 +145,7 @@ describe("users.routes", () => {
 					expect(participant.userId).toBe(user.uuid);
 					expect(participant.user.uuid).toBe(user.uuid);
 					expect(participant.user.username).toBe(user.username);
-					expect(participant.user.avatar).toBeNull();
+					expect(participant.user.avatarPath).toBeNull();
 				});
 			});
 		});

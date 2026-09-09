@@ -1,24 +1,17 @@
-import { useEffect, useState } from "react";
-import { Navigate } from "react-router";
-import { API_URL } from "../../../config";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { useAuth } from "../context/AuthContext";
 
 export default function LogoutPage() {
-	const [done, setDone] = useState(false);
+	const { logout } = useAuth();
+	const navigate = useNavigate();
 
 	useEffect(() => {
-		const logout = async () => {
-			try {
-				await fetch(`${API_URL}/auth/logout`, {
-					method: "POST",
-					credentials: "include",
-				});
-			} finally {
-				setDone(true);
-			}
+		const doLogout = async () => {
+			await logout();
+			navigate("/", { replace: true });
 		};
-
-		logout();
-	}, []);
-	if (!done) return null;
-	return <Navigate to="/" replace />;
+		doLogout();
+	}, [logout]);
+	return null;
 }

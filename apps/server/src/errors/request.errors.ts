@@ -1,11 +1,15 @@
 import { AppDomainError, ValidationError } from "@ft_transcendence/shared";
-import { AlreadyAuthError, RequireAuthError } from "./auth.errors";
+import {
+	AlreadyAuthError,
+	CannotEditUserError,
+	RequireAuthError,
+} from "./auth.errors";
 import {
 	DuplicateElementError,
 	InvalidElementError,
-	UnknownAvatarIdError,
 	UnknownUserIdError,
 } from "./data-manager.errors";
+import { InvalidFileError } from "./upload.errors";
 
 type ErrorResponse = {
 	status: number;
@@ -20,14 +24,17 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 409), error);
 	if (err instanceof InvalidElementError)
 		return ((error.status = 400), error);
+	if (err instanceof UnknownUserIdError) return ((error.status = 404), error);
 	if (
-		err instanceof UnknownUserIdError ||
-		err instanceof UnknownAvatarIdError
+		err instanceof ValidationError ||
+		err instanceof SyntaxError ||
+		err instanceof InvalidFileError
 	)
-		return ((error.status = 404), error);
-	if (err instanceof ValidationError) return ((error.status = 400), error);
+		return ((error.status = 400), error);
 	if (err instanceof AlreadyAuthError) return ((error.status = 403), error);
 	if (err instanceof RequireAuthError) return ((error.status = 401), error);
+	if (err instanceof CannotEditUserError)
+		return ((error.status = 403), error);
 
 	if (err instanceof AppDomainError) return ((error.status = 400), error);
 	return {

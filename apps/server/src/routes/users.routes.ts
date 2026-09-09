@@ -2,12 +2,23 @@ import { Router } from "express";
 import { DataManagerSingleton } from "../data/DataManager";
 import {
 	Achievement,
+	FriendDTO,
 	PublicUserDTO,
 	Stat,
-	FriendDTO,
+	parseEditUser,
 } from "@ft_transcendence/shared";
 import { UnknownUserIdError } from "../errors/data-manager.errors";
 import { prisma } from "../lib/prisma.lib";
+import {
+	requireAuth,
+	requireUserOwnership,
+} from "../middlewares/auth.middleware";
+import { InvalidCredentialsError } from "../errors/auth.errors";
+import { toUserResponseDTO } from "../data/User.data";
+import { NoFileUploadError } from "../errors/upload.errors";
+import { uploadAvatar } from "../middlewares/upload.middleware";
+import { AVATAR_DIR } from "../config/upload.config";
+import fs from "node:fs";
 
 const usersRouter = Router();
 
@@ -27,20 +38,76 @@ usersRouter.get("/:uuid", async (req, res) => {
 
 	const data = await DataManagerSingleton.getInstance().getUserById(uuid);
 	if (data === null) throw new UnknownUserIdError();
-	let avatar = null;
-	if (data?.avatarUuid !== null)
-		avatar = await DataManagerSingleton.getInstance().getAvatarById(
-			data.avatarUuid,
-		);
 
 	const user: PublicUserDTO = {
 		uuid: data?.uuid,
 		username: data?.username,
-		avatar: avatar,
+		avatarPath: data?.avatarPath,
 	};
 
 	res.json({ user });
 });
+
+usersRouter.patch(
+	"/:uuid",
+	requireAuth,
+	requireUserOwnership,
+	async (req, res) => {
+		const { uuid } = req.params;
+		const {
+			currentPassword,
+			confirmPassword: _confirmPassword,
+			...userUpdates
+		} = parseEditUser(req.body);
+
+		if (typeof uuid !== "string") throw new UnknownUserIdError();
+
+		const dataManager = DataManagerSingleton.getInstance();
+
+		const isPasswordValid = await dataManager.validateUserPassword(
+			uuid,
+			currentPassword,
+		);
+		if (!isPasswordValid) throw new InvalidCredentialsError();
+
+		const user = await DataManagerSingleton.getInstance().updateUser(
+			uuid,
+			userUpdates,
+		);
+		if (!user) throw new UnknownUserIdError();
+		res.json({ user: toUserResponseDTO(user) });
+	},
+);
+
+usersRouter.post(
+	"/:uuid",
+	requireAuth,
+	requireUserOwnership,
+	uploadAvatar,
+	async (req, res) => {
+		const { uuid } = req.params;
+
+		if (typeof uuid !== "string") throw new UnknownUserIdError();
+		if (!req.file) throw new NoFileUploadError();
+
+		const path = req.file.path.replace(`${AVATAR_DIR}/`, "");
+		const currentPath =
+			await DataManagerSingleton.getInstance().getUserAvatarPath(uuid);
+		const user =
+			await DataManagerSingleton.getInstance().updateUserAvatarPath(
+				uuid,
+				path,
+			);
+		if (currentPath) {
+			try {
+				fs.unlinkSync(`${AVATAR_DIR}/${currentPath}`);
+			} catch (err) {
+				console.error("unlink avatar error:", err);
+			}
+		}
+		res.json({ user: toUserResponseDTO(user) });
+	},
+);
 
 usersRouter.get("/:uuid/history", async (req, res) => {
 	const uuid = req.params.uuid;
@@ -129,7 +196,7 @@ usersRouter.get("/:uuid/friends", async (_req, res) => {
 				uuid: crypto.randomUUID(),
 				username: "Another",
 				email: "spongybobby@gmail.com",
-				avatarUuid: null,
+				avatarPath: null,
 			},
 			status: "in_game",
 		},
@@ -138,7 +205,7 @@ usersRouter.get("/:uuid/friends", async (_req, res) => {
 				uuid: crypto.randomUUID(),
 				username: "Blabla",
 				email: "spongybobby@gmail.com",
-				avatarUuid: null,
+				avatarPath: null,
 			},
 			status: "online",
 		},
@@ -147,7 +214,7 @@ usersRouter.get("/:uuid/friends", async (_req, res) => {
 				uuid: crypto.randomUUID(),
 				username: "Nobody",
 				email: "spongybobby@gmail.com",
-				avatarUuid: null,
+				avatarPath: null,
 			},
 			status: "offline",
 		},

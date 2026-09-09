@@ -13,17 +13,9 @@ model User {
 	username	String		@unique
 	password	String
 	createdAt	DateTime	@default(now())
-	avatarUuid	String?		@unique @db.Uuid
+	avatarPath	String?
 
-	avatar		Avatar?		@relation("UserAvatar", fields: [avatarUuid], references: [uuid], onDelete: SetNull)
 	userOnGames	UserOnGame[]
-}
-
-model Avatar {
-	uuid	String	@id @default(uuid()) @db.Uuid
-	path	String
-
-	user	User?	@relation("UserAvatar")
 }
 
 enum GameMode {
