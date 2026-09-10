@@ -7,6 +7,17 @@ datasource db {
 	provider = "postgresql"
 }
 
+enum GameMode {
+	SOLO
+	DUO
+}
+
+enum GameStatus {
+	PENDING
+	IN_PROGRESS
+	FINISHED
+}
+
 model User {
 	uuid		String		@id @default(uuid()) @db.Uuid
 	email		String		@unique
@@ -15,18 +26,13 @@ model User {
 	createdAt	DateTime	@default(now())
 	avatarPath	String?
 
-	userOnGames	UserOnGame[]
-}
-
-enum GameMode {
-	SOLO
-	DUO
+	participations	UserOnGame[]
 }
 
 model Game {
 	uuid			String			@id @default(uuid(7)) @db.Uuid
 	mode			GameMode		@default(SOLO)
-	finished		Boolean			@default(false)
+	status			GameStatus		@default(PENDING)
 	duration		Int				@default(0)
 	participants	UserOnGame[]
 }
@@ -37,8 +43,8 @@ model UserOnGame {
 	gameId	String	@db.Uuid
 	score	Int		@default(0)
 
-	user	User	@relation(fields: [userId], references: [uuid])
-	game	Game	@relation(fields: [gameId], references: [uuid])
+	user	User	@relation(fields: [userId], references: [uuid], onDelete: Cascade)
+	game	Game	@relation(fields: [gameId], references: [uuid], onDelete: Cascade)
 
 	@@unique([userId, gameId])
 	@@index([userId])

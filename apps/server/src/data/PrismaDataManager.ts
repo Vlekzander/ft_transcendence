@@ -263,11 +263,11 @@ export class PrismaDataManager implements DataManager {
 			});
 
 			const history: GameHistoryEntry[] = result
-				.filter((game) => game.game.finished)
+				.filter((game) => game.game.status == "FINISHED")
 				.map((game) => ({
 					uuid: game.game.uuid,
 					mode: game.game.mode,
-					finished: game.game.finished,
+					finished: game.game.status == "FINISHED",
 					duration: game.game.duration,
 					participants: game.game.participants.map((p) => ({
 						userId: p.userId,
