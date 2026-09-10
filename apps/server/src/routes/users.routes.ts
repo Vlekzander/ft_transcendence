@@ -26,7 +26,7 @@ const usersRouter = Router();
 usersRouter.post("/:uuid/history", async (req, res) => {
 	const uuid = req.params.uuid;
 
-	const game = await prisma.game.create({ data: { finished: true } });
+	const game = await prisma.game.create({ data: { status: "FINISHED" } });
 	await prisma.userOnGame.create({
 		data: { gameId: game.uuid, userId: uuid },
 	});

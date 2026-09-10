@@ -123,7 +123,7 @@ describe("users.routes", () => {
 			});
 			for (let i = 0; i < 5; i++) {
 				const game = await prisma.game.create({
-					data: { finished: true },
+					data: { status: "FINISHED" },
 				}); //TODO: TEMP, replace with dataManager.createGame(...)
 				await prisma.userOnGame.create({
 					data: { gameId: game.uuid, userId: user.uuid },
