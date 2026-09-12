@@ -41,3 +41,31 @@ export class UnknownUserIdError extends AppDomainError {
 		this.name = "UnknownUserIdError";
 	}
 }
+
+export class AlreadyAuthError extends AppDomainError {
+	constructor() {
+		super("Already authenticated");
+		this.name = "AlreadyAuthError";
+	}
+}
+
+export class RequireAuthError extends AppDomainError {
+	constructor() {
+		super("Authentication required");
+		this.name = "RequireAuthError";
+	}
+}
+
+export class InvalidCredentialsError extends AppDomainError {
+	constructor() {
+		super("Invalid credentials");
+		this.name = "InvalidCredentialsError";
+	}
+}
+
+export class CannotEditUserError extends AppDomainError {
+	constructor() {
+		super("No permission for edit user");
+		this.name = "CannotEditUserError";
+	}
+}

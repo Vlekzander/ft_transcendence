@@ -2,10 +2,9 @@ import { hello } from "@ft_transcendence/shared";
 import cors from "cors";
 import express from "express";
 import cookieParser from "cookie-parser";
-import authRouter from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
-import usersRouter from "./routes/users.routes";
 import { AVATAR_DIR } from "./config/upload.config";
+import authRouter from "./modules/auth/auth.routes";
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
 
@@ -21,7 +20,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/auth", authRouter);
-app.use("/users", usersRouter);
+// app.use("/users", usersRouter);
 
 app.get("/", (_req, res) => {
 	res.json({ message: hello("API") });
