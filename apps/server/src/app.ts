@@ -2,10 +2,10 @@ import { hello } from "@ft_transcendence/shared";
 import cors from "cors";
 import express from "express";
 import cookieParser from "cookie-parser";
-import authRouter from "./routes/auth.routes";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
-import usersRouter from "./routes/users.routes";
 import { AVATAR_DIR } from "./config/upload.config";
+import authRouter from "./modules/auth/auth.routes";
+import usersRouter from "./modules/users/users.routes";
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
 
