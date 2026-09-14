@@ -14,10 +14,63 @@ import {
 	sharedService,
 	userDtoSelect,
 } from "../shared/shared.service";
-import { UpdateUserInput, UserEntity } from "./users.mapper";
+import { GameHistoryEntry, UpdateUserInput, UserEntity } from "./users.mapper";
 import fs from "node:fs";
 
 export class UsersService {
+	async getUserHistory(uuid: string): Promise<GameHistoryEntry[]> {
+		try {
+			const result = await prisma.userOnGame.findMany({
+				where: { userId: uuid },
+				orderBy: { gameId: "desc" },
+				include: {
+					game: {
+						include: {
+							participants: {
+								select: {
+									userId: true,
+									score: true,
+									user: {
+										select: {
+											uuid: true,
+											username: true,
+											avatarPath: true,
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			});
+
+			const history = result
+				.filter((element) => element.game.status == "FINISHED")
+				.map((element) => ({
+					uuid: element.game.uuid,
+					mode: element.game.mode,
+					finished: element.game.status == "FINISHED",
+					duration: element.game.duration,
+					participants: element.game.participants.map((p) => ({
+						userId: p.userId,
+						score: p.score ?? 0,
+						user: {
+							uuid: p.user.uuid,
+							username: p.user.username,
+							avatarPath: p.user.avatarPath,
+						},
+					})),
+				}));
+
+			return history;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+			}
+			throw error;
+		}
+	}
+
 	async updateUser(uuid: string, data: UpdateUserInput): Promise<UserEntity> {
 		if (data.password !== undefined)
 			data.password = await generateHash(data.password);

@@ -33,4 +33,28 @@ usersRouter.post(
 	usersController.updateAvatar,
 );
 
+usersRouter.get(
+	"/:uuid/history",
+	validate({ params: UserParamsSchema }),
+	usersController.getUserHistory,
+);
+
+usersRouter.get(
+	"/:uuid/stats",
+	validate({ params: UserParamsSchema }),
+	usersController.getUserStats,
+);
+
+usersRouter.get(
+	"/:uuid/achievements",
+	validate({ params: UserParamsSchema }),
+	usersController.getUserAchievements,
+);
+
+usersRouter.get(
+	"/:uuid/friends",
+	validate({ params: UserParamsSchema }),
+	usersController.getUserFriends,
+);
+
 export default usersRouter;
