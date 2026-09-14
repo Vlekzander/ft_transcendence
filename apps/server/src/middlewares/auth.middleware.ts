@@ -4,7 +4,7 @@ import {
 	AlreadyAuthError,
 	CannotEditUserError,
 	RequireAuthError,
-} from "../modules/auth/auth.errors";
+} from "../errors";
 
 function isAuthenticated(req: Request): boolean {
 	const token = req.cookies?.token;

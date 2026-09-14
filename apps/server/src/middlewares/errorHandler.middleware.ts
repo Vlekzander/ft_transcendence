@@ -1,4 +1,5 @@
 import { ErrorRequestHandler } from "express";
+import { AppDomainError, ValidationError } from "@ft_transcendence/shared";
 import {
 	AlreadyAuthError,
 	CannotEditUserError,
@@ -6,8 +7,7 @@ import {
 	InvalidElementError,
 	RequireAuthError,
 	UnknownUserIdError,
-} from "../modules/auth/auth.errors";
-import { AppDomainError, ValidationError } from "@ft_transcendence/shared";
+} from "../errors";
 
 type ErrorResponse = {
 	status: number;
@@ -31,6 +31,7 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 403), error);
 
 	if (err instanceof AppDomainError) return ((error.status = 400), error);
+	console.log(err);
 	return {
 		status: 500,
 		code: "InternalServerError",

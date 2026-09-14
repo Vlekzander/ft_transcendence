@@ -1,5 +1,7 @@
+import { InvalidIdError, UnknownUserIdError } from "../../errors";
 import { Prisma } from "../../generated/prisma/client";
 import { prisma } from "../../lib/prisma.lib";
+import { compareHash } from "../../utils/hash.util";
 import { UserEntity } from "./shared.mapper";
 
 type WithDraverAdapterFields = {
@@ -42,12 +44,40 @@ export async function getUserById(uuid: string): Promise<UserEntity | null> {
 
 export class SharedService {
 	async getUserById(uuid: string): Promise<UserEntity | null> {
-		const result = await prisma.user.findUnique({
-			where: { uuid: uuid },
-			select: userDtoSelect,
-		});
+		try {
+			const result = await prisma.user.findUnique({
+				where: { uuid: uuid },
+				select: userDtoSelect,
+			});
 
-		return result;
+			return result;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") return null;
+			}
+			throw error;
+		}
+	}
+
+	async validateUserPassword(
+		uuid: string,
+		password: string,
+	): Promise<boolean> {
+		try {
+			const result = await prisma.user.findUnique({
+				where: { uuid: uuid },
+				select: { password: true },
+			});
+
+			if (!result) throw new UnknownUserIdError();
+			return await compareHash(password, result.password);
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
 	}
 }
 

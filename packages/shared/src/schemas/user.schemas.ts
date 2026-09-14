@@ -1,11 +1,25 @@
 import z from "zod";
 
+// OUTPUTS SCHEMAS
+
 export const UserResponseSchema = z.object({
 	uuid: z.string(),
 	email: z.email(),
 	username: z.string(),
 	avatarPath: z.string().nullable(),
 });
+
+export type UserResponseDTO = z.infer<typeof UserResponseSchema>;
+
+export const PublicUserSchema = z.object({
+	uuid: z.string(),
+	username: z.string(),
+	avatarPath: z.string().nullable(),
+});
+
+export type PublicUserDTO = z.infer<typeof PublicUserSchema>;
+
+// INPUTS SCHEMAS
 
 const emailSchema = z.email("Invalid email address");
 const usernameSchema = z
@@ -37,10 +51,14 @@ export const RegisterUserSchema = z
 		path: ["confirmPassword"],
 	});
 
+export type RegisterUserDTO = z.infer<typeof RegisterUserSchema>;
+
 export const LoginUserSchema = z.object({
 	username: usernameSchema,
 	password: passwordSchema,
 });
+
+export type LoginUserDTO = z.infer<typeof LoginUserSchema>;
 
 export const EditUserSchema = z
 	.object({
@@ -73,7 +91,10 @@ export const EditUserSchema = z
 		},
 	);
 
-export type UserResponseDTO = z.infer<typeof UserResponseSchema>;
-export type RegisterUserDTO = z.infer<typeof RegisterUserSchema>;
-export type LoginUserDTO = z.infer<typeof LoginUserSchema>;
 export type EditUserDTO = z.infer<typeof EditUserSchema>;
+
+export const UserParamsSchema = z.object({
+	uuid: z.string().min(1, "UUID is required"),
+});
+
+export type UserParamsDTO = z.infer<typeof UserParamsSchema>;

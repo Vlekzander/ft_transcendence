@@ -8,7 +8,7 @@ import {
 	DuplicateEmailError,
 	DuplicateUsernameError,
 	InvalidCredentialsError,
-} from "./auth.errors";
+} from "../../errors";
 import {
 	getPrismaConstraintFields,
 	userDtoSelect,

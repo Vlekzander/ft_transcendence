@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { errorHandler } from "./middlewares/errorHandler.middleware";
 import { AVATAR_DIR } from "./config/upload.config";
 import authRouter from "./modules/auth/auth.routes";
+import usersRouter from "./modules/users/users.routes";
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
 
@@ -20,7 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use("/auth", authRouter);
-// app.use("/users", usersRouter);
+app.use("/users", usersRouter);
 
 app.get("/", (_req, res) => {
 	res.json({ message: hello("API") });

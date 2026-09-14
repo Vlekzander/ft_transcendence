@@ -3,7 +3,7 @@ import {
 	InvalidFileError,
 	InvalidFileSizeError,
 	InvalidFileTypeError,
-} from "../errors/upload.errors";
+} from "../errors";
 import { NextFunction, Request, Response } from "express";
 import path from "node:path";
 import { AVATAR_DIR } from "../config/upload.config";
