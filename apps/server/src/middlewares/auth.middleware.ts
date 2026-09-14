@@ -35,12 +35,12 @@ export function requireUserOwnership(
 	const { uuid } = req.params;
 	const token = req.cookies?.token;
 
-	if (!token) return false;
+	if (!token) return next(new RequireAuthError());
 	try {
 		const payload = validateAccessToken(token);
 		if (uuid !== payload.sub) return next(new CannotEditUserError());
 		return next();
 	} catch {
-		return false;
+		return next(new RequireAuthError());
 	}
 }

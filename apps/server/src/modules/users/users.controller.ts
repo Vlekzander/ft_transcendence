@@ -185,7 +185,7 @@ export async function updateUser(
 			...userUpdates
 		} = req.parsedBody!;
 
-		const isPasswordValid = sharedService.validateUserPassword(
+		const isPasswordValid = await sharedService.validateUserPassword(
 			uuid,
 			currentPassword,
 		);
@@ -212,7 +212,7 @@ export async function updateAvatar(
 		const avatarPath = file.path.replace(`${AVATAR_DIR}/`, "");
 		const user = await usersService.updateUserAvatar(uuid, avatarPath);
 
-		if (!updateUser) throw new UnknownUserIdError();
+		if (!user) throw new UnknownUserIdError();
 
 		const dto = toUserResponseDTO(user);
 		res.json({ user: dto });
