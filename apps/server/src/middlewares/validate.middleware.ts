@@ -10,7 +10,10 @@ type ValidateOptions = {
 
 type inferZodType<T extends ZodObject> = z.infer<T>;
 
-export type ParsedRequest<T extends ValidateOptions> = Request & {
+export type ParsedRequest<
+	T extends ValidateOptions,
+	FileT = Request["file"],
+> = Request & {
 	parsedBody?: T["body"] extends ZodObject
 		? inferZodType<T["body"]>
 		: unknown;
@@ -20,10 +23,17 @@ export type ParsedRequest<T extends ValidateOptions> = Request & {
 	parsedQuery?: T["query"] extends ZodObject
 		? inferZodType<T["query"]>
 		: unknown;
+	file?: FileT;
 };
 
-export function validate<T extends ValidateOptions>(options: T) {
-	return (req: ParsedRequest<T>, _res: Response, next: NextFunction) => {
+export function validate<T extends ValidateOptions, FileT = undefined>(
+	options: T,
+) {
+	return (
+		req: ParsedRequest<T, FileT>,
+		_res: Response,
+		next: NextFunction,
+	) => {
 		try {
 			if (options.body) {
 				const result = options.body.safeParse(req.body);

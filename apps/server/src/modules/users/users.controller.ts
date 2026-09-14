@@ -2,11 +2,19 @@ import { NextFunction, Response } from "express";
 import { sharedService } from "../shared/shared.service";
 import { toPublicUserDTO, toUserResponseDTO } from "./users.mapper";
 import { ParsedRequest } from "../../middlewares/validate.middleware";
-import { InvalidCredentialsError, UnknownUserIdError } from "../../errors";
+import {
+	InvalidCredentialsError,
+	NoFileUploadError,
+	UnknownUserIdError,
+} from "../../errors";
 import { EditUserSchema, UserParamsSchema } from "@ft_transcendence/shared";
 import { usersService } from "./users.service";
+import { AVATAR_DIR } from "../../config/upload.config";
 
-type GetUserRequest = ParsedRequest<{ params: typeof UserParamsSchema }>;
+type UserRequest = ParsedRequest<
+	{ params: typeof UserParamsSchema },
+	Express.Multer.File
+>;
 
 type UpdateUserRequest = ParsedRequest<{
 	body: typeof EditUserSchema;
@@ -14,7 +22,7 @@ type UpdateUserRequest = ParsedRequest<{
 }>;
 
 export async function getUser(
-	req: GetUserRequest,
+	req: UserRequest,
 	res: Response,
 	next: NextFunction,
 ) {
@@ -52,7 +60,29 @@ export async function updateUser(
 		const user = await usersService.updateUser(uuid, userUpdates);
 		if (!user) throw new UnknownUserIdError();
 		const dto = toUserResponseDTO(user);
-		res.status(200).json({ data: dto });
+		res.status(200).json({ user: dto });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function updateAvatar(
+	req: UserRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+
+		const file = req.file;
+		if (!file) throw new NoFileUploadError();
+		const avatarPath = file.path.replace(`${AVATAR_DIR}/`, "");
+		const user = await usersService.updateUserAvatar(uuid, avatarPath);
+
+		if (!updateUser) throw new UnknownUserIdError();
+
+		const dto = toUserResponseDTO(user);
+		res.json({ user: dto });
 	} catch (err) {
 		next(err);
 	}

@@ -1,3 +1,4 @@
+import { AVATAR_DIR } from "../../config/upload.config";
 import {
 	DuplicateElementError,
 	DuplicateEmailError,
@@ -10,9 +11,11 @@ import { prisma } from "../../lib/prisma.lib";
 import { generateHash } from "../../utils/hash.util";
 import {
 	getPrismaConstraintFields,
+	sharedService,
 	userDtoSelect,
 } from "../shared/shared.service";
 import { UpdateUserInput, UserEntity } from "./users.mapper";
+import fs from "node:fs";
 
 export class UsersService {
 	async updateUser(uuid: string, data: UpdateUserInput): Promise<UserEntity> {
@@ -47,18 +50,30 @@ export class UsersService {
 		}
 	}
 
-	async updateUserAvatarPath(
-		uuid: string,
-		path: string,
-	): Promise<UserEntity> {
+	async updateUserAvatar(uuid: string, path: string): Promise<UserEntity> {
 		try {
-			const result = await prisma.user.update({
+			const user = await sharedService.getUserById(uuid);
+
+			if (!user) throw new UnknownUserIdError();
+
+			const oldAvatarPath = user.avatarPath;
+
+			const updated = await prisma.user.update({
 				where: { uuid: uuid },
 				data: { avatarPath: path },
 				select: userDtoSelect,
 			});
 
-			return result;
+			if (oldAvatarPath) {
+				const oldFullPath = `${AVATAR_DIR}/${oldAvatarPath}`;
+				try {
+					fs.unlinkSync(oldFullPath);
+				} catch (error) {
+					console.error("unlink avatar error:", error);
+				}
+			}
+
+			return updated;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();

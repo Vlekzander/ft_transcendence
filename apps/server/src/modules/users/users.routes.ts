@@ -6,6 +6,7 @@ import {
 	requireAuth,
 	requireUserOwnership,
 } from "../../middlewares/auth.middleware";
+import { uploadAvatar } from "../../middlewares/upload.middleware";
 
 const usersRouter = Router();
 
@@ -21,6 +22,15 @@ usersRouter.patch(
 	requireUserOwnership,
 	validate({ params: UserParamsSchema, body: EditUserSchema }),
 	usersController.updateUser,
+);
+
+usersRouter.post(
+	"/:uuid",
+	requireAuth,
+	requireUserOwnership,
+	uploadAvatar,
+	validate({ params: UserParamsSchema }),
+	usersController.updateAvatar,
 );
 
 export default usersRouter;

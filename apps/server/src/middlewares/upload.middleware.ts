@@ -3,6 +3,7 @@ import {
 	InvalidFileError,
 	InvalidFileSizeError,
 	InvalidFileTypeError,
+	NoFileUploadError,
 } from "../errors";
 import { NextFunction, Request, Response } from "express";
 import path from "node:path";
@@ -37,7 +38,7 @@ const avatar = multer({
 });
 
 export function uploadAvatar(req: Request, res: Response, next: NextFunction) {
-	avatar.single("file")(req, res, (err: unknown) => {
+	avatar.single("file")(req, res, (err) => {
 		if (err instanceof multer.MulterError) {
 			if (err.code === "LIMIT_FILE_SIZE")
 				return next(new InvalidFileSizeError(MAX_FILE_SIZE_MB));
@@ -45,8 +46,8 @@ export function uploadAvatar(req: Request, res: Response, next: NextFunction) {
 				return next(new InvalidFileError("Invalid file error"));
 			return next(err);
 		}
-		console.log(err);
 		if (err) return next(err);
+		if (!req.file) return next(new NoFileUploadError());
 		next();
 	});
 }
