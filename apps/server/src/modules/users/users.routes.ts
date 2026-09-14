@@ -8,6 +8,9 @@ import {
 } from "../../middlewares/auth.middleware";
 import { uploadAvatar } from "../../middlewares/upload.middleware";
 
+//TODO: REMOVE
+import { prisma } from "../../lib/prisma.lib";
+
 const usersRouter = Router();
 
 usersRouter.get(
@@ -56,5 +59,16 @@ usersRouter.get(
 	validate({ params: UserParamsSchema }),
 	usersController.getUserFriends,
 );
+
+//TODO: REMOVE
+usersRouter.get("/:uuid/fillhistory", async (req, res) => {
+	const uuid = req.params.uuid;
+
+	const game = await prisma.game.create({ data: { status: "FINISHED" } });
+	await prisma.userOnGame.create({
+		data: { gameId: game.uuid, userId: uuid },
+	});
+	res.status(200).json({ game });
+});
 
 export default usersRouter;
