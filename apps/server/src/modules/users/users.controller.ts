@@ -191,7 +191,7 @@ export async function updateUser(
 		);
 		if (!isPasswordValid) throw new InvalidCredentialsError();
 		const user = await usersService.updateUser(uuid, userUpdates);
-		if (!user) throw new UnknownUserIdError();
+
 		const dto = toUserResponseDTO(user);
 		res.status(200).json({ user: dto });
 	} catch (err) {
@@ -211,8 +211,6 @@ export async function updateAvatar(
 		if (!file) throw new NoFileUploadError();
 		const avatarPath = file.path.replace(`${AVATAR_DIR}/`, "");
 		const user = await usersService.updateUserAvatar(uuid, avatarPath);
-
-		if (!user) throw new UnknownUserIdError();
 
 		const dto = toUserResponseDTO(user);
 		res.json({ user: dto });
