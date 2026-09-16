@@ -1,3 +1,4 @@
+import { isUserOnline } from "@/websocket.server";
 import { AVATAR_DIR } from "../../config/upload.config";
 import {
 	DuplicateElementError,
@@ -58,6 +59,7 @@ export class UsersService {
 							uuid: p.user.uuid,
 							username: p.user.username,
 							avatarPath: p.user.avatarPath,
+							online: isUserOnline(p.user.uuid),
 						},
 					})),
 				}));

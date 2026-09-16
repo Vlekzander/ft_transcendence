@@ -58,6 +58,7 @@ const publicUserDTO = {
 	uuid: "user-uuid",
 	username: "user",
 	avatarPath: null,
+	online: false,
 };
 
 const userResponseDTO = {

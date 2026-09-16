@@ -42,6 +42,13 @@ export class InvalidIdError extends InvalidElementError {
 	}
 }
 
+export class InvalidJWTError extends InvalidElementError {
+	constructor() {
+		super("JWT");
+		this.name = "InvalidJWTError";
+	}
+}
+
 export class AlreadyAuthError extends AppDomainError {
 	constructor() {
 		super("Already authenticated");

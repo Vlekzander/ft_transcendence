@@ -149,6 +149,7 @@ describe("users/users.service", () => {
 								uuid: "user-uuid",
 								username: "user",
 								avatarPath: "avatar.png",
+								online: false,
 							},
 						},
 					],

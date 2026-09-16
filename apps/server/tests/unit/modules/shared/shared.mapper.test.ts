@@ -40,6 +40,7 @@ describe("shared/shared.mapper", () => {
 			uuid: user.uuid,
 			username: user.username,
 			avatarPath: user.avatarPath,
+			online: false,
 		});
 	});
 });

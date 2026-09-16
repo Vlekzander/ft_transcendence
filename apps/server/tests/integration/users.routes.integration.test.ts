@@ -50,6 +50,7 @@ describe("users routes", () => {
 					uuid: userUuid,
 					username: "user",
 					avatarPath: null,
+					online: false,
 				},
 			});
 		});

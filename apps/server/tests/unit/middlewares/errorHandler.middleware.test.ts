@@ -131,6 +131,9 @@ describe("middlewares/errorHandler.middleware", () => {
 
 		it("Maps unknown errors to the internal server error response", () => {
 			// Arrange
+			const consoleError = vi
+				.spyOn(console, "error")
+				.mockImplementation(() => undefined);
 			const error = new Error("Database failure");
 
 			// Act
@@ -142,6 +145,7 @@ describe("middlewares/errorHandler.middleware", () => {
 				code: "InternalServerError",
 				message: "Internal server error",
 			});
+			expect(consoleError).toHaveBeenCalled();
 		});
 	});
 

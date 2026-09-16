@@ -15,6 +15,7 @@ export const PublicUserSchema = z.object({
 	uuid: z.string(),
 	username: z.string(),
 	avatarPath: z.string().nullable(),
+	online: z.boolean(),
 });
 
 export type PublicUserDTO = z.infer<typeof PublicUserSchema>;
