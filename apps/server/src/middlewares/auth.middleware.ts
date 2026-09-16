@@ -11,7 +11,8 @@ function isAuthenticated(req: Request): boolean {
 
 	if (!token) return false;
 	try {
-		return token && validateAccessToken(token);
+		validateAccessToken(token);
+		return true;
 	} catch {
 		return false;
 	}

@@ -37,10 +37,17 @@ lint:
 format:
 	npm run format
 
-test: test-up
+test:
+	@$(DOCKER) --env-file .env.test -f test-compose.yml run --rm backend npm run test
+
+test-coverage:
+	@$(DOCKER) --env-file .env.test -f test-compose.yml run --rm backend npm run test:coverage
+
+test-unit:
+	@$(DOCKER) --env-file .env.test -f test-compose.yml run --rm backend npm run test:unit
 	
-test-up:
-	@$(DOCKER) --env-file .env.test -f test-compose.yml run --rm backend npx vitest --maxWorkers=1 --watch
+test-integration:
+	@$(DOCKER) --env-file .env.test -f test-compose.yml run --rm backend npm run test:integration
 
 test-down:
 	-@$(DOCKER) --env-file .env.test -f test-compose.yml down
@@ -54,4 +61,4 @@ secrets:
 	@export DB_PASSWORD='$(P_DB_PASSWORD)'; echo "$$DB_PASSWORD" > ./docker/secrets/db_password.txt
 	@export JWT_SECRET='$(P_JWT_SECRET)'; echo "$$JWT_SECRET" > ./docker/secrets/jwt_secret.txt
 
-.PHONY: all build up down logs clean re status lint format test test-up test-down test-logs secrets
+.PHONY: all build up down logs clean re status lint format test test-coverage test-unit test-integration test-down test-logs secrets
