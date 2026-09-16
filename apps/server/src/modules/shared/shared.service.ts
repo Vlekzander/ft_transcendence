@@ -33,15 +33,6 @@ export const userDtoSelect = {
 	createdAt: true,
 } as const;
 
-export async function getUserById(uuid: string): Promise<UserEntity | null> {
-	const result = await prisma.user.findUnique({
-		where: { uuid: uuid },
-		select: userDtoSelect,
-	});
-
-	return result;
-}
-
 export class SharedService {
 	async getUserById(uuid: string): Promise<UserEntity | null> {
 		try {
