@@ -9,10 +9,10 @@
 		"build": "tsc && tsc-alias",
 		"start": "node dist/server.js",
 		"lint": "eslint .",
-		"test": "vitest run",
-		"test:coverage": "vitest run --coverage",
-		"test:unit": "vitest run tests/unit",
-		"test:integration": "vitest run tests/integration",
+		"test": "vitest run --maxWorkers=1 --watch",
+		"test:coverage": "vitest run --coverage --maxWorkers=1 --watch",
+		"test:unit": "vitest run tests/unit --watch",
+		"test:integration": "vitest run tests/integration --maxWorkers=1 --watch",
 		"postinstall": "prisma generate || true"
 	},
 	"dependencies": {
