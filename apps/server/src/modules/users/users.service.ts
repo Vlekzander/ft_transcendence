@@ -20,7 +20,13 @@ import {
 	sharedService,
 	userDtoSelect,
 } from "../shared/shared.service";
-import { GameHistoryEntry, UpdateUserInput, UserEntity } from "./users.mapper";
+import {
+	FriendshipEntity,
+	GameHistoryEntry,
+	ReceivedRequestEntity,
+	UpdateUserInput,
+	UserEntity,
+} from "./users.mapper";
 import fs from "node:fs";
 
 export class UsersService {
@@ -145,31 +151,31 @@ export class UsersService {
 
 	async getFriendships(uuid: string) {
 		try {
-			const friendships = await prisma.friendship.findMany({
+			const result = await prisma.friendship.findMany({
 				where: {
 					status: "ACCEPTED",
 					OR: [{ senderId: uuid }, { receiverId: uuid }],
 				},
 				include: {
 					sender: {
-						select: {
-							uuid: true,
-							username: true,
-							avatarPath: true,
-						},
+						select: userDtoSelect,
 					},
 					receiver: {
-						select: {
-							uuid: true,
-							username: true,
-							avatarPath: true,
-						},
+						select: userDtoSelect,
 					},
 				},
 				orderBy: {
 					uuid: "desc",
 				},
 			});
+
+			const friendships: FriendshipEntity[] = result.map((element) => ({
+				uuid: element.uuid,
+				user:
+					uuid === element.senderId
+						? element.receiver
+						: element.sender,
+			}));
 
 			return friendships;
 		} catch (error) {
@@ -183,24 +189,25 @@ export class UsersService {
 
 	async getPendingFriendRequest(uuid: string) {
 		try {
-			const requests = await prisma.friendship.findMany({
+			const result = await prisma.friendship.findMany({
 				where: {
 					status: "PENDING",
 					OR: [{ receiverId: uuid }],
 				},
 				include: {
 					sender: {
-						select: {
-							uuid: true,
-							username: true,
-							avatarPath: true,
-						},
+						select: userDtoSelect,
 					},
 				},
 				orderBy: {
 					uuid: "desc",
 				},
 			});
+
+			const requests: ReceivedRequestEntity[] = result.map((element) => ({
+				uuid: element.uuid,
+				sender: element.sender,
+			}));
 
 			return requests;
 		} catch (error) {

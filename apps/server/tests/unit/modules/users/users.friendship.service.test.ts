@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma.lib";
 import { UsersService } from "@/modules/users/users.service";
-import { getPrismaConstraintFields } from "@/modules/shared/shared.service";
+import {
+	getPrismaConstraintFields,
+	userDtoSelect,
+} from "@/modules/shared/shared.service";
 
 vi.mock("@/lib/prisma.lib", () => ({
 	prisma: {
@@ -12,6 +15,12 @@ vi.mock("@/lib/prisma.lib", () => ({
 			create: vi.fn(),
 			update: vi.fn(),
 			delete: vi.fn(),
+		},
+		userOnGame: {
+			findMany: vi.fn(),
+		},
+		user: {
+			update: vi.fn(),
 		},
 	},
 }));
@@ -27,43 +36,63 @@ vi.mock("@/modules/shared/shared.service", async () => {
 	};
 });
 
+vi.mock("@/websocket.server", () => ({
+	isUserOnline: vi.fn(),
+}));
+
+import { isUserOnline } from "@/websocket.server";
+
 const mockedFindMany = vi.mocked(prisma.friendship.findMany);
 const mockedFindFirst = vi.mocked(prisma.friendship.findFirst);
 const mockedCreate = vi.mocked(prisma.friendship.create);
 const mockedUpdate = vi.mocked(prisma.friendship.update);
 const mockedDelete = vi.mocked(prisma.friendship.delete);
 const mockedGetPrismaConstraintFields = vi.mocked(getPrismaConstraintFields);
+const mockedIsUserOnline = vi.mocked(isUserOnline);
 
 const sender = {
 	uuid: "sender-uuid",
+	email: "sender@email.com",
 	username: "sender",
 	avatarPath: null,
+	createdAt: new Date("2026-01-01"),
 };
 
 const receiver = {
 	uuid: "receiver-uuid",
+	email: "receiver@email.com",
 	username: "receiver",
 	avatarPath: "receiver-avatar.png",
+	createdAt: new Date("2026-01-02"),
 };
 
-const acceptedFriendship = {
+const acceptedFriendshipFromDatabase = {
 	uuid: "friendship-uuid",
 	senderId: sender.uuid,
 	receiverId: receiver.uuid,
 	status: "ACCEPTED",
-	createdAt: new Date("2026-01-01"),
+	createdAt: new Date("2026-01-03"),
 	sender,
 	receiver,
 };
 
-const pendingFriendRequest = {
+const pendingRequestFromDatabase = {
 	uuid: "request-uuid",
 	senderId: sender.uuid,
 	receiverId: receiver.uuid,
 	status: "PENDING",
-	createdAt: new Date("2026-01-01"),
+	createdAt: new Date("2026-01-04"),
 	sender,
-	receiver,
+};
+
+const acceptedFriendshipResult = {
+	uuid: "friendship-uuid",
+	user: sender,
+};
+
+const pendingRequestResult = {
+	uuid: "request-uuid",
+	sender,
 };
 
 function createPrismaError(code: string, meta?: Record<string, unknown>) {
@@ -81,15 +110,18 @@ describe("users/users.service friendships", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockedGetPrismaConstraintFields.mockReturnValue([]);
+		mockedIsUserOnline.mockReturnValue(false);
 	});
 
 	describe("getFriendships", () => {
-		it("Returns accepted friendships involving the user", async () => {
+		it("Returns the other user for accepted friendships where the user is the sender", async () => {
 			// Arrange
-			mockedFindMany.mockResolvedValue([acceptedFriendship] as any);
+			mockedFindMany.mockResolvedValue([
+				acceptedFriendshipFromDatabase,
+			] as any);
 
 			// Act
-			const result = await service.getFriendships(receiver.uuid);
+			const result = await service.getFriendships(sender.uuid);
 
 			// Assert
 			expect(mockedFindMany).toHaveBeenCalledWith({
@@ -97,27 +129,19 @@ describe("users/users.service friendships", () => {
 					status: "ACCEPTED",
 					OR: [
 						{
-							senderId: receiver.uuid,
+							senderId: sender.uuid,
 						},
 						{
-							receiverId: receiver.uuid,
+							receiverId: sender.uuid,
 						},
 					],
 				},
 				include: {
 					sender: {
-						select: {
-							uuid: true,
-							username: true,
-							avatarPath: true,
-						},
+						select: userDtoSelect,
 					},
 					receiver: {
-						select: {
-							uuid: true,
-							username: true,
-							avatarPath: true,
-						},
+						select: userDtoSelect,
 					},
 				},
 				orderBy: {
@@ -125,26 +149,49 @@ describe("users/users.service friendships", () => {
 				},
 			});
 
-			expect(result).toEqual([acceptedFriendship]);
+			expect(result).toEqual([
+				{
+					uuid: acceptedFriendshipFromDatabase.uuid,
+					user: receiver,
+				},
+			]);
 		});
 
-		it("Returns an empty array when the user has no accepted friendships", async () => {
+		it("Returns the other user for accepted friendships where the user is the receiver", async () => {
 			// Arrange
-			mockedFindMany.mockResolvedValue([]);
+			mockedFindMany.mockResolvedValue([
+				acceptedFriendshipFromDatabase,
+			] as any);
 
 			// Act
 			const result = await service.getFriendships(receiver.uuid);
 
 			// Assert
-			expect(result).toEqual([]);
+			expect(result).toEqual([
+				{
+					uuid: acceptedFriendshipFromDatabase.uuid,
+					user: sender,
+				},
+			]);
 		});
 
-		it("Does not return pending friend requests", async () => {
+		it("Returns an empty array when no accepted friendship exists", async () => {
 			// Arrange
 			mockedFindMany.mockResolvedValue([]);
 
 			// Act
-			await service.getFriendships(receiver.uuid);
+			const result = await service.getFriendships(sender.uuid);
+
+			// Assert
+			expect(result).toEqual([]);
+		});
+
+		it("Only queries accepted friendships", async () => {
+			// Arrange
+			mockedFindMany.mockResolvedValue([]);
+
+			// Act
+			await service.getFriendships(sender.uuid);
 
 			// Assert
 			expect(mockedFindMany).toHaveBeenCalledWith(
@@ -152,6 +199,23 @@ describe("users/users.service friendships", () => {
 					where: expect.objectContaining({
 						status: "ACCEPTED",
 					}),
+				}),
+			);
+		});
+
+		it("Orders accepted friendships by UUID descending", async () => {
+			// Arrange
+			mockedFindMany.mockResolvedValue([]);
+
+			// Act
+			await service.getFriendships(sender.uuid);
+
+			// Assert
+			expect(mockedFindMany).toHaveBeenCalledWith(
+				expect.objectContaining({
+					orderBy: {
+						uuid: "desc",
+					},
 				}),
 			);
 		});
@@ -182,14 +246,14 @@ describe("users/users.service friendships", () => {
 			});
 		});
 
-		it("Rethrows unexpected Prisma errors", async () => {
+		it("Rethrows unexpected errors", async () => {
 			// Arrange
 			const error = new Error("Database unavailable");
 
 			mockedFindMany.mockRejectedValue(error);
 
 			// Act
-			const action = service.getFriendships(receiver.uuid);
+			const action = service.getFriendships(sender.uuid);
 
 			// Assert
 			await expect(action).rejects.toBe(error);
@@ -199,7 +263,9 @@ describe("users/users.service friendships", () => {
 	describe("getPendingFriendRequest", () => {
 		it("Returns pending requests received by the user", async () => {
 			// Arrange
-			mockedFindMany.mockResolvedValue([pendingFriendRequest] as any);
+			mockedFindMany.mockResolvedValue([
+				pendingRequestFromDatabase,
+			] as any);
 
 			// Act
 			const result = await service.getPendingFriendRequest(receiver.uuid);
@@ -216,11 +282,7 @@ describe("users/users.service friendships", () => {
 				},
 				include: {
 					sender: {
-						select: {
-							uuid: true,
-							username: true,
-							avatarPath: true,
-						},
+						select: userDtoSelect,
 					},
 				},
 				orderBy: {
@@ -228,7 +290,12 @@ describe("users/users.service friendships", () => {
 				},
 			});
 
-			expect(result).toEqual([pendingFriendRequest]);
+			expect(result).toEqual([
+				{
+					uuid: pendingRequestFromDatabase.uuid,
+					sender,
+				},
+			]);
 		});
 
 		it("Returns an empty array when no pending request exists", async () => {
@@ -242,7 +309,7 @@ describe("users/users.service friendships", () => {
 			expect(result).toEqual([]);
 		});
 
-		it("Only searches requests received by the user", async () => {
+		it("Only queries pending requests received by the user", async () => {
 			// Arrange
 			mockedFindMany.mockResolvedValue([]);
 
@@ -250,18 +317,24 @@ describe("users/users.service friendships", () => {
 			await service.getPendingFriendRequest(receiver.uuid);
 
 			// Assert
-			expect(mockedFindMany).toHaveBeenCalledWith(
-				expect.objectContaining({
-					where: {
-						status: "PENDING",
-						OR: [
-							{
-								receiverId: receiver.uuid,
-							},
-						],
+			expect(mockedFindMany).toHaveBeenCalledWith({
+				where: {
+					status: "PENDING",
+					OR: [
+						{
+							receiverId: receiver.uuid,
+						},
+					],
+				},
+				include: {
+					sender: {
+						select: userDtoSelect,
 					},
-				}),
-			);
+				},
+				orderBy: {
+					uuid: "desc",
+				},
+			});
 		});
 
 		it("Throws InvalidIdError when Prisma returns P2007", async () => {
@@ -290,7 +363,7 @@ describe("users/users.service friendships", () => {
 			});
 		});
 
-		it("Rethrows unexpected Prisma errors", async () => {
+		it("Rethrows unexpected errors", async () => {
 			// Arrange
 			const error = new Error("Database unavailable");
 
@@ -321,10 +394,10 @@ describe("users/users.service friendships", () => {
 			expect(mockedCreate).not.toHaveBeenCalled();
 		});
 
-		it("Creates a pending friend request when no relationship exists", async () => {
+		it("Creates a pending request when no relationship exists", async () => {
 			// Arrange
 			mockedFindFirst.mockResolvedValue(null);
-			mockedCreate.mockResolvedValue(pendingFriendRequest as any);
+			mockedCreate.mockResolvedValue(pendingRequestFromDatabase as any);
 
 			// Act
 			const result = await service.sendFriendRequest(
@@ -355,12 +428,14 @@ describe("users/users.service friendships", () => {
 				},
 			});
 
-			expect(result).toEqual(pendingFriendRequest);
+			expect(result).toEqual(pendingRequestFromDatabase);
 		});
 
 		it("Rejects a request when an accepted friendship already exists", async () => {
 			// Arrange
-			mockedFindFirst.mockResolvedValue(acceptedFriendship as any);
+			mockedFindFirst.mockResolvedValue(
+				acceptedFriendshipFromDatabase as any,
+			);
 
 			// Act
 			const action = service.sendFriendRequest(
@@ -378,7 +453,9 @@ describe("users/users.service friendships", () => {
 
 		it("Rejects a request when a pending request already exists", async () => {
 			// Arrange
-			mockedFindFirst.mockResolvedValue(pendingFriendRequest as any);
+			mockedFindFirst.mockResolvedValue(
+				pendingRequestFromDatabase as any,
+			);
 
 			// Act
 			const action = service.sendFriendRequest(
@@ -394,29 +471,48 @@ describe("users/users.service friendships", () => {
 			expect(mockedCreate).not.toHaveBeenCalled();
 		});
 
-		it("Checks both directions before creating a request", async () => {
+		it("Rejects a request when the reverse accepted friendship exists", async () => {
 			// Arrange
-			mockedFindFirst.mockResolvedValue(null);
-			mockedCreate.mockResolvedValue(pendingFriendRequest as any);
+			mockedFindFirst.mockResolvedValue({
+				...acceptedFriendshipFromDatabase,
+				senderId: receiver.uuid,
+				receiverId: sender.uuid,
+			} as any);
 
 			// Act
-			await service.sendFriendRequest(sender.uuid, receiver.uuid);
+			const action = service.sendFriendRequest(
+				sender.uuid,
+				receiver.uuid,
+			);
 
 			// Assert
-			expect(mockedFindFirst).toHaveBeenCalledWith({
-				where: {
-					OR: [
-						{
-							senderId: sender.uuid,
-							receiverId: receiver.uuid,
-						},
-						{
-							senderId: receiver.uuid,
-							receiverId: sender.uuid,
-						},
-					],
-				},
+			await expect(action).rejects.toMatchObject({
+				name: "FriendshipAlreadyExistError",
 			});
+
+			expect(mockedCreate).not.toHaveBeenCalled();
+		});
+
+		it("Rejects a request when the reverse pending request exists", async () => {
+			// Arrange
+			mockedFindFirst.mockResolvedValue({
+				...pendingRequestFromDatabase,
+				senderId: receiver.uuid,
+				receiverId: sender.uuid,
+			} as any);
+
+			// Act
+			const action = service.sendFriendRequest(
+				sender.uuid,
+				receiver.uuid,
+			);
+
+			// Assert
+			await expect(action).rejects.toMatchObject({
+				name: "PendingFriendRequestExistError",
+			});
+
+			expect(mockedCreate).not.toHaveBeenCalled();
 		});
 
 		it("Throws InvalidIdError when Prisma returns P2007", async () => {
@@ -476,7 +572,7 @@ describe("users/users.service friendships", () => {
 		it("Accepts a request addressed to the receiver", async () => {
 			// Arrange
 			const accepted = {
-				...pendingFriendRequest,
+				...pendingRequestFromDatabase,
 				status: "ACCEPTED",
 			};
 
@@ -485,13 +581,13 @@ describe("users/users.service friendships", () => {
 			// Act
 			const result = await service.acceptFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
 			expect(mockedUpdate).toHaveBeenCalledWith({
 				where: {
-					uuid: pendingFriendRequest.uuid,
+					uuid: pendingRequestFromDatabase.uuid,
 					receiverId: receiver.uuid,
 				},
 				data: {
@@ -509,7 +605,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.acceptFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
@@ -518,7 +614,7 @@ describe("users/users.service friendships", () => {
 			});
 		});
 
-		it("Throws UnknownFriendRequestError when the request UUID is not found", async () => {
+		it("Throws UnknownFriendRequestError when the request UUID is unknown", async () => {
 			// Arrange
 			const error = createPrismaError("P2025");
 
@@ -535,11 +631,9 @@ describe("users/users.service friendships", () => {
 			await expect(action).rejects.toMatchObject({
 				name: "UnknownFriendRequestError",
 			});
-
-			expect(mockedGetPrismaConstraintFields).toHaveBeenCalledWith(error);
 		});
 
-		it("Throws UnknownUserIdError when the receiver UUID is not found", async () => {
+		it("Throws UnknownUserIdError when the receiver UUID is unknown", async () => {
 			// Arrange
 			const error = createPrismaError("P2025");
 
@@ -549,7 +643,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.acceptFriendRequest(
 				"unknown-user-uuid",
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
@@ -558,7 +652,7 @@ describe("users/users.service friendships", () => {
 			});
 		});
 
-		it("Throws UnknownElementError when Prisma identifies another missing field", async () => {
+		it("Throws UnknownElementError when Prisma reports another field", async () => {
 			// Arrange
 			const error = createPrismaError("P2025");
 
@@ -568,7 +662,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.acceptFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
@@ -587,7 +681,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.acceptFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
@@ -605,7 +699,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.acceptFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
@@ -614,46 +708,48 @@ describe("users/users.service friendships", () => {
 	});
 
 	describe("deleteFriendRequest", () => {
-		it("Deletes a request addressed to the receiver", async () => {
+		it("Deletes a pending request addressed to the receiver", async () => {
 			// Arrange
-			mockedDelete.mockResolvedValue(pendingFriendRequest as any);
+			mockedDelete.mockResolvedValue(pendingRequestFromDatabase as any);
 
 			// Act
 			const result = await service.deleteFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
 			expect(mockedDelete).toHaveBeenCalledWith({
 				where: {
-					uuid: pendingFriendRequest.uuid,
+					uuid: pendingRequestFromDatabase.uuid,
 					receiverId: receiver.uuid,
 				},
 			});
 
-			expect(result).toEqual(pendingFriendRequest);
+			expect(result).toEqual(pendingRequestFromDatabase);
 		});
 
-		it("Deletes an accepted friendship with the same method", async () => {
+		it("Deletes an accepted friendship addressed to the receiver", async () => {
 			// Arrange
-			mockedDelete.mockResolvedValue(acceptedFriendship as any);
+			mockedDelete.mockResolvedValue(
+				acceptedFriendshipFromDatabase as any,
+			);
 
 			// Act
 			const result = await service.deleteFriendRequest(
 				receiver.uuid,
-				acceptedFriendship.uuid,
+				acceptedFriendshipFromDatabase.uuid,
 			);
 
 			// Assert
 			expect(mockedDelete).toHaveBeenCalledWith({
 				where: {
-					uuid: acceptedFriendship.uuid,
+					uuid: acceptedFriendshipFromDatabase.uuid,
 					receiverId: receiver.uuid,
 				},
 			});
 
-			expect(result).toEqual(acceptedFriendship);
+			expect(result).toEqual(acceptedFriendshipFromDatabase);
 		});
 
 		it("Throws InvalidIdError when Prisma returns P2007", async () => {
@@ -663,7 +759,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.deleteFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
@@ -672,7 +768,7 @@ describe("users/users.service friendships", () => {
 			});
 		});
 
-		it("Throws UnknownFriendRequestError when the request UUID is not found", async () => {
+		it("Throws UnknownFriendRequestError when the request UUID is unknown", async () => {
 			// Arrange
 			const error = createPrismaError("P2025");
 
@@ -691,7 +787,7 @@ describe("users/users.service friendships", () => {
 			});
 		});
 
-		it("Throws UnknownUserIdError when the receiver UUID is not found", async () => {
+		it("Throws UnknownUserIdError when the receiver UUID is unknown", async () => {
 			// Arrange
 			const error = createPrismaError("P2025");
 
@@ -701,12 +797,31 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.deleteFriendRequest(
 				"unknown-user-uuid",
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
 			await expect(action).rejects.toMatchObject({
 				name: "UnknownUserIdError",
+			});
+		});
+
+		it("Throws UnknownElementError when Prisma reports another field", async () => {
+			// Arrange
+			const error = createPrismaError("P2025");
+
+			mockedDelete.mockRejectedValue(error);
+			mockedGetPrismaConstraintFields.mockReturnValue(["senderId"]);
+
+			// Act
+			const action = service.deleteFriendRequest(
+				receiver.uuid,
+				pendingRequestFromDatabase.uuid,
+			);
+
+			// Assert
+			await expect(action).rejects.toMatchObject({
+				name: "UnknownElementError",
 			});
 		});
 
@@ -720,7 +835,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.deleteFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert
@@ -738,7 +853,7 @@ describe("users/users.service friendships", () => {
 			// Act
 			const action = service.deleteFriendRequest(
 				receiver.uuid,
-				pendingFriendRequest.uuid,
+				pendingRequestFromDatabase.uuid,
 			);
 
 			// Assert

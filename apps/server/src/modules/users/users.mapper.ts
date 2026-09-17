@@ -1,3 +1,5 @@
+import { UserEntity } from "./users.mapper";
+
 export {
 	type UserEntity,
 	toUserResponseDTO,
@@ -17,3 +19,18 @@ export interface UpdateUserInput {
 	username?: string;
 	password?: string;
 }
+
+export type FriendshipEntity = {
+	uuid: string;
+	user: UserEntity;
+};
+
+export type SentRequestEntity = {
+	uuid: string;
+	receiver: UserEntity;
+};
+
+export type ReceivedRequestEntity = {
+	uuid: string;
+	sender: UserEntity;
+};
