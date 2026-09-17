@@ -20,13 +20,7 @@ import {
 	sharedService,
 	userDtoSelect,
 } from "../shared/shared.service";
-import {
-	FriendshipEntity,
-	GameHistoryEntry,
-	ReceivedRequestEntity,
-	UpdateUserInput,
-	UserEntity,
-} from "./users.mapper";
+import { GameHistoryEntry, UpdateUserInput, UserEntity } from "./users.mapper";
 import fs from "node:fs";
 
 export class UsersService {
@@ -151,6 +145,8 @@ export class UsersService {
 
 	async getFriendships(uuid: string) {
 		try {
+			if ((await sharedService.getUserById(uuid)) === null)
+				throw new UnknownUserIdError();
 			const result = await prisma.friendship.findMany({
 				where: {
 					status: "ACCEPTED",
@@ -169,7 +165,7 @@ export class UsersService {
 				},
 			});
 
-			const friendships: FriendshipEntity[] = result.map((element) => ({
+			const friendships = result.map((element) => ({
 				uuid: element.uuid,
 				user:
 					uuid === element.senderId
@@ -187,7 +183,7 @@ export class UsersService {
 		}
 	}
 
-	async getPendingFriendRequest(uuid: string) {
+	async getPendingFriendRequests(uuid: string) {
 		try {
 			const result = await prisma.friendship.findMany({
 				where: {
@@ -204,7 +200,7 @@ export class UsersService {
 				},
 			});
 
-			const requests: ReceivedRequestEntity[] = result.map((element) => ({
+			const requests = result.map((element) => ({
 				uuid: element.uuid,
 				sender: element.sender,
 			}));
@@ -242,6 +238,11 @@ export class UsersService {
 					senderId: uuid,
 					receiverId: receiverUuid,
 				},
+				include: {
+					receiver: {
+						select: userDtoSelect,
+					},
+				},
 			});
 
 			return result;
@@ -259,9 +260,22 @@ export class UsersService {
 			const result = await prisma.friendship.update({
 				where: { uuid: requestUuid, receiverId: uuid },
 				data: { status: "ACCEPTED" },
+				include: {
+					sender: {
+						select: userDtoSelect,
+					},
+					receiver: {
+						select: userDtoSelect,
+					},
+				},
 			});
 
-			return result;
+			const friendship = {
+				uuid: result.uuid,
+				user: result.sender,
+			};
+
+			return friendship;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();
@@ -272,7 +286,7 @@ export class UsersService {
 					if (fields.includes("receiverId"))
 						throw new UnknownUserIdError();
 					if (fields.length) throw new UnknownElementError(fields[0]);
-					throw new UnknownElementError("Unknown");
+					throw new UnknownFriendRequestError();
 				}
 			}
 			throw error;
@@ -296,7 +310,7 @@ export class UsersService {
 					if (fields.includes("receiverId"))
 						throw new UnknownUserIdError();
 					if (fields.length) throw new UnknownElementError(fields[0]);
-					throw new UnknownElementError("Unknown");
+					throw new UnknownFriendRequestError();
 				}
 			}
 			throw error;

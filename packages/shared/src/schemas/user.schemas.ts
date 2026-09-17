@@ -20,14 +20,28 @@ export const PublicUserSchema = z.object({
 
 export type PublicUserDTO = z.infer<typeof PublicUserSchema>;
 
-export const FriendshipResponseSchema = z.object({
-	sender: PublicUserSchema,
-	receiver: PublicUserSchema,
-	status: z.enum(["PENDING", "ACCEPTED"]),
-	createdAt: z.date(),
+export const FriendshipSchema = z.object({
+	uuid: z.string(),
+	user: PublicUserSchema,
 });
 
-export type FriendshipResponseDTO = z.infer<typeof FriendshipResponseSchema>;
+export type FriendshipDTO = z.infer<typeof FriendshipSchema>;
+
+export const PendingFriendRequestSchema = z.object({
+	uuid: z.string(),
+	sender: PublicUserSchema,
+});
+
+export type PendingFriendRequestDTO = z.infer<
+	typeof PendingFriendRequestSchema
+>;
+
+export const SentFriendRequestSchema = z.object({
+	uuid: z.string(),
+	receiver: PublicUserSchema,
+});
+
+export type SentFriendRequestDTO = z.infer<typeof SentFriendRequestSchema>;
 
 // INPUTS SCHEMAS
 
