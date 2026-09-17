@@ -20,6 +20,15 @@ export const PublicUserSchema = z.object({
 
 export type PublicUserDTO = z.infer<typeof PublicUserSchema>;
 
+export const FriendshipResponseSchema = z.object({
+	sender: PublicUserSchema,
+	receiver: PublicUserSchema,
+	status: z.enum(["PENDING", "ACCEPTED"]),
+	createdAt: z.date(),
+});
+
+export type FriendshipResponseDTO = z.infer<typeof FriendshipResponseSchema>;
+
 // INPUTS SCHEMAS
 
 const emailSchema = z.email("Invalid email address");
@@ -99,3 +108,15 @@ export const UserParamsSchema = z.object({
 });
 
 export type UserParamsDTO = z.infer<typeof UserParamsSchema>;
+
+export const CreateFriendshipSchema = z.object({
+	receiverId: z.string(),
+});
+
+export type CreateFriendshipDTO = z.infer<typeof CreateFriendshipSchema>;
+
+export const EditFriendshipSchema = z.object({
+	requestId: z.string(),
+});
+
+export type EditFriendshipDTO = z.infer<typeof CreateFriendshipSchema>;

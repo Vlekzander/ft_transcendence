@@ -4,7 +4,12 @@ import {
 	DuplicateElementError,
 	DuplicateEmailError,
 	DuplicateUsernameError,
+	FriendshipAlreadyExistError,
 	InvalidIdError,
+	PendingFriendRequestExistError,
+	SelfFriendRequestError,
+	UnknownElementError,
+	UnknownFriendRequestError,
 	UnknownUserIdError,
 } from "../../errors";
 import { Prisma } from "../../generated/prisma/client";
@@ -133,6 +138,159 @@ export class UsersService {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();
 				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
+	async getFriendships(uuid: string) {
+		try {
+			const friendships = await prisma.friendship.findMany({
+				where: {
+					status: "ACCEPTED",
+					OR: [{ senderId: uuid }, { receiverId: uuid }],
+				},
+				include: {
+					sender: {
+						select: {
+							uuid: true,
+							username: true,
+							avatarPath: true,
+						},
+					},
+					receiver: {
+						select: {
+							uuid: true,
+							username: true,
+							avatarPath: true,
+						},
+					},
+				},
+				orderBy: {
+					uuid: "desc",
+				},
+			});
+
+			return friendships;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
+	async getPendingFriendRequest(uuid: string) {
+		try {
+			const requests = await prisma.friendship.findMany({
+				where: {
+					status: "PENDING",
+					OR: [{ receiverId: uuid }],
+				},
+				include: {
+					sender: {
+						select: {
+							uuid: true,
+							username: true,
+							avatarPath: true,
+						},
+					},
+				},
+				orderBy: {
+					uuid: "desc",
+				},
+			});
+
+			return requests;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
+	async sendFriendRequest(uuid: string, receiverUuid: string) {
+		try {
+			if (uuid === receiverUuid) throw new SelfFriendRequestError();
+
+			const existing = await prisma.friendship.findFirst({
+				where: {
+					OR: [
+						{ senderId: uuid, receiverId: receiverUuid },
+						{ senderId: receiverUuid, receiverId: uuid },
+					],
+				},
+			});
+
+			if (existing)
+				throw existing.status === "ACCEPTED"
+					? new FriendshipAlreadyExistError()
+					: new PendingFriendRequestExistError();
+
+			const result = await prisma.friendship.create({
+				data: {
+					senderId: uuid,
+					receiverId: receiverUuid,
+				},
+			});
+
+			return result;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
+	async acceptFriendRequest(uuid: string, requestUuid: string) {
+		try {
+			const result = await prisma.friendship.update({
+				where: { uuid: requestUuid, receiverId: uuid },
+				data: { status: "ACCEPTED" },
+			});
+
+			return result;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") {
+					const fields = getPrismaConstraintFields(error);
+					if (fields.includes("uuid"))
+						throw new UnknownFriendRequestError();
+					if (fields.includes("receiverId"))
+						throw new UnknownUserIdError();
+					if (fields.length) throw new UnknownElementError(fields[0]);
+					throw new UnknownElementError("Unknown");
+				}
+			}
+			throw error;
+		}
+	}
+
+	async deleteFriendRequest(uuid: string, requestUuid: string) {
+		try {
+			const result = await prisma.friendship.delete({
+				where: { uuid: requestUuid, receiverId: uuid },
+			});
+
+			return result;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") {
+					const fields = getPrismaConstraintFields(error);
+					if (fields.includes("uuid"))
+						throw new UnknownFriendRequestError();
+					if (fields.includes("receiverId"))
+						throw new UnknownUserIdError();
+					if (fields.length) throw new UnknownElementError(fields[0]);
+					throw new UnknownElementError("Unknown");
+				}
 			}
 			throw error;
 		}
