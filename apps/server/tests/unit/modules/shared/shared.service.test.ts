@@ -5,8 +5,8 @@ import { compareHash } from "@/utils/hash.util";
 import {
 	getPrismaConstraintFields,
 	SharedService,
+	userDtoSelect,
 } from "@/modules/shared/shared.service";
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime/client";
 
 vi.mock("@/lib/prisma.lib", () => ({
 	prisma: {
@@ -39,21 +39,17 @@ describe("modules/shared/shared.service", () => {
 	});
 
 	describe("getPrismaConstraintFields", () => {
-		it("Returns an empty array for a non-unique Prisma error", () => {
-			// Arrange
+		it("Returns an empty array for a non-P2002 Prisma error", () => {
 			const error = {
 				code: "P2025",
 			} as Prisma.PrismaClientKnownRequestError;
 
-			// Act
 			const result = getPrismaConstraintFields(error);
 
-			// Assert
 			expect(result).toEqual([]);
 		});
 
 		it("Returns the constraint fields from a P2002 Prisma error", () => {
-			// Arrange
 			const error = {
 				code: "P2002",
 				meta: {
@@ -67,53 +63,45 @@ describe("modules/shared/shared.service", () => {
 				},
 			} as unknown as Prisma.PrismaClientKnownRequestError;
 
-			// Act
 			const result = getPrismaConstraintFields(error);
 
-			// Assert
 			expect(result).toEqual(["email"]);
 		});
 
 		it("Returns an empty array when a P2002 error has no constraint fields", () => {
-			// Arrange
 			const error = {
 				code: "P2002",
 				meta: {},
 			} as unknown as Prisma.PrismaClientKnownRequestError;
 
-			// Act
 			const result = getPrismaConstraintFields(error);
 
-			// Assert
 			expect(result).toEqual([]);
 		});
 	});
 
 	describe("SharedService.getUserById", () => {
-		it("Returns the user returned by Prisma", async () => {
-			// Arrange
+		it("Returns the user returned by Prisma with userDtoSelect", async () => {
 			mockedFindUnique.mockResolvedValue(user as any);
 
-			// Act
 			const result = await service.getUserById("user-uuid");
 
-			// Assert
+			expect(mockedFindUnique).toHaveBeenCalledWith({
+				where: { uuid: "user-uuid" },
+				select: userDtoSelect,
+			});
 			expect(result).toEqual(user);
 		});
 
 		it("Returns null when Prisma returns no user", async () => {
-			// Arrange
 			mockedFindUnique.mockResolvedValue(null);
 
-			// Act
 			const result = await service.getUserById("unknown-uuid");
 
-			// Assert
 			expect(result).toBeNull();
 		});
 
 		it("Returns null when Prisma raises error P2007", async () => {
-			// Arrange
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2007",
 				clientVersion: "x.y.z",
@@ -121,44 +109,34 @@ describe("modules/shared/shared.service", () => {
 
 			mockedFindUnique.mockRejectedValue(error);
 
-			// Act
 			const result = await service.getUserById("invalid-uuid");
 
-			// Assert
 			expect(result).toBeNull();
 		});
 
-		it("Rethrows unknown Prisma errors", async () => {
-			// Arrange
-			const error = {
-				code: "P0",
-			} as Prisma.PrismaClientKnownRequestError;
+		it("Rethrows unexpected Prisma errors", async () => {
+			const error = new Error("Database query failed");
 
 			mockedFindUnique.mockRejectedValue(error);
 
-			// Act
 			const action = service.getUserById("user-uuid");
 
-			// Assert
 			await expect(action).rejects.toBe(error);
 		});
 	});
 
 	describe("SharedService.validateUserPassword", () => {
 		it("Returns true when the password matches", async () => {
-			// Arrange
 			mockedFindUnique.mockResolvedValue({
 				password: "hashed-password",
 			} as any);
 			mockedCompareHash.mockResolvedValue(true);
 
-			// Act
 			const result = await service.validateUserPassword(
 				"user-uuid",
 				"password",
 			);
 
-			// Assert
 			expect(mockedFindUnique).toHaveBeenCalledWith({
 				where: {
 					uuid: "user-uuid",
@@ -175,40 +153,33 @@ describe("modules/shared/shared.service", () => {
 		});
 
 		it("Returns false when the password does not match", async () => {
-			// Arrange
 			mockedFindUnique.mockResolvedValue({
 				password: "hashed-password",
 			} as any);
 			mockedCompareHash.mockResolvedValue(false);
 
-			// Act
 			const result = await service.validateUserPassword(
 				"user-uuid",
 				"wrong-password",
 			);
 
-			// Assert
 			expect(result).toBe(false);
 		});
 
 		it("Throws UnknownUserIdError when no user exists", async () => {
-			// Arrange
 			mockedFindUnique.mockResolvedValue(null);
 
-			// Act
 			const action = service.validateUserPassword(
 				"unknown-uuid",
 				"password",
 			);
 
-			// Assert
 			await expect(action).rejects.toMatchObject({
 				name: "UnknownUserIdError",
 			});
 		});
 
 		it("Throws InvalidIdError when Prisma raises error P2007", async () => {
-			// Arrange
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2007",
 				clientVersion: "x.y.z",
@@ -216,20 +187,17 @@ describe("modules/shared/shared.service", () => {
 
 			mockedFindUnique.mockRejectedValue(error);
 
-			// Act
 			const action = service.validateUserPassword(
 				"invalid-uuid",
 				"password",
 			);
 
-			// Assert
 			await expect(action).rejects.toMatchObject({
 				name: "InvalidIdError",
 			});
 		});
 
 		it("Throws UnknownUserIdError when Prisma raises error P2025", async () => {
-			// Arrange
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2025",
 				clientVersion: "x.y.z",
@@ -237,13 +205,11 @@ describe("modules/shared/shared.service", () => {
 
 			mockedFindUnique.mockRejectedValue(error);
 
-			// Act
 			const action = service.validateUserPassword(
 				"unknown-uuid",
 				"password",
 			);
 
-			// Assert
 			await expect(action).rejects.toMatchObject({
 				name: "UnknownUserIdError",
 			});

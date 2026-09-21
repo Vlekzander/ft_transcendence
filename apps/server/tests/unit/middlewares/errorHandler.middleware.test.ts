@@ -4,73 +4,71 @@ import {
 	AlreadyAuthError,
 	CannotEditUserError,
 	DuplicateElementError,
+	DuplicateEmailError,
+	DuplicateUsernameError,
+	FriendshipAlreadyExistError,
+	InvalidCredentialsError,
 	InvalidElementError,
+	InvalidFileSizeError,
+	InvalidFileTypeError,
+	InvalidIdError,
+	InvalidJWTError,
+	NoFileUploadError,
+	PendingFriendRequestExistError,
 	RequireAuthError,
+	SelfFriendRequestError,
+	UnknownElementError,
+	UnknownFriendRequestError,
 	UnknownUserIdError,
 } from "@/errors";
 import { errorHandler, mapError } from "@/middlewares/errorHandler.middleware";
 
 describe("middlewares/errorHandler.middleware", () => {
 	describe("mapError", () => {
-		it("Maps DuplicateElementError to HTTP 409", () => {
-			// Arrange
+		it("Maps DuplicateElementError and subclasses to HTTP 409", () => {
 			const error = new DuplicateElementError("email");
+			const emailError = new DuplicateEmailError();
+			const usernameError = new DuplicateUsernameError();
 
-			// Act
-			const result = mapError(error);
-
-			// Assert
-			expect(result).toEqual({
+			expect(mapError(error)).toEqual({
 				status: 409,
 				code: error.name,
 				message: error.message,
 			});
+			expect(mapError(emailError).status).toBe(409);
+			expect(mapError(usernameError).status).toBe(409);
 		});
 
-		it("Maps InvalidElementError to HTTP 400", () => {
-			// Arrange
-			const error = new InvalidElementError("email");
+		it("Maps InvalidElementError and subclasses to HTTP 400", () => {
+			const error = new InvalidElementError("field");
+			const idError = new InvalidIdError();
+			const jwtError = new InvalidJWTError();
 
-			// Act
-			const result = mapError(error);
-
-			// Assert
-			expect(result.status).toBe(400);
-			expect(result.code).toBe(error.name);
+			expect(mapError(error).status).toBe(400);
+			expect(mapError(idError).status).toBe(400);
+			expect(mapError(jwtError).status).toBe(400);
 		});
 
 		it("Maps UnknownUserIdError to HTTP 404", () => {
-			// Arrange
 			const error = new UnknownUserIdError();
-
-			// Act
 			const result = mapError(error);
 
-			// Assert
 			expect(result.status).toBe(404);
 			expect(result.code).toBe(error.name);
 		});
 
 		it("Maps ValidationError to HTTP 400", () => {
-			// Arrange
 			const error = new ValidationError("email", "Invalid email");
-
-			// Act
 			const result = mapError(error);
 
-			// Assert
 			expect(result.status).toBe(400);
 			expect(result.code).toBe(error.name);
 		});
 
 		it("Maps SyntaxError to HTTP 400", () => {
-			// Arrange
 			const error = new SyntaxError("Invalid JSON");
-
-			// Act
 			const result = mapError(error);
 
-			// Assert
 			expect(result).toEqual({
 				status: 400,
 				code: error.name,
@@ -79,67 +77,68 @@ describe("middlewares/errorHandler.middleware", () => {
 		});
 
 		it("Maps AlreadyAuthError to HTTP 403", () => {
-			// Arrange
 			const error = new AlreadyAuthError();
-
-			// Act
 			const result = mapError(error);
 
-			// Assert
 			expect(result.status).toBe(403);
 			expect(result.code).toBe(error.name);
 		});
 
 		it("Maps RequireAuthError to HTTP 401", () => {
-			// Arrange
 			const error = new RequireAuthError();
-
-			// Act
 			const result = mapError(error);
 
-			// Assert
 			expect(result.status).toBe(401);
 			expect(result.code).toBe(error.name);
 		});
 
 		it("Maps CannotEditUserError to HTTP 403", () => {
-			// Arrange
 			const error = new CannotEditUserError();
-
-			// Act
 			const result = mapError(error);
 
-			// Assert
 			expect(result.status).toBe(403);
 			expect(result.code).toBe(error.name);
 		});
 
-		it("Maps AppDomainError to HTTP 400", () => {
-			// Arrange
-			const error = new AppDomainError("Domain error");
-
-			// Act
+		it("Maps InvalidCredentialsError to HTTP 401", () => {
+			const error = new InvalidCredentialsError();
 			const result = mapError(error);
 
-			// Assert
-			expect(result).toEqual({
-				status: 400,
-				code: error.name,
-				message: error.message,
-			});
+			expect(result.status).toBe(401);
+			expect(result.code).toBe(error.name);
+		});
+
+		it("Maps generic AppDomainError and its subclasses to HTTP 400", () => {
+			const baseDomainError = new AppDomainError("Domain error");
+			const unknownElementError = new UnknownElementError("target");
+			const unknownFriendRequest = new UnknownFriendRequestError();
+			const noFileError = new NoFileUploadError();
+			const invalidFileTypeError = new InvalidFileTypeError();
+			const invalidFileSizeError = new InvalidFileSizeError(5);
+			const selfFriendRequestError = new SelfFriendRequestError();
+			const friendshipAlreadyExist = new FriendshipAlreadyExistError();
+			const pendingFriendRequestExist =
+				new PendingFriendRequestExistError();
+
+			expect(mapError(baseDomainError).status).toBe(400);
+			expect(mapError(unknownElementError).status).toBe(400);
+			expect(mapError(unknownFriendRequest).status).toBe(400);
+			expect(mapError(noFileError).status).toBe(400);
+			expect(mapError(invalidFileTypeError).status).toBe(400);
+			expect(mapError(invalidFileSizeError).status).toBe(400);
+			expect(mapError(selfFriendRequestError).status).toBe(400);
+			expect(mapError(friendshipAlreadyExist).status).toBe(400);
+			expect(mapError(pendingFriendRequestExist).status).toBe(400);
 		});
 
 		it("Maps unknown errors to the internal server error response", () => {
-			// Arrange
 			const consoleError = vi
 				.spyOn(console, "error")
 				.mockImplementation(() => undefined);
 			const error = new Error("Database failure");
 
-			// Act
 			const result = mapError(error);
 
-			// Assert
 			expect(result).toEqual({
 				status: 500,
 				code: "InternalServerError",
@@ -151,7 +150,6 @@ describe("middlewares/errorHandler.middleware", () => {
 
 	describe("errorHandler", () => {
 		it("Sends the mapped error response when headers were not sent", () => {
-			// Arrange
 			const error = new RequireAuthError();
 			const status = vi.fn().mockReturnThis();
 			const json = vi.fn();
@@ -164,10 +162,8 @@ describe("middlewares/errorHandler.middleware", () => {
 
 			const next = vi.fn();
 
-			// Act
 			errorHandler(error, {} as any, res, next);
 
-			// Assert
 			expect(status).toHaveBeenCalledWith(401);
 			expect(json).toHaveBeenCalledWith({
 				error: {
@@ -179,17 +175,14 @@ describe("middlewares/errorHandler.middleware", () => {
 		});
 
 		it("Forwards the error when headers were already sent", () => {
-			// Arrange
 			const error = new Error("Headers already sent");
 			const res = {
 				headersSent: true,
 			} as any;
 			const next = vi.fn();
 
-			// Act
 			errorHandler(error, {} as any, res, next);
 
-			// Assert
 			expect(next).toHaveBeenCalledWith(error);
 		});
 	});

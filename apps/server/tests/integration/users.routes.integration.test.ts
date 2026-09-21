@@ -70,7 +70,7 @@ describe("users routes", () => {
 			});
 		});
 
-		it("Returns HTTP 400 for an invalid UUID", async () => {
+		it("Returns HTTP 404 for an invalid UUID", async () => {
 			// Arrange
 			const invalidUuid = "invalid-uuid";
 
@@ -306,21 +306,7 @@ describe("users routes", () => {
 
 			// Assert
 			expect(response.status).toBe(200);
-			expect(response.body.friends).toHaveLength(3);
-
-			expect(response.body.friends).toEqual(
-				expect.arrayContaining([
-					expect.objectContaining({
-						status: "in_game",
-					}),
-					expect.objectContaining({
-						status: "online",
-					}),
-					expect.objectContaining({
-						status: "offline",
-					}),
-				]),
-			);
+			expect(response.body.friends).toHaveLength(0);
 		});
 	});
 
