@@ -1,5 +1,11 @@
-export type ApiResult<
-	T extends Record<string, unknown> = Record<string, unknown>,
-> =
-	| { ok: true }
-	| { ok: false; error: string; errors?: Partial<Record<keyof T, string>> };
+export type ApiSuccess<T = void> = T extends void
+	? { ok: true }
+	: { ok: true; data: T };
+
+export type ApiFailure = {
+	ok: false;
+	error: string;
+	errors?: Record<string, string>;
+};
+
+export type ApiResult<T = void> = ApiSuccess<T> | ApiFailure;
