@@ -1,4 +1,7 @@
-import type { PendingFriendRequestDTO } from "@ft_transcendence/shared";
+import type {
+	PendingFriendRequestDTO,
+	SentFriendRequestDTO,
+} from "@ft_transcendence/shared";
 import type { ApiResult } from "../../../shared/types/api";
 import { DEFAULT_ERROR, getApiErrorMessage } from "../../../shared/utils/api";
 import { API_URL } from "../../../config";
@@ -38,6 +41,29 @@ export async function getPendingRequests(
 		if (res.ok) {
 			const data = await res.json();
 			return { ok: true, data: data.pendingRequests ?? data };
+		}
+
+		const error = await getApiErrorMessage(res);
+		return { ok: false, error };
+	} catch (err) {
+		return {
+			ok: false,
+			error: err instanceof Error ? err.message : DEFAULT_ERROR,
+		};
+	}
+}
+
+export async function getSentRequests(
+	uuid: string,
+): Promise<ApiResult<SentFriendRequestDTO[]>> {
+	try {
+		const res = await fetch(`${API_URL}/users/${uuid}/friends/sent`, {
+			credentials: "include",
+		});
+
+		if (res.ok) {
+			const data = await res.json();
+			return { ok: true, data: data.sentRequests ?? data };
 		}
 
 		const error = await getApiErrorMessage(res);

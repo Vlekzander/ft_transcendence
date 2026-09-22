@@ -328,7 +328,10 @@ export class UsersService {
 	async deleteFriendRequest(uuid: string, requestUuid: string) {
 		try {
 			const result = await prisma.friendship.delete({
-				where: { uuid: requestUuid, receiverId: uuid },
+				where: {
+					uuid: requestUuid,
+					OR: [{ receiverId: uuid }, { senderId: uuid }],
+				},
 			});
 
 			return result;
@@ -340,6 +343,8 @@ export class UsersService {
 					if (fields.includes("uuid"))
 						throw new UnknownFriendRequestError();
 					if (fields.includes("receiverId"))
+						throw new UnknownUserIdError();
+					if (fields.includes("senderId"))
 						throw new UnknownUserIdError();
 					if (fields.length) throw new UnknownElementError(fields[0]);
 					throw new UnknownFriendRequestError();

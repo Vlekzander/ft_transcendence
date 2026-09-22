@@ -10,12 +10,12 @@ import {
 	Check,
 	ChevronDown,
 	Clock,
-	Crown,
 	Medal,
 	Star,
 	Trophy,
 	UserRound,
 	UserRoundPlus,
+	X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import FriendComponent from "../components/Friend";
@@ -31,7 +31,7 @@ import {
 } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { useAuth } from "../../auth/context/AuthContext";
-import { deleteFriendRequest } from "../services/friendApi";
+import { deleteFriendRequest, sendFriendRequest } from "../services/friendApi";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
@@ -268,7 +268,9 @@ function GameHistoryItem({
 export default function UserPage() {
 	const { user } = useAuth();
 	const { uuid } = useParams<{ uuid: string }>();
+	const isOwnProfile = user?.uuid === uuid;
 	const [isLoading, setLoading] = useState(true);
+	const [isFriendActionLoading, setIsFriendActionLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const [userData, setUserData] = useState<PublicUserDTO | null>(null);
@@ -282,21 +284,44 @@ export default function UserPage() {
 	);
 	const [openedGameId, setOpenedGameId] = useState("");
 
+	const currentFriendship = friends?.find((f) => f.user.uuid === user?.uuid);
+	const isFriend = Boolean(currentFriendship);
+
 	const toggleGame = (gameId: string) => {
 		if (openedGameId === gameId) setOpenedGameId("");
 		else setOpenedGameId(gameId);
+	};
+
+	const handleAddFriend = async () => {
+		if (!user || currentFriendship || isFriendActionLoading) return;
+		try {
+			setIsFriendActionLoading(true);
+			const result = await sendFriendRequest(user.uuid, uuid);
+
+			if (result.ok === false)
+				console.error("Failed to add friend:", result.error);
+		} finally {
+			setIsFriendActionLoading(false);
+		}
+	};
+
+	const handleRemoveFriend = async () => {
+		if (!user || !currentFriendship || isFriendActionLoading) return;
+		try {
+			setIsFriendActionLoading(true);
+			handleDeleteFriend(currentFriendship.uuid);
+		} finally {
+			setIsFriendActionLoading(false);
+		}
 	};
 
 	const handleDeleteFriend = async (request: string) => {
 		if (!user) return;
 
 		const result = await deleteFriendRequest(user.uuid, request);
-
 		if (result.ok === true)
-			setFriends((prevFriends) =>
-				prevFriends
-					? prevFriends.filter((f) => f.uuid !== request)
-					: [],
+			setFriends((prev) =>
+				prev ? prev.filter((f) => f.uuid !== request) : [],
 			);
 		else console.error("Failed to delete friend:", result.error);
 	};
@@ -310,19 +335,21 @@ export default function UserPage() {
 				setLoading(true);
 				setError(null);
 				const userEndpoint = `${API_URL}/users/${uuid}`;
+				const publicFetches = [
+					fetch(`${userEndpoint}`),
+					fetch(`${userEndpoint}/history`),
+					fetch(`${userEndpoint}/stats`),
+					fetch(`${userEndpoint}/achievements`),
+					fetch(`${userEndpoint}/friends`),
+				];
+
 				const [
 					resUser,
 					resHistory,
 					resStats,
 					resAchievements,
 					resFriends,
-				] = await Promise.all([
-					fetch(`${userEndpoint}`),
-					fetch(`${userEndpoint}/history`),
-					fetch(`${userEndpoint}/stats`),
-					fetch(`${userEndpoint}/achievements`),
-					fetch(`${userEndpoint}/friends`),
-				]);
+				] = await Promise.all([...publicFetches]);
 				if (!resUser.ok) {
 					if (resUser.status === 404) throw new UserNotFoundError();
 					throw new UserProfileError();
@@ -385,7 +412,6 @@ export default function UserPage() {
 				onClick={() => window.location.reload()}
 			/>
 		);
-
 	return (
 		<div className="p-5 flex justify-center">
 			<div className="w-full sm:w-4/5">
@@ -407,10 +433,26 @@ export default function UserPage() {
 							<h1 className="text-3xl font-extrabold order-2 sm:order-1">
 								{userData.username}
 							</h1>
-							<span className="inline-flex items-center gap-1 text-xs border border-primary bg-primary/10 text-primary/90 p-1 whitespace-nowrap order-1 sm:order-2">
-								<Crown size={16} />
-								Top 10
-							</span>
+							{!isOwnProfile &&
+								(isFriend ? (
+									<button
+										type="button"
+										disabled={isFriendActionLoading}
+										onClick={handleRemoveFriend}
+										className="order-1 sm:order-2 bg-red-500/10 text-red-500/90 border border-red-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-red-500/20 cursor-pointer"
+									>
+										<X strokeWidth={1} />
+									</button>
+								) : (
+									<button
+										type="button"
+										disabled={isFriendActionLoading}
+										onClick={handleAddFriend}
+										className="order-1 sm:order-2 bg-primary/10 text-primary/90 border border-primary font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-primary/20 cursor-pointer"
+									>
+										<UserRoundPlus strokeWidth={1} />
+									</button>
+								))}
 						</div>
 						<div className="flex items-center justify-center sm:justify-start gap-1 m-1">
 							<UserStatusComponent
@@ -502,7 +544,7 @@ export default function UserPage() {
 
 				{tab === "friends" && (
 					<div>
-						{user?.uuid === uuid && (
+						{isOwnProfile && (
 							<button className="bg-primary/10 text-primary/90 border border-primary font-semibold flex gap-2 px-2 py-1.5 hover:bg-primary/20 cursor-pointer">
 								<UserRoundPlus />
 								Add friend
@@ -514,7 +556,7 @@ export default function UserPage() {
 									key={friend.uuid}
 									friend={friend.user}
 									onDelete={
-										user?.uuid === uuid
+										isOwnProfile
 											? () =>
 													handleDeleteFriend(
 														friend.uuid,
