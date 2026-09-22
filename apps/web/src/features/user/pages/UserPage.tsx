@@ -1,6 +1,6 @@
 import type {
 	Achievement,
-	FriendDTO,
+	FriendshipDTO,
 	GameHistoryEntry,
 	GameParticipant,
 	PublicUserDTO,
@@ -30,6 +30,8 @@ import {
 	UserProfileError,
 } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
+import { useAuth } from "../../auth/context/AuthContext";
+import { deleteFriendRequest } from "../services/friendApi";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
@@ -264,6 +266,7 @@ function GameHistoryItem({
 }
 
 export default function UserPage() {
+	const { user } = useAuth();
 	const { uuid } = useParams<{ uuid: string }>();
 	const [isLoading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
@@ -272,7 +275,7 @@ export default function UserPage() {
 	const [history, setHistory] = useState<GameHistoryEntry[]>([]);
 	const [stats, setStats] = useState<Stat[]>([]);
 	const [achievements, setAchievements] = useState<Achievement[]>([]);
-	const [friends, setFriends] = useState<FriendDTO[] | null>(null);
+	const [friends, setFriends] = useState<FriendshipDTO[] | null>(null);
 
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
@@ -282,6 +285,20 @@ export default function UserPage() {
 	const toggleGame = (gameId: string) => {
 		if (openedGameId === gameId) setOpenedGameId("");
 		else setOpenedGameId(gameId);
+	};
+
+	const handleDeleteFriend = async (request: string) => {
+		if (!user) return;
+
+		const result = await deleteFriendRequest(user.uuid, request);
+
+		if (result.ok === true)
+			setFriends((prevFriends) =>
+				prevFriends
+					? prevFriends.filter((f) => f.uuid !== request)
+					: [],
+			);
+		else console.error("Failed to delete friend:", result.error);
 	};
 
 	useEffect(() => {
@@ -485,16 +502,25 @@ export default function UserPage() {
 
 				{tab === "friends" && (
 					<div>
-						<button className="bg-primary/10 text-primary/90 border border-primary font-semibold flex gap-2 px-2 py-1.5 hover:bg-primary/20 cursor-pointer">
-							<UserRoundPlus />
-							Add friend
-						</button>
+						{user?.uuid === uuid && (
+							<button className="bg-primary/10 text-primary/90 border border-primary font-semibold flex gap-2 px-2 py-1.5 hover:bg-primary/20 cursor-pointer">
+								<UserRoundPlus />
+								Add friend
+							</button>
+						)}
 						<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
 							{friends.map((friend) => (
 								<FriendComponent
-									key={friend.user.uuid}
-									user={friend.user}
-									status={friend.status}
+									key={friend.uuid}
+									friend={friend.user}
+									onDelete={
+										user?.uuid === uuid
+											? () =>
+													handleDeleteFriend(
+														friend.uuid,
+													)
+											: undefined
+									}
 								/>
 							))}
 						</div>

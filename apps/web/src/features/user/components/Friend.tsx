@@ -1,41 +1,65 @@
-import type { Status, UserResponseDTO } from "@ft_transcendence/shared";
-import { Gamepad2, X } from "lucide-react";
+import type { PublicUserDTO } from "@ft_transcendence/shared";
+import { X } from "lucide-react";
 import UserStatusComponent from "./UserStatus";
+import { useState } from "react";
+import { AVATARS_PATH } from "../../../config";
 
-export default function FriendComponent({
-	user,
-	status,
-}: {
-	user: UserResponseDTO;
-	status: Status;
-}) {
+type FriendProps = {
+	friend: PublicUserDTO;
+	onDelete?: () => Promise<void> | void;
+};
+
+export default function FriendComponent({ friend, onDelete }: FriendProps) {
+	const [isDeleting, setIsDeleting] = useState(false);
+
+	const handleDelete = async () => {
+		if (!onDelete || isDeleting) return;
+		setIsDeleting(true);
+		try {
+			await onDelete();
+		} finally {
+			setIsDeleting(false);
+		}
+	};
+
 	return (
 		<div className="flex flex-col sm:flex-row justify-between sm:items-center p-2 bg-background">
 			<div className="flex gap-2 items-center">
 				<div className="w-12 h-12">
 					<img
-						src="/assets/default_avatar.jpg"
+						src={
+							friend.avatarPath
+								? `${AVATARS_PATH}/${friend.avatarPath}`
+								: "/assets/default_avatar.jpg"
+						}
+						alt={friend.username}
 						className="w-full h-full object-cover border"
 					/>
 				</div>
 				<div>
-					<span className="font-semibold text-lg">
-						{user.username}
-					</span>
-					<UserStatusComponent status={status} />
+					<a
+						href={`/user/${friend.uuid}`}
+						className="font-semibold text-lg"
+					>
+						{friend.username}
+					</a>
+					<UserStatusComponent
+						status={friend.online ? "online" : "offline"}
+					/>
 				</div>
 			</div>
-			<div className="flex gap-2 items-center self-end sm:self-auto">
-				{status === "in_game" && (
-					<button className="flex items-center gap-1 text-sm text-green-500/90 hover:bg-green-500/10 border border-green-500 p-1 cursor-pointer">
-						<Gamepad2 size={20} />
-						<span>Join</span>
+			{onDelete && (
+				<div className="flex gap-2 items-center self-end sm:self-auto">
+					<button
+						type="button"
+						onClick={handleDelete}
+						disabled={isDeleting}
+						className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 cursor-pointer"
+					>
+						<X strokeWidth={1} />
 					</button>
-				)}
-				<button className="w-10 h-10 sm:w-7 sm:h-7 flex items-center justify-center hover:bg-red-500/10 hover:text-red-500 cursor-pointer">
-					<X strokeWidth={1} />
-				</button>
-			</div>
+				</div>
+			)}
 		</div>
 	);
 }
