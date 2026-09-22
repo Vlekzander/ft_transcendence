@@ -215,6 +215,38 @@ export class UsersService {
 		}
 	}
 
+	async getSentFriendRequests(uuid: string) {
+		try {
+			const result = await prisma.friendship.findMany({
+				where: {
+					status: "PENDING",
+					OR: [{ senderId: uuid }],
+				},
+				include: {
+					receiver: {
+						select: userDtoSelect,
+					},
+				},
+				orderBy: {
+					uuid: "desc",
+				},
+			});
+
+			const requests = result.map((element) => ({
+				uuid: element.uuid,
+				receiver: element.receiver,
+			}));
+
+			return requests;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
+
 	async sendFriendRequest(uuid: string, receiverUuid: string) {
 		try {
 			if (uuid === receiverUuid) throw new SelfFriendRequestError();

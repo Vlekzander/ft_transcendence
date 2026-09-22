@@ -73,6 +73,14 @@ usersRouter.get(
 	usersController.getPendingFriendRequests,
 );
 
+usersRouter.get(
+	"/:uuid/friends/sent",
+	requireAuth,
+	requireUserOwnership,
+	validate({ params: UserParamsSchema }),
+	usersController.getSentFriendRequests,
+);
+
 usersRouter.post(
 	"/:uuid/friends",
 	requireAuth,

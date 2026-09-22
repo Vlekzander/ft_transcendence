@@ -23,6 +23,7 @@ import {
 	EditFriendshipSchema,
 	FriendshipDTO,
 	PendingFriendRequestDTO,
+	SentFriendRequestDTO,
 } from "@ft_transcendence/shared";
 import { toPublicUserDTO } from "../shared/shared.mapper";
 
@@ -232,6 +233,25 @@ export async function getPendingFriendRequests(
 		);
 
 		res.status(200).json({ pendingRequests: pendingRequests });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function getSentFriendRequests(
+	req: UserRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+
+		const requests = await usersService.getSentFriendRequests(uuid);
+		const sentRequests: SentFriendRequestDTO[] = requests.map((element) =>
+			toSentFriendRequestDTO(element),
+		);
+
+		res.status(200).json({ sentRequests: sentRequests });
 	} catch (err) {
 		next(err);
 	}
