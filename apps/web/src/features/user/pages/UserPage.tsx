@@ -3,7 +3,9 @@ import type {
 	FriendshipDTO,
 	GameHistoryEntry,
 	GameParticipant,
+	PendingFriendRequestDTO,
 	PublicUserDTO,
+	SentFriendRequestDTO,
 	Stat,
 } from "@ft_transcendence/shared";
 import {
@@ -31,7 +33,13 @@ import {
 } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { useAuth } from "../../auth/context/AuthContext";
-import { deleteFriendRequest, sendFriendRequest } from "../services/friendApi";
+import {
+	acceptFriendRequest,
+	deleteFriendRequest,
+	getPendingRequests,
+	getSentRequests,
+	sendFriendRequest,
+} from "../services/friendApi";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
@@ -278,6 +286,11 @@ export default function UserPage() {
 	const [stats, setStats] = useState<Stat[]>([]);
 	const [achievements, setAchievements] = useState<Achievement[]>([]);
 	const [friends, setFriends] = useState<FriendshipDTO[] | null>(null);
+	const [sentRequest, setSentRequest] = useState<SentFriendRequestDTO | null>(
+		null,
+	);
+	const [pendingRequest, setPendingRequest] =
+		useState<PendingFriendRequestDTO | null>(null);
 
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
@@ -298,8 +311,39 @@ export default function UserPage() {
 			setIsFriendActionLoading(true);
 			const result = await sendFriendRequest(user.uuid, uuid);
 
-			if (result.ok === false)
-				console.error("Failed to add friend:", result.error);
+			if (result.ok === true) {
+				const sentList = await getSentRequests(user.uuid);
+				if (sentList.ok && sentList.data) {
+					const match = sentList.data.find(
+						(req) => req.receiver.uuid === uuid,
+					);
+					setSentRequest(match ?? null);
+				}
+			} else console.error("Failed to add friend:", result.error);
+		} finally {
+			setIsFriendActionLoading(false);
+		}
+	};
+
+	const handleAcceptFriend = async () => {
+		if (!user || !pendingRequest || isFriendActionLoading) return;
+		try {
+			setIsFriendActionLoading(true);
+			const result = await acceptFriendRequest(
+				user.uuid,
+				pendingRequest.uuid,
+			);
+			if (result.ok === true) {
+				setPendingRequest(null);
+				const resFriends = await fetch(
+					`${API_URL}/users/${uuid}/friends`,
+				);
+				if (resFriends.ok) {
+					const friendsData = await resFriends.json();
+					setFriends(friendsData.friends ?? []);
+				}
+			} else
+				console.error("Failed to accept friend request:", result.error);
 		} finally {
 			setIsFriendActionLoading(false);
 		}
@@ -319,11 +363,13 @@ export default function UserPage() {
 		if (!user) return;
 
 		const result = await deleteFriendRequest(user.uuid, request);
-		if (result.ok === true)
+		if (result.ok === true) {
 			setFriends((prev) =>
 				prev ? prev.filter((f) => f.uuid !== request) : [],
 			);
-		else console.error("Failed to delete friend:", result.error);
+			setSentRequest(null);
+			setPendingRequest(null);
+		} else console.error("Failed to delete friend:", result.error);
 	};
 
 	useEffect(() => {
@@ -343,13 +389,23 @@ export default function UserPage() {
 					fetch(`${userEndpoint}/friends`),
 				];
 
+				const requestsFetches =
+					user && !isOwnProfile
+						? [
+								getSentRequests(user.uuid),
+								getPendingRequests(user.uuid),
+							]
+						: [Promise.resolve(null), Promise.resolve(null)];
+
 				const [
 					resUser,
 					resHistory,
 					resStats,
 					resAchievements,
 					resFriends,
-				] = await Promise.all([...publicFetches]);
+					sentRes,
+					pendingRes,
+				] = await Promise.all([...publicFetches, ...requestsFetches]);
 				if (!resUser.ok) {
 					if (resUser.status === 404) throw new UserNotFoundError();
 					throw new UserProfileError();
@@ -374,6 +430,20 @@ export default function UserPage() {
 					setStats(resultStats.stats || []);
 					setAchievements(resultAchievements.achievements || []);
 					setFriends(resultFriends.friends || []);
+					if (sentRes?.ok === true && sentRes.data) {
+						const matchSent = sentRes.data.find(
+							(req: SentFriendRequestDTO) =>
+								req.receiver.uuid === uuid,
+						);
+						setSentRequest(matchSent ?? null);
+					}
+					if (pendingRes?.ok === true && pendingRes.data) {
+						const matchPending = pendingRes.data.find(
+							(req: PendingFriendRequestDTO) =>
+								req.sender.uuid === uuid,
+						);
+						setPendingRequest(matchPending ?? null);
+					}
 				}
 				if (
 					!resHistory.ok ||
@@ -392,7 +462,7 @@ export default function UserPage() {
 		return () => {
 			isMounted = false;
 		};
-	}, [uuid]);
+	}, [uuid, user?.uuid]);
 
 	if (isLoading) {
 		return (
@@ -433,26 +503,85 @@ export default function UserPage() {
 							<h1 className="text-3xl font-extrabold order-2 sm:order-1">
 								{userData.username}
 							</h1>
-							{!isOwnProfile &&
-								(isFriend ? (
-									<button
-										type="button"
-										disabled={isFriendActionLoading}
-										onClick={handleRemoveFriend}
-										className="order-1 sm:order-2 bg-red-500/10 text-red-500/90 border border-red-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-red-500/20 cursor-pointer"
-									>
-										<X strokeWidth={1} />
-									</button>
-								) : (
-									<button
-										type="button"
-										disabled={isFriendActionLoading}
-										onClick={handleAddFriend}
-										className="order-1 sm:order-2 bg-primary/10 text-primary/90 border border-primary font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-primary/20 cursor-pointer"
-									>
-										<UserRoundPlus strokeWidth={1} />
-									</button>
-								))}
+							{!isOwnProfile && (
+								<div className="flex gap-2 order-1 sm:order-2">
+									{isFriend && (
+										<button
+											type="button"
+											disabled={isFriendActionLoading}
+											onClick={handleRemoveFriend}
+											title="Remove friend"
+											className="bg-red-500/10 text-red-500/90 border border-red-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-red-500/20 cursor-pointer"
+										>
+											<X strokeWidth={1} />
+										</button>
+									)}
+									{!isFriend && sentRequest && (
+										<button
+											type="button"
+											disabled={isFriendActionLoading}
+											onClick={() =>
+												handleDeleteFriend(
+													sentRequest.uuid,
+												)
+											}
+											title="Cancel friend request"
+											className="bg-red-500/10 text-red-500/90 border border-red-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-red-500/20 cursor-pointer"
+										>
+											<X strokeWidth={1} />
+										</button>
+									)}
+									{!isFriend &&
+										!sentRequest &&
+										pendingRequest && (
+											<>
+												<button
+													type="button"
+													disabled={
+														isFriendActionLoading
+													}
+													onClick={handleAcceptFriend}
+													title="Accept friend request"
+													className="order-1 sm:order-2 bg-green-500/10 text-green-500/90 border border-green-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-green-500/20 cursor-pointer"
+												>
+													<UserRoundPlus
+														strokeWidth={1}
+													/>
+												</button>
+												<button
+													type="button"
+													disabled={
+														isFriendActionLoading
+													}
+													onClick={() =>
+														handleDeleteFriend(
+															pendingRequest.uuid,
+														)
+													}
+													title="Refuse friend request"
+													className="bg-red-500/10 text-red-500/90 border border-red-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-red-500/20 cursor-pointer"
+												>
+													<X strokeWidth={1} />
+												</button>
+											</>
+										)}
+									{!isFriend &&
+										!sentRequest &&
+										!pendingRequest && (
+											<button
+												type="button"
+												disabled={isFriendActionLoading}
+												onClick={handleAddFriend}
+												title="Send friend request"
+												className="order-1 sm:order-2 bg-primary/10 text-primary/90 border border-primary font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-primary/20 cursor-pointer"
+											>
+												<UserRoundPlus
+													strokeWidth={1}
+												/>
+											</button>
+										)}
+								</div>
+							)}
 						</div>
 						<div className="flex items-center justify-center sm:justify-start gap-1 m-1">
 							<UserStatusComponent
