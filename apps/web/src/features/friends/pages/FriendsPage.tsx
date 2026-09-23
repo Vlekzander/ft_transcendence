@@ -1,4 +1,4 @@
-import { Search, UserRound, Users } from "lucide-react";
+import { Search, Users } from "lucide-react";
 import { useFriends } from "../context/FriendContext";
 import { useEffect, useState } from "react";
 import type { PublicUserDTO } from "@ft_transcendence/shared";
@@ -55,12 +55,6 @@ export default function FriendsPage() {
 						<Users className="text-primary" size={32} />
 						Friends
 					</h1>
-				</div>
-				<div className="flex items-center gap-2 text-sm text-gray-600 border border-gray-300 px-3 py-1.5 self-start sm:self-auto">
-					<UserRound size={16} className="text-primary" />
-					<span>
-						Total: <strong>{friends.length}</strong>
-					</span>
 				</div>
 			</div>
 
