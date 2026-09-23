@@ -14,13 +14,14 @@ import {
 	Star,
 	Trophy,
 	UserRound,
+	UserRoundPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import FriendComponent from "../components/Friend";
 import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
-import { Navigate, useParams } from "react-router";
+import { Link, Navigate, useParams } from "react-router";
 import { API_URL, AVATARS_PATH } from "../../../config";
 import {
 	PartialProfileError,
@@ -379,7 +380,7 @@ export default function UserPage() {
 
 	return (
 		<div className="p-5 flex justify-center">
-			<div className="w-full sm:w-4/5">
+			<div className="w-full">
 				<div className="flex flex-col sm:flex-row gap-3 items-center">
 					<div className="w-32 h-32 shrink-0">
 						<img
@@ -494,6 +495,15 @@ export default function UserPage() {
 
 				{tab === "friends" && (
 					<div>
+						{isOwnProfile && (
+							<Link
+								to="/friends"
+								className="inline-flex items-center gap-2 bg-primary/10 text-primary/90 border border-primary font-semibold px-2 py-1.5 hover:bg-primary/20"
+							>
+								<UserRoundPlus size={18} />
+								Manage friends
+							</Link>
+						)}
 						<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
 							{displayedFriends.map((friend) => (
 								<FriendComponent

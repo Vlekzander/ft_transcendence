@@ -134,3 +134,7 @@ export const EditFriendshipSchema = z.object({
 });
 
 export type EditFriendshipDTO = z.infer<typeof CreateFriendshipSchema>;
+
+export const StringQuerySchema = z.object({
+	query: z.string(),
+});

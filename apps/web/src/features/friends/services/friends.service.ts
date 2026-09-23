@@ -1,6 +1,7 @@
 import type {
 	FriendshipDTO,
 	PendingFriendRequestDTO,
+	PublicUserDTO,
 	SentFriendRequestDTO,
 } from "@ft_transcendence/shared";
 import type { ApiResult } from "../../../shared/types/api";
@@ -135,6 +136,27 @@ export async function deleteFriendRequest(
 		});
 
 		if (res.ok) return { ok: true };
+
+		const error = await getApiErrorMessage(res);
+		return { ok: false, error };
+	} catch (err) {
+		return {
+			ok: false,
+			error: err instanceof Error ? err.message : DEFAULT_ERROR,
+		};
+	}
+}
+
+export async function searchUserRequest(
+	query: string,
+): Promise<ApiResult<PublicUserDTO[]>> {
+	try {
+		const res = await fetch(`${API_URL}/users?query=${query}`);
+
+		if (res.ok) {
+			const data = await res.json();
+			return { ok: true, data: data.users ?? data };
+		}
 
 		const error = await getApiErrorMessage(res);
 		return { ok: false, error };

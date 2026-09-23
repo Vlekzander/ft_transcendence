@@ -17,6 +17,7 @@ import { WebSocketProvider } from "./features/websocket/context/WebSocketContext
 import { AuthProvider } from "./features/auth/context/AuthContext";
 import AccountPage from "./features/user/pages/AccountPage";
 import { FriendProvider } from "./features/friends/context/FriendContext";
+import FriendsPage from "./features/friends/pages/FriendsPage";
 
 const router = createBrowserRouter([
 	{
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
 					{
 						path: "/account",
 						element: <AccountPage />,
+					},
+					{
+						path: "/friends",
+						element: <FriendsPage />,
 					},
 				],
 			},
