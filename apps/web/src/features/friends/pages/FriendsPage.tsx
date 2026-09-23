@@ -95,7 +95,7 @@ export default function FriendsPage() {
 										className="flex items-center justify-between p-3 hover:bg-gray-400/5 transition-colors"
 									>
 										<Link
-											to={`/users/${user.uuid}`}
+											to={`/user/${user.uuid}`}
 											className="flex items-center gap-3 hover:underline"
 										>
 											<img
