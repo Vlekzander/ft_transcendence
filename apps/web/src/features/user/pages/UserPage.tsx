@@ -16,7 +16,7 @@ import {
 	UserRound,
 	UserRoundPlus,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import FriendComponent from "../../friends/components/Friend";
 import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
@@ -289,6 +289,20 @@ export default function UserPage() {
 		else setOpenedGameId(gameId);
 	};
 
+	const fetchProfileFriends = useCallback(async () => {
+		if (!uuid || isOwnProfile) return;
+
+		try {
+			const res = await fetch(`${API_URL}/users/${uuid}/friends`);
+			if (res.ok) {
+				const friendsData = await res.json();
+				setProfileFriends(friendsData.friends || []);
+			}
+		} catch (err) {
+			console.error("Failed to refresh profile friends:", err);
+		}
+	}, [uuid, isOwnProfile]);
+
 	useEffect(() => {
 		let isMounted = true;
 
@@ -401,7 +415,10 @@ export default function UserPage() {
 							</h1>
 							{!isOwnProfile && (
 								<div className="order-1 sm:order-2">
-									<FriendActionButton uuid={uuid} />
+									<FriendActionButton
+										uuid={uuid}
+										onSuccess={fetchProfileFriends}
+									/>
 								</div>
 							)}
 						</div>
