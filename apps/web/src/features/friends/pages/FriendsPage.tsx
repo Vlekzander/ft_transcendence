@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import type { PublicUserDTO } from "@ft_transcendence/shared";
 import { Link } from "react-router";
 import { AVATARS_PATH } from "../../../config";
-import { FriendActionButton } from "../../user/components/FriendActionButton";
 import { searchUserRequest } from "../services/friends.service";
-import FriendComponent from "../../user/components/Friend";
+import { FriendActionButton } from "../components/FriendActionButton";
+import FriendComponent from "../components/Friend";
 
 export default function FriendsPage() {
 	const { friends, removeFriend } = useFriends();

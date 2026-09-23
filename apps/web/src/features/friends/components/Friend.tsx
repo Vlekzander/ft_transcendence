@@ -1,8 +1,8 @@
 import type { PublicUserDTO } from "@ft_transcendence/shared";
 import { X } from "lucide-react";
-import UserStatusComponent from "./UserStatus";
 import { useState } from "react";
 import { AVATARS_PATH } from "../../../config";
+import UserStatusComponent from "../../user/components/UserStatus";
 
 type FriendProps = {
 	friend: PublicUserDTO;

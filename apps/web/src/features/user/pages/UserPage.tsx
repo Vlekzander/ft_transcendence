@@ -17,7 +17,7 @@ import {
 	UserRoundPlus,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import FriendComponent from "../components/Friend";
+import FriendComponent from "../../friends/components/Friend";
 import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
@@ -31,7 +31,7 @@ import {
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useFriends } from "../../friends/context/FriendContext";
-import { FriendActionButton } from "../components/FriendActionButton";
+import { FriendActionButton } from "../../friends/components/FriendActionButton";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
