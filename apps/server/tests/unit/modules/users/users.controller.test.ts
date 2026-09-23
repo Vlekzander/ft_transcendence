@@ -4,10 +4,12 @@ import {
 	deleteFriendRequest,
 	getFriends,
 	getPendingFriendRequests,
+	getSentFriendRequests,
 	getUser,
 	getUserAchievements,
 	getUserHistory,
 	getUserStats,
+	searchUser,
 	sendFriendRequest,
 	updateAvatar,
 	updateUser,
@@ -37,9 +39,11 @@ vi.mock("@/modules/users/users.service", () => ({
 		updateUserAvatar: vi.fn(),
 		getFriendships: vi.fn(),
 		getPendingFriendRequests: vi.fn(),
+		getSentFriendRequests: vi.fn(),
 		sendFriendRequest: vi.fn(),
 		acceptFriendRequest: vi.fn(),
 		deleteFriendRequest: vi.fn(),
+		searchUser: vi.fn(),
 	},
 }));
 
@@ -65,9 +69,13 @@ const mockedGetFriendships = vi.mocked(usersService.getFriendships);
 const mockedGetPendingFriendRequests = vi.mocked(
 	usersService.getPendingFriendRequests,
 );
+const mockedGetSentFriendRequests = vi.mocked(
+	usersService.getSentFriendRequests,
+);
 const mockedSendFriendRequest = vi.mocked(usersService.sendFriendRequest);
 const mockedAcceptFriendRequest = vi.mocked(usersService.acceptFriendRequest);
 const mockedDeleteFriendRequest = vi.mocked(usersService.deleteFriendRequest);
+const mockedSearchUser = vi.mocked(usersService.searchUser);
 
 const mockedToPublicUserDTO = vi.mocked(toPublicUserDTO);
 const mockedToUserResponseDTO = vi.mocked(toUserResponseDTO);
@@ -103,32 +111,23 @@ function createResponseMock() {
 		json: vi.fn(),
 		sendStatus: vi.fn(),
 	};
-
 	res.status.mockReturnValue(res);
 	res.json.mockReturnValue(res);
 	res.sendStatus.mockReturnValue(res);
-
 	return res;
 }
 
 describe("users/users.controller", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
-
 		mockedToPublicUserDTO.mockReturnValue(publicUserDTO);
 		mockedToUserResponseDTO.mockReturnValue(userResponseDTO);
 	});
 
 	describe("getUser", () => {
-		it("Returns a public user with HTTP 200", async () => {
+		it("should return a public user with HTTP 200", async () => {
 			mockedGetUserById.mockResolvedValue(user as any);
-
-			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
-			} as any;
-
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -137,21 +136,13 @@ describe("users/users.controller", () => {
 			expect(mockedGetUserById).toHaveBeenCalledWith("user-uuid");
 			expect(mockedToPublicUserDTO).toHaveBeenCalledWith(user);
 			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				user: publicUserDTO,
-			});
+			expect(res.json).toHaveBeenCalledWith({ user: publicUserDTO });
 			expect(next).not.toHaveBeenCalled();
 		});
 
-		it("Calls next with UnknownUserIdError when the user does not exist", async () => {
+		it("should call next with UnknownUserIdError when the user does not exist", async () => {
 			mockedGetUserById.mockResolvedValue(null);
-
-			const req = {
-				parsedParams: {
-					uuid: "unknown-uuid",
-				},
-			} as any;
-
+			const req = { parsedParams: { uuid: "unknown-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -164,16 +155,10 @@ describe("users/users.controller", () => {
 			expect(res.status).not.toHaveBeenCalled();
 		});
 
-		it("Forwards service errors to next", async () => {
+		it("should forward shared service errors to next", async () => {
 			const error = new Error("Database unavailable");
 			mockedGetUserById.mockRejectedValue(error);
-
-			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
-			} as any;
-
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -184,7 +169,7 @@ describe("users/users.controller", () => {
 	});
 
 	describe("getUserHistory", () => {
-		it("Returns user history with HTTP 200", async () => {
+		it("should return user history with HTTP 200", async () => {
 			const history = [
 				{
 					uuid: "game-uuid",
@@ -194,15 +179,8 @@ describe("users/users.controller", () => {
 					participants: [],
 				},
 			];
-
 			mockedGetUserHistory.mockResolvedValue(history as any);
-
-			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
-			} as any;
-
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -210,22 +188,14 @@ describe("users/users.controller", () => {
 
 			expect(mockedGetUserHistory).toHaveBeenCalledWith("user-uuid");
 			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				history,
-			});
+			expect(res.json).toHaveBeenCalledWith({ history });
 			expect(next).not.toHaveBeenCalled();
 		});
 
-		it("Forwards history service errors to next", async () => {
+		it("should forward history service errors to next", async () => {
 			const error = new Error("History unavailable");
 			mockedGetUserHistory.mockRejectedValue(error);
-
-			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
-			} as any;
-
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -236,7 +206,7 @@ describe("users/users.controller", () => {
 	});
 
 	describe("getUserStats", () => {
-		it("Returns the user statistics with HTTP 200", async () => {
+		it("should return user statistics with HTTP 200", async () => {
 			const req = {} as any;
 			const res = createResponseMock();
 			const next = vi.fn();
@@ -258,7 +228,7 @@ describe("users/users.controller", () => {
 	});
 
 	describe("getUserAchievements", () => {
-		it("Returns achievements with UUIDs with HTTP 200", async () => {
+		it("should return achievements with UUIDs with HTTP 200", async () => {
 			const req = {} as any;
 			const res = createResponseMock();
 			const next = vi.fn();
@@ -267,7 +237,6 @@ describe("users/users.controller", () => {
 
 			expect(res.status).toHaveBeenCalledWith(200);
 			const response = res.json.mock.calls[0][0];
-
 			expect(response.achievements).toHaveLength(3);
 			for (const achievement of response.achievements) {
 				expect(achievement.uuid).toEqual(expect.any(String));
@@ -277,21 +246,18 @@ describe("users/users.controller", () => {
 	});
 
 	describe("updateUser", () => {
-		it("Updates the user when current password is valid", async () => {
+		it("should update the user when the current password is valid", async () => {
 			mockedValidateUserPassword.mockResolvedValue(true);
 			mockedUpdateUser.mockResolvedValue(user as any);
 
 			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
+				parsedParams: { uuid: "user-uuid" },
 				parsedBody: {
 					currentPassword: "current-password",
 					confirmPassword: "new-password",
 					username: "updated-user",
 				},
 			} as any;
-
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -304,28 +270,22 @@ describe("users/users.controller", () => {
 			expect(mockedUpdateUser).toHaveBeenCalledWith("user-uuid", {
 				username: "updated-user",
 			});
-			expect(mockedToUserResponseDTO).toHaveBeenCalledWith(user);
 			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				user: userResponseDTO,
-			});
+			expect(res.json).toHaveBeenCalledWith({ user: userResponseDTO });
 			expect(next).not.toHaveBeenCalled();
 		});
 
-		it("Calls next with InvalidCredentialsError when current password is invalid", async () => {
+		it("should call next with InvalidCredentialsError when current password is invalid", async () => {
 			mockedValidateUserPassword.mockResolvedValue(false);
 
 			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
+				parsedParams: { uuid: "user-uuid" },
 				parsedBody: {
 					currentPassword: "wrong-password",
 					confirmPassword: "new-password",
 					username: "updated-user",
 				},
 			} as any;
-
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -339,18 +299,12 @@ describe("users/users.controller", () => {
 	});
 
 	describe("updateAvatar", () => {
-		it("Updates avatar and returns user with HTTP 200", async () => {
+		it("should update the avatar and return user response DTO with HTTP 200", async () => {
 			mockedUpdateUserAvatar.mockResolvedValue(user as any);
-
 			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
-				file: {
-					path: `${AVATAR_DIR}/new-avatar.png`,
-				},
+				parsedParams: { uuid: "user-uuid" },
+				file: { path: `${AVATAR_DIR}/new-avatar.png` },
 			} as any;
-
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -360,21 +314,15 @@ describe("users/users.controller", () => {
 				"user-uuid",
 				"new-avatar.png",
 			);
-			expect(mockedToUserResponseDTO).toHaveBeenCalledWith(user);
-			expect(res.json).toHaveBeenCalledWith({
-				user: userResponseDTO,
-			});
+			expect(res.json).toHaveBeenCalledWith({ user: userResponseDTO });
 			expect(next).not.toHaveBeenCalled();
 		});
 
-		it("Calls next with NoFileUploadError when file is missing", async () => {
+		it("should call next with NoFileUploadError when file is missing", async () => {
 			const req = {
-				parsedParams: {
-					uuid: "user-uuid",
-				},
+				parsedParams: { uuid: "user-uuid" },
 				file: undefined,
 			} as any;
-
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -388,20 +336,13 @@ describe("users/users.controller", () => {
 	});
 
 	describe("getFriends", () => {
-		it("Returns friendships mapped to DTOs with HTTP 200", async () => {
+		it("should return friendships mapped to DTOs with HTTP 200", async () => {
 			const rawFriendships = [{ uuid: "f-1", user }];
-			const mappedFriendshipDTO = {
-				uuid: "f-1",
-				user: publicUserDTO,
-			};
-
+			const mappedDTO = { uuid: "f-1", user: publicUserDTO };
 			mockedGetFriendships.mockResolvedValue(rawFriendships as any);
-			mockedToFriendshipDTO.mockReturnValue(mappedFriendshipDTO as any);
+			mockedToFriendshipDTO.mockReturnValue(mappedDTO as any);
 
-			const req = {
-				parsedParams: { uuid: "user-uuid" },
-			} as any;
-
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -412,20 +353,15 @@ describe("users/users.controller", () => {
 				rawFriendships[0],
 			);
 			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				friends: [mappedFriendshipDTO],
-			});
+			expect(res.json).toHaveBeenCalledWith({ friends: [mappedDTO] });
 			expect(next).not.toHaveBeenCalled();
 		});
 
-		it("Forwards errors to next", async () => {
+		it("should forward friendship errors to next", async () => {
 			const error = new Error("Friendship query failed");
 			mockedGetFriendships.mockRejectedValue(error);
 
-			const req = {
-				parsedParams: { uuid: "user-uuid" },
-			} as any;
-
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -436,21 +372,15 @@ describe("users/users.controller", () => {
 	});
 
 	describe("getPendingFriendRequests", () => {
-		it("Returns pending requests mapped to DTOs with HTTP 200", async () => {
+		it("should return pending friend requests mapped to DTOs with HTTP 200", async () => {
 			const rawRequests = [{ uuid: "req-1", sender: user }];
-			const mappedRequestDTO = { uuid: "req-1", sender: publicUserDTO };
-
+			const mappedDTO = { uuid: "req-1", sender: publicUserDTO };
 			mockedGetPendingFriendRequests.mockResolvedValue(
 				rawRequests as any,
 			);
-			mockedToPendingFriendRequestDTO.mockReturnValue(
-				mappedRequestDTO as any,
-			);
+			mockedToPendingFriendRequestDTO.mockReturnValue(mappedDTO as any);
 
-			const req = {
-				parsedParams: { uuid: "user-uuid" },
-			} as any;
-
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -464,25 +394,63 @@ describe("users/users.controller", () => {
 			);
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.json).toHaveBeenCalledWith({
-				pendingRequests: [mappedRequestDTO],
+				pendingRequests: [mappedDTO],
 			});
 			expect(next).not.toHaveBeenCalled();
 		});
 	});
 
-	describe("sendFriendRequest", () => {
-		it("Sends friend request and returns sentRequest with HTTP 200", async () => {
-			const createdRequest = { uuid: "req-1", receiver: user };
-			const mappedSentDTO = { uuid: "req-1", receiver: publicUserDTO };
+	describe("getSentFriendRequests", () => {
+		it("should return sent friend requests mapped to DTOs with HTTP 200", async () => {
+			const rawSent = [{ uuid: "req-1", receiver: user }];
+			const mappedDTO = { uuid: "req-1", receiver: publicUserDTO };
+			mockedGetSentFriendRequests.mockResolvedValue(rawSent as any);
+			mockedToSentFriendRequestDTO.mockReturnValue(mappedDTO as any);
 
-			mockedSendFriendRequest.mockResolvedValue(createdRequest as any);
-			mockedToSentFriendRequestDTO.mockReturnValue(mappedSentDTO as any);
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
+			const res = createResponseMock();
+			const next = vi.fn();
+
+			await getSentFriendRequests(req, res as any, next);
+
+			expect(mockedGetSentFriendRequests).toHaveBeenCalledWith(
+				"user-uuid",
+			);
+			expect(mockedToSentFriendRequestDTO).toHaveBeenCalledWith(
+				rawSent[0],
+			);
+			expect(res.status).toHaveBeenCalledWith(200);
+			expect(res.json).toHaveBeenCalledWith({
+				sentRequests: [mappedDTO],
+			});
+			expect(next).not.toHaveBeenCalled();
+		});
+
+		it("should forward sent friend request errors to next", async () => {
+			const error = new Error("Failed to get sent requests");
+			mockedGetSentFriendRequests.mockRejectedValue(error);
+
+			const req = { parsedParams: { uuid: "user-uuid" } } as any;
+			const res = createResponseMock();
+			const next = vi.fn();
+
+			await getSentFriendRequests(req, res as any, next);
+
+			expect(next).toHaveBeenCalledWith(error);
+		});
+	});
+
+	describe("sendFriendRequest", () => {
+		it("should send a friend request and return sentRequest with HTTP 200", async () => {
+			const created = { uuid: "req-1", receiver: user };
+			const mappedDTO = { uuid: "req-1", receiver: publicUserDTO };
+			mockedSendFriendRequest.mockResolvedValue(created as any);
+			mockedToSentFriendRequestDTO.mockReturnValue(mappedDTO as any);
 
 			const req = {
 				parsedParams: { uuid: "user-uuid" },
 				parsedBody: { receiverId: "receiver-uuid" },
 			} as any;
-
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -492,30 +460,24 @@ describe("users/users.controller", () => {
 				"user-uuid",
 				"receiver-uuid",
 			);
-			expect(mockedToSentFriendRequestDTO).toHaveBeenCalledWith(
-				createdRequest,
-			);
+			expect(mockedToSentFriendRequestDTO).toHaveBeenCalledWith(created);
 			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				sentRequest: mappedSentDTO,
-			});
+			expect(res.json).toHaveBeenCalledWith({ sentRequest: mappedDTO });
 			expect(next).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("acceptFriendRequest", () => {
-		it("Accepts friend request and returns friend with HTTP 200", async () => {
+		it("should accept a friend request and return friend with HTTP 200", async () => {
 			const accepted = { uuid: "f-1", user };
-			const mappedFriendDTO = { uuid: "f-1", user: publicUserDTO };
-
+			const mappedDTO = { uuid: "f-1", user: publicUserDTO };
 			mockedAcceptFriendRequest.mockResolvedValue(accepted as any);
-			mockedToFriendshipDTO.mockReturnValue(mappedFriendDTO as any);
+			mockedToFriendshipDTO.mockReturnValue(mappedDTO as any);
 
 			const req = {
 				parsedParams: { uuid: "user-uuid" },
-				parsedBody: { requestId: "req-uuid" },
+				parsedBody: { requestId: "req-1" },
 			} as any;
-
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -523,26 +485,22 @@ describe("users/users.controller", () => {
 
 			expect(mockedAcceptFriendRequest).toHaveBeenCalledWith(
 				"user-uuid",
-				"req-uuid",
+				"req-1",
 			);
 			expect(mockedToFriendshipDTO).toHaveBeenCalledWith(accepted);
 			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				friend: mappedFriendDTO,
-			});
+			expect(res.json).toHaveBeenCalledWith({ friend: mappedDTO });
 			expect(next).not.toHaveBeenCalled();
 		});
 	});
 
 	describe("deleteFriendRequest", () => {
-		it("Deletes friend request and responds with HTTP 204", async () => {
+		it("should delete a friend request and respond with HTTP 204", async () => {
 			mockedDeleteFriendRequest.mockResolvedValue({} as any);
-
 			const req = {
 				parsedParams: { uuid: "user-uuid" },
-				parsedBody: { requestId: "req-uuid" },
+				parsedBody: { requestId: "req-1" },
 			} as any;
-
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -550,10 +508,42 @@ describe("users/users.controller", () => {
 
 			expect(mockedDeleteFriendRequest).toHaveBeenCalledWith(
 				"user-uuid",
-				"req-uuid",
+				"req-1",
 			);
 			expect(res.sendStatus).toHaveBeenCalledWith(204);
 			expect(next).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("searchUser", () => {
+		it("should search users and return matches with HTTP 200", async () => {
+			mockedSearchUser.mockResolvedValue([user] as any);
+			mockedToPublicUserDTO.mockReturnValue(publicUserDTO);
+
+			const req = { parsedQuery: { query: "usr" } } as any;
+			const res = createResponseMock();
+			const next = vi.fn();
+
+			await searchUser(req, res as any, next);
+
+			expect(mockedSearchUser).toHaveBeenCalledWith("usr");
+			expect(mockedToPublicUserDTO).toHaveBeenCalledWith(user);
+			expect(res.status).toHaveBeenCalledWith(200);
+			expect(res.json).toHaveBeenCalledWith({ users: [publicUserDTO] });
+			expect(next).not.toHaveBeenCalled();
+		});
+
+		it("should forward search errors to next", async () => {
+			const error = new Error("Search Error");
+			mockedSearchUser.mockRejectedValue(error);
+
+			const req = { parsedQuery: { query: "usr" } } as any;
+			const res = createResponseMock();
+			const next = vi.fn();
+
+			await searchUser(req, res as any, next);
+
+			expect(next).toHaveBeenCalledWith(error);
 		});
 	});
 });

@@ -78,7 +78,7 @@ describe("users/users.service", () => {
 	});
 
 	describe("getUserHistory", () => {
-		it("Returns only finished games with participant online status", async () => {
+		it("should return only finished games with participant online status", async () => {
 			mockedFindMany.mockResolvedValue([
 				{
 					game: {
@@ -124,7 +124,7 @@ describe("users/users.service", () => {
 			expect(result[0].participants[0].user.online).toBe(true);
 		});
 
-		it("Replaces a null participant score with zero", async () => {
+		it("should replace a null participant score with zero", async () => {
 			mockedFindMany.mockResolvedValue([
 				{
 					game: {
@@ -152,7 +152,7 @@ describe("users/users.service", () => {
 			expect(result[0].participants[0].score).toBe(0);
 		});
 
-		it("Throws InvalidIdError when Prisma returns P2007", async () => {
+		it("should throw InvalidIdError when Prisma returns P2007", async () => {
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2007",
 				clientVersion: "x.y.z",
@@ -169,7 +169,7 @@ describe("users/users.service", () => {
 	});
 
 	describe("updateUser", () => {
-		it("Updates user data without hashing when no password is provided", async () => {
+		it("should update user data without hashing when no password is provided", async () => {
 			const updates = {
 				username: "updated-user",
 				email: "updated@email.com",
@@ -189,7 +189,7 @@ describe("users/users.service", () => {
 			expect(result).toEqual(updatedUser);
 		});
 
-		it("Hashes the new password before updating", async () => {
+		it("should hash the new password before updating", async () => {
 			const updates = { password: "new-password" };
 			mockedGenerateHash.mockResolvedValue("hashed-password");
 			mockedUpdate.mockResolvedValue(user as any);
@@ -204,7 +204,7 @@ describe("users/users.service", () => {
 			});
 		});
 
-		it("Throws DuplicateEmailError when Prisma reports duplicate email", async () => {
+		it("should throw DuplicateEmailError when Prisma reports duplicate email", async () => {
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2002",
 				clientVersion: "x.y.z",
@@ -220,7 +220,7 @@ describe("users/users.service", () => {
 			});
 		});
 
-		it("Throws DuplicateUsernameError when Prisma reports duplicate username", async () => {
+		it("should throw DuplicateUsernameError when Prisma reports duplicate username", async () => {
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2002",
 				clientVersion: "x.y.z",
@@ -236,7 +236,7 @@ describe("users/users.service", () => {
 			});
 		});
 
-		it("Throws UnknownUserIdError when Prisma returns P2025", async () => {
+		it("should throw UnknownUserIdError when Prisma returns P2025", async () => {
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2025",
 				clientVersion: "x.y.z",
@@ -253,7 +253,7 @@ describe("users/users.service", () => {
 	});
 
 	describe("updateUserAvatar", () => {
-		it("Throws UnknownUserIdError when the user does not exist", async () => {
+		it("should throw UnknownUserIdError when the user does not exist", async () => {
 			mockedGetUserById.mockResolvedValue(null);
 
 			await expect(
@@ -264,7 +264,7 @@ describe("users/users.service", () => {
 			expect(mockedUpdate).not.toHaveBeenCalled();
 		});
 
-		it("Updates the avatar path and unlinks old avatar", async () => {
+		it("should update the avatar path and delete old avatar file", async () => {
 			const userWithAvatar = { ...user, avatarPath: "old-avatar.png" };
 			mockedGetUserById.mockResolvedValue(userWithAvatar as any);
 			mockedUpdate.mockResolvedValue({
@@ -288,7 +288,7 @@ describe("users/users.service", () => {
 			expect(result.avatarPath).toBe("new-avatar.png");
 		});
 
-		it("Does not delete a file when the user has no previous avatar", async () => {
+		it("should not delete a file when the user has no previous avatar", async () => {
 			mockedGetUserById.mockResolvedValue(user as any);
 			mockedUpdate.mockResolvedValue({
 				...user,

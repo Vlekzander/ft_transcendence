@@ -326,7 +326,6 @@ export async function searchUser(
 ) {
 	try {
 		const { query } = req.parsedQuery!;
-		console.log(query);
 		const result = await usersService.searchUser(query);
 
 		const users: PublicUserDTO[] = result.map((element) =>
