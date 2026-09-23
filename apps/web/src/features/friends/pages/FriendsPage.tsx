@@ -8,8 +8,39 @@ import { searchUserRequest } from "../services/friends.service";
 import { FriendActionButton } from "../components/FriendActionButton";
 import FriendComponent from "../components/Friend";
 
+function UserPreviewComponent({ user }: { user: PublicUserDTO }) {
+	return (
+		<div
+			key={user.uuid}
+			className="flex items-center justify-between p-3 hover:bg-gray-400/5 transition-colors"
+		>
+			<Link
+				to={`/user/${user.uuid}`}
+				className="flex items-center gap-3 hover:underline"
+			>
+				<img
+					src={
+						user.avatarPath === null
+							? "/assets/default_avatar.jpg"
+							: AVATARS_PATH + user.avatarPath
+					}
+					alt=""
+					width={32}
+					height={32}
+					className="w-8 h-8 object-cover border"
+				/>
+				<span className="font-semibold text-sm sm:text-base">
+					{user.username}
+				</span>
+			</Link>
+			<FriendActionButton uuid={user.uuid} />
+		</div>
+	);
+}
+
 export default function FriendsPage() {
-	const { friends, removeFriend } = useFriends();
+	const { friends, removeFriend, pendingRequests, sentRequests } =
+		useFriends();
 
 	const [query, setQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<PublicUserDTO[]>([]);
@@ -84,32 +115,7 @@ export default function FriendsPage() {
 						) : searchResults.length > 0 ? (
 							<div className="divide-y divide-gray-200">
 								{searchResults.map((user) => (
-									<div
-										key={user.uuid}
-										className="flex items-center justify-between p-3 hover:bg-gray-400/5 transition-colors"
-									>
-										<Link
-											to={`/user/${user.uuid}`}
-											className="flex items-center gap-3 hover:underline"
-										>
-											<img
-												src={
-													user.avatarPath === null
-														? "/assets/default_avatar.jpg"
-														: AVATARS_PATH +
-															user.avatarPath
-												}
-												alt=""
-												width={36}
-												height={36}
-												className="w-9 h-9 object-cover border"
-											/>
-											<span className="font-semibold text-sm sm:text-base">
-												{user.username}
-											</span>
-										</Link>
-										<FriendActionButton uuid={user.uuid} />
-									</div>
+									<UserPreviewComponent user={user} />
 								))}
 							</div>
 						) : (
@@ -120,6 +126,43 @@ export default function FriendsPage() {
 					</div>
 				)}
 			</section>
+
+			{(pendingRequests.length > 0 || sentRequests.length > 0) && (
+				<section className="flex flex-col gap-4">
+					<h2 className="font-bold text-xl uppercase tracking-wide text-gray-700">
+						Requests
+					</h2>
+					{pendingRequests.length > 0 && (
+						<div className="flex flex-col gap-2">
+							<span className="text-xs uppercase font-semibold text-gray-500">
+								Received ({pendingRequests.length})
+							</span>
+							<div className="divide-y divide-gray-200">
+								{pendingRequests.map((request) => (
+									<UserPreviewComponent
+										user={request.sender}
+									/>
+								))}
+							</div>
+						</div>
+					)}
+
+					{sentRequests.length > 0 && (
+						<div className="flex flex-col gap-2">
+							<span className="text-xs uppercase font-semibold text-gray-500">
+								Sent ({sentRequests.length})
+							</span>
+							<div className="divide-y divide-gray-200">
+								{sentRequests.map((request) => (
+									<UserPreviewComponent
+										user={request.receiver}
+									/>
+								))}
+							</div>
+						</div>
+					)}
+				</section>
+			)}
 
 			<section className="flex flex-col gap-4">
 				<h2 className="font-bold text-xl uppercase tracking-wide text-gray-700">
