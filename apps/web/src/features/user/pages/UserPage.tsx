@@ -542,7 +542,7 @@ export default function UserPage() {
 													}
 													onClick={handleAcceptFriend}
 													title="Accept friend request"
-													className="order-1 sm:order-2 bg-green-500/10 text-green-500/90 border border-green-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-green-500/20 cursor-pointer"
+													className="bg-green-500/10 text-green-500/90 border border-green-500 font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-green-500/20 cursor-pointer"
 												>
 													<UserRoundPlus
 														strokeWidth={1}
@@ -573,7 +573,7 @@ export default function UserPage() {
 												disabled={isFriendActionLoading}
 												onClick={handleAddFriend}
 												title="Send friend request"
-												className="order-1 sm:order-2 bg-primary/10 text-primary/90 border border-primary font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-primary/20 cursor-pointer"
+												className="bg-primary/10 text-primary/90 border border-primary font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-primary/20 cursor-pointer"
 											>
 												<UserRoundPlus
 													strokeWidth={1}
