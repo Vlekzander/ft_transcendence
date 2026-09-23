@@ -23,7 +23,9 @@ import {
 	EditFriendshipSchema,
 	FriendshipDTO,
 	PendingFriendRequestDTO,
+	PublicUserDTO,
 	SentFriendRequestDTO,
+	StringQuerySchema,
 } from "@ft_transcendence/shared";
 import { toPublicUserDTO } from "../shared/shared.mapper";
 
@@ -45,6 +47,10 @@ type CreateFriendshipRequest = ParsedRequest<{
 type EditFriendshipRequest = ParsedRequest<{
 	body: typeof EditFriendshipSchema;
 	params: typeof UserParamsSchema;
+}>;
+
+type StringQueryRequest = ParsedRequest<{
+	query: typeof StringQuerySchema;
 }>;
 
 export async function getUser(
@@ -308,6 +314,26 @@ export async function deleteFriendRequest(
 		await usersService.deleteFriendRequest(uuid, requestId);
 
 		res.sendStatus(204);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function searchUser(
+	req: StringQueryRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { query } = req.parsedQuery!;
+		console.log(query);
+		const result = await usersService.searchUser(query);
+
+		const users: PublicUserDTO[] = result.map((element) =>
+			toPublicUserDTO(element),
+		);
+
+		res.status(200).json({ users: users });
 	} catch (err) {
 		next(err);
 	}

@@ -353,6 +353,19 @@ export class UsersService {
 			throw error;
 		}
 	}
+
+	async searchUser(query: string) {
+		const result = await prisma.user.findMany({
+			where: {
+				username: {
+					startsWith: query,
+					mode: "insensitive",
+				},
+			},
+		});
+
+		return result;
+	}
 }
 
 export const usersService = new UsersService();

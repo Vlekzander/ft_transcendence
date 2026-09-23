@@ -2,6 +2,7 @@ import {
 	CreateFriendshipSchema,
 	EditFriendshipSchema,
 	EditUserSchema,
+	StringQuerySchema,
 	UserParamsSchema,
 } from "@ft_transcendence/shared";
 import { Router } from "express";
@@ -103,6 +104,12 @@ usersRouter.delete(
 	requireUserOwnership,
 	validate({ body: EditFriendshipSchema, params: UserParamsSchema }),
 	usersController.deleteFriendRequest,
+);
+
+usersRouter.get(
+	"",
+	validate({ query: StringQuerySchema }),
+	usersController.searchUser,
 );
 
 //TODO: REMOVE
