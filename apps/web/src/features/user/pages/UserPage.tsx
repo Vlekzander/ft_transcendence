@@ -694,6 +694,15 @@ export default function UserPage() {
 									}
 								/>
 							))}
+							{friends.length % 3 > 0 &&
+								Array.from({
+									length: 3 - (friends.length % 3),
+								}).map((_, index) => (
+									<div
+										key={index}
+										className="bg-background hidden md:block"
+									></div>
+								))}
 						</div>
 					</div>
 				)}
