@@ -6,9 +6,10 @@ import { Link } from "react-router";
 import { AVATARS_PATH } from "../../../config";
 import { FriendActionButton } from "../../user/components/FriendActionButton";
 import { searchUserRequest } from "../services/friends.service";
+import FriendComponent from "../../user/components/Friend";
 
 export default function FriendsPage() {
-	const { friends } = useFriends();
+	const { friends, removeFriend } = useFriends();
 
 	const [query, setQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<PublicUserDTO[]>([]);
@@ -122,6 +123,43 @@ export default function FriendsPage() {
 								No players found for &quot;{query}&quot;
 							</p>
 						)}
+					</div>
+				)}
+			</section>
+
+			<section className="flex flex-col gap-4">
+				<h2 className="font-bold text-xl uppercase tracking-wide text-gray-700">
+					All friends ({friends.length})
+				</h2>
+				{friends.length > 0 ? (
+					<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200">
+						{friends.map((friend) => (
+							<FriendComponent
+								key={friend.uuid}
+								friend={friend.user}
+								onDelete={() => {
+									void removeFriend(friend.uuid);
+								}}
+							/>
+						))}
+						{friends.length % 3 > 0 &&
+							Array.from({
+								length: 3 - (friends.length % 3),
+							}).map((_, index) => (
+								<div
+									key={index}
+									className="bg-background hidden md:block"
+								></div>
+							))}
+					</div>
+				) : (
+					<div className="border border-gray-300 p-8 text-center bg-background">
+						<p className="text-gray-500">
+							You don&apos;t have any friends yet.
+						</p>
+						<p className="text-sm text-gray-400 mt-1">
+							Search for a player above to send a friend request.
+						</p>
 					</div>
 				)}
 			</section>

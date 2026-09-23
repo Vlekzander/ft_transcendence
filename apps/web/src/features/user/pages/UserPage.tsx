@@ -504,32 +504,42 @@ export default function UserPage() {
 								Manage friends
 							</Link>
 						)}
-						<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
-							{displayedFriends.map((friend) => (
-								<FriendComponent
-									key={friend.uuid}
-									friend={friend.user}
-									onDelete={
-										isOwnProfile
-											? () => {
-													void removeFriend(
-														friend.uuid,
-													);
-												}
-											: undefined
-									}
-								/>
-							))}
-							{friends.length % 3 > 0 &&
-								Array.from({
-									length: 3 - (friends.length % 3),
-								}).map((_, index) => (
-									<div
-										key={index}
-										className="bg-background hidden md:block"
-									></div>
+						{displayedFriends.length > 0 ? (
+							<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
+								{displayedFriends.map((friend) => (
+									<FriendComponent
+										key={friend.uuid}
+										friend={friend.user}
+										onDelete={
+											isOwnProfile
+												? () => {
+														void removeFriend(
+															friend.uuid,
+														);
+													}
+												: undefined
+										}
+									/>
 								))}
-						</div>
+								{displayedFriends.length % 3 > 0 &&
+									Array.from({
+										length:
+											3 - (displayedFriends.length % 3),
+									}).map((_, index) => (
+										<div
+											key={index}
+											className="bg-background hidden md:block"
+										></div>
+									))}
+							</div>
+						) : (
+							<div className="border border-gray-300 p-8 text-center bg-background mt-5">
+								<p className="text-gray-500">
+									{userData.username} don&apos;t have any
+									friends yet.
+								</p>
+							</div>
+						)}
 					</div>
 				)}
 			</div>
