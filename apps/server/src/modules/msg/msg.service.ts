@@ -7,7 +7,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { getPrismaConstraintFields } from "../shared/shared.service";
 import { prisma } from "@/lib/prisma.lib";
 
-export class ChatService {
+export class MsgService {
 	async sendMessage(sender: string, receiver: string, message: string) {
 		try {
 			const result = await prisma.message.create({
@@ -73,4 +73,4 @@ export class ChatService {
 	}
 }
 
-export const chatService = new ChatService();
+export const msgService = new MsgService();

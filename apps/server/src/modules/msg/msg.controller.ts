@@ -4,7 +4,7 @@ import {
 	SendMessagePacket,
 	UserParamsSchema,
 } from "@ft_transcendence/shared";
-import { chatService } from "./chat.service";
+import { msgService } from "./msg.service";
 import { RequireAuthError, SelfMessageError } from "@/errors";
 import { sendToWs } from "@/websocket.server";
 import { ParsedRequest } from "@/middlewares/validate.middleware";
@@ -15,7 +15,7 @@ type UserParamRequest = ParsedRequest<{ params: typeof UserParamsSchema }>;
 
 // REQUESTS
 
-export async function getChatHistory(
+export async function getMsgHistory(
 	req: UserParamRequest,
 	res: Response,
 	next: NextFunction,
@@ -25,7 +25,7 @@ export async function getChatHistory(
 		const { uuid: receiver } = req.parsedParams!;
 
 		if (!sender) throw new RequireAuthError();
-		const result = await chatService.getConversation(sender, receiver);
+		const result = await msgService.getConversation(sender, receiver);
 		res.status(200).send({ chatHistory: result });
 	} catch (err) {
 		next(err);
@@ -40,7 +40,7 @@ export async function handleMessage(
 ) {
 	if (!ws.uuid) throw new RequireAuthError();
 	if (ws.uuid === packet.receiver) throw new SelfMessageError();
-	const result = await chatService.sendMessage(
+	const result = await msgService.sendMessage(
 		ws.uuid,
 		packet.receiver,
 		packet.content,

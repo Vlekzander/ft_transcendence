@@ -1,16 +1,16 @@
 import { requireAuth } from "@/middlewares/auth.middleware";
 import { UserParamsSchema } from "@ft_transcendence/shared";
-import * as chatController from "./chat.controller";
+import * as msgController from "./msg.controller";
 import { Router } from "express";
 import { validate } from "@/middlewares/validate.middleware";
 
-const chatRouter = Router();
+const msgRouter = Router();
 
-chatRouter.get(
+msgRouter.get(
 	"/:uuid",
 	requireAuth,
 	validate({ params: UserParamsSchema }),
-	chatController.getChatHistory,
+	msgController.getMsgHistory,
 );
 
-export default chatRouter;
+export default msgRouter;

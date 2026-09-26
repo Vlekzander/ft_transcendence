@@ -1,5 +1,5 @@
-import { registerChatSockets } from "./modules/chat/chat.socket";
+import { registerMsgSockets } from "./modules/msg/msg.socket";
 
 export function registerAllSockets(): void {
-	registerChatSockets();
+	registerMsgSockets();
 }
