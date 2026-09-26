@@ -48,6 +48,7 @@ export async function handleMessage(
 	const resPacket = createReceiveMessagePacket(
 		result.uuid,
 		result.senderId,
+		result.receiverId,
 		result.content,
 	);
 

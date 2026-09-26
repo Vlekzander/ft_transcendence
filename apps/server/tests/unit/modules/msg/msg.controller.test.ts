@@ -138,6 +138,7 @@ describe("msg/msg.controller", () => {
 				type: "RECEIVE_MESSAGE",
 				uuid: "msg-123",
 				sender: "sender-uuid",
+				receiverId: "receiver-uuid",
 				content: "Hello from WS!",
 			};
 
@@ -156,6 +157,7 @@ describe("msg/msg.controller", () => {
 			expect(mockedCreateReceiveMessagePacket).toHaveBeenCalledWith(
 				"msg-123",
 				"sender-uuid",
+				"receiver-uuid",
 				"Hello from WS!",
 			);
 			expect(mockedSendToWs).toHaveBeenCalledWith(

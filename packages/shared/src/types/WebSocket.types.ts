@@ -30,6 +30,7 @@ export interface ReceiveMessagePacket extends BasePacket {
 	type: "RECEIVE_MESSAGE";
 	uuid: string;
 	sender: string;
+	receiver: string;
 	content: string;
 }
 
@@ -62,12 +63,14 @@ export function createSendMessagePacket(
 export function createReceiveMessagePacket(
 	uuid: string,
 	sender: string,
+	receiver: string,
 	content: string,
 ): ReceiveMessagePacket {
 	return {
 		type: "RECEIVE_MESSAGE",
 		uuid: uuid,
 		sender: sender,
+		receiver: receiver,
 		content: content,
 	};
 }
