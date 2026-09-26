@@ -45,12 +45,12 @@ export async function handleMessage(
 		packet.receiver,
 		packet.content,
 	);
-	sendToWs(
-		result.receiverId,
-		createReceiveMessagePacket(
-			result.uuid,
-			result.receiverId,
-			result.content,
-		),
+	const resPacket = createReceiveMessagePacket(
+		result.uuid,
+		result.senderId,
+		result.content,
 	);
+
+	sendToWs(result.senderId, resPacket);
+	sendToWs(result.receiverId, resPacket);
 }
