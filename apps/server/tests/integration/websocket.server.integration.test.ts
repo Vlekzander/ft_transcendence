@@ -15,6 +15,17 @@ import {
 	setupWebSocketServer,
 } from "@/websocket.server";
 import { generateAccessToken } from "@/utils/jwt.util";
+import { msgService } from "@/modules/msg/msg.service";
+
+// Mock the service layer to avoid actual DB writes during integration testing of the WS pipeline
+vi.mock("@/modules/msg/msg.service", () => ({
+	msgService: {
+		sendMessage: vi.fn(),
+		getConversation: vi.fn(),
+	},
+}));
+
+const mockedSendMessage = vi.mocked(msgService.sendMessage);
 
 const JWT_SECRET = "websocket-test-secret";
 
@@ -312,6 +323,143 @@ describe("websocket server", () => {
 				type: "ERROR",
 				text: "Unknown packet type: UNKNOWN",
 			});
+
+			socket.close();
+			await waitForClose(socket);
+		});
+
+		it("Broadcasts a message to both sender and receiver when valid", async () => {
+			// Arrange
+			const senderUuid = "sender-uuid";
+			const receiverUuid = "receiver-uuid";
+
+			const senderToken = generateAccessToken(senderUuid);
+			const receiverToken = generateAccessToken(receiverUuid);
+
+			const senderSocket = new WebSocket(address, {
+				headers: { Cookie: `token=${senderToken}` },
+			});
+			const receiverSocket = new WebSocket(address, {
+				headers: { Cookie: `token=${receiverToken}` },
+			});
+
+			await Promise.all([
+				waitForOpen(senderSocket),
+				waitForOpen(receiverSocket),
+			]);
+
+			mockedSendMessage.mockResolvedValue({
+				uuid: "msg-id-123",
+				senderId: senderUuid,
+				receiverId: receiverUuid,
+				content: "Hello receiver!",
+				createdAt: new Date(),
+			} as any);
+
+			const packet = {
+				type: "SEND_MESSAGE",
+				receiver: receiverUuid,
+				content: "Hello receiver!",
+			};
+
+			// Act
+			const senderMessagePromise = waitForMessage(senderSocket);
+			const receiverMessagePromise = waitForMessage(receiverSocket);
+
+			senderSocket.send(JSON.stringify(packet));
+
+			const [senderRaw, receiverRaw] = await Promise.all([
+				senderMessagePromise,
+				receiverMessagePromise,
+			]);
+
+			// Assert
+			const senderPacket = JSON.parse(senderRaw);
+			const receiverPacket = JSON.parse(receiverRaw);
+
+			expect(mockedSendMessage).toHaveBeenCalledWith(
+				senderUuid,
+				receiverUuid,
+				"Hello receiver!",
+			);
+
+			const expectedPayload = {
+				uuid: "msg-id-123",
+				sender: senderUuid,
+				content: "Hello receiver!",
+			};
+
+			expect(senderPacket).toMatchObject({
+				type: "RECEIVE_MESSAGE",
+				...expectedPayload,
+			});
+			expect(receiverPacket).toMatchObject({
+				type: "RECEIVE_MESSAGE",
+				...expectedPayload,
+			});
+
+			senderSocket.close();
+			receiverSocket.close();
+			await Promise.all([
+				waitForClose(senderSocket),
+				waitForClose(receiverSocket),
+			]);
+		});
+
+		it("Returns an error packet if an unauthenticated user attempts to send a message", async () => {
+			// Arrange
+			const socket = new WebSocket(address);
+			await waitForOpen(socket);
+
+			const packet = {
+				type: "SEND_MESSAGE",
+				receiver: "receiver-uuid",
+				content: "Unauthorized hello",
+			};
+
+			// Act
+			const messagePromise = waitForMessage(socket);
+			socket.send(JSON.stringify(packet));
+			const rawResponse = await messagePromise;
+
+			// Assert
+			const errorPacket = JSON.parse(rawResponse);
+			expect(errorPacket).toMatchObject({
+				type: "ERROR",
+			});
+			expect(mockedSendMessage).not.toHaveBeenCalled();
+
+			socket.close();
+			await waitForClose(socket);
+		});
+
+		it("Returns an error packet if a user attempts to send a message to themselves", async () => {
+			// Arrange
+			const userUuid = "user-uuid";
+			const token = generateAccessToken(userUuid);
+
+			const socket = new WebSocket(address, {
+				headers: { Cookie: `token=${token}` },
+			});
+			await waitForOpen(socket);
+
+			const packet = {
+				type: "SEND_MESSAGE",
+				receiver: userUuid,
+				content: "Message to self",
+			};
+
+			// Act
+			const messagePromise = waitForMessage(socket);
+			socket.send(JSON.stringify(packet));
+			const rawResponse = await messagePromise;
+
+			// Assert
+			const errorPacket = JSON.parse(rawResponse);
+			expect(errorPacket).toMatchObject({
+				type: "ERROR",
+			});
+			expect(mockedSendMessage).not.toHaveBeenCalled();
 
 			socket.close();
 			await waitForClose(socket);
