@@ -41,6 +41,13 @@ export function getOnlineUsers(): string[] {
 	return Array.from(presence.keys());
 }
 
+export function sendToWs(uuid: string, packet: AppPacket) {
+	const sockets = presence.get(uuid);
+
+	if (!sockets) return;
+	for (const socket of sockets) socket.send(JSON.stringify(packet));
+}
+
 function addSocketToPresence(ws: AppWebSocket) {
 	if (!ws.uuid) return;
 

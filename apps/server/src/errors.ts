@@ -139,3 +139,10 @@ export class PendingFriendRequestExistError extends AppDomainError {
 		this.name = "PendingFriendRequestExistError";
 	}
 }
+
+export class SelfMessageError extends AppDomainError {
+	constructor() {
+		super("You can't send a message to yourself");
+		this.name = "SelfMessageError";
+	}
+}

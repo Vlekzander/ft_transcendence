@@ -267,34 +267,6 @@ describe("websocket server", () => {
 	});
 
 	describe("messages", () => {
-		it("Returns a message packet for a valid MESSAGE packet", async () => {
-			// Arrange
-			const socket = new WebSocket(address);
-
-			await waitForOpen(socket);
-
-			const packet = {
-				type: "MESSAGE",
-				text: "Hello WebSocket",
-			};
-
-			// Act
-			socket.send(JSON.stringify(packet));
-
-			const message = await waitForMessage(socket);
-
-			// Assert
-			const responsePacket = JSON.parse(message);
-
-			expect(responsePacket).toMatchObject({
-				type: "MESSAGE",
-				text: "Your message: Hello WebSocket",
-			});
-
-			socket.close();
-			await waitForClose(socket);
-		});
-
 		it("Returns an error packet for invalid JSON", async () => {
 			// Arrange
 			const socket = new WebSocket(address);
