@@ -22,7 +22,7 @@ export class MsgService {
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {
 				if (error.code === "P2007") throw new InvalidIdError();
-				if (error.code === "P2025") {
+				if (error.code === "P2025" || error.code === "P2003") {
 					const fields = getPrismaConstraintFields(error);
 					if (fields.includes("senderId"))
 						throw new UnknownUserIdError();
@@ -32,6 +32,7 @@ export class MsgService {
 					throw new UnknownElementError("unknown");
 				}
 			}
+			console.log(error);
 			throw error;
 		}
 	}

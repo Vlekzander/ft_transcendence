@@ -2,6 +2,7 @@ import {
 	AppWebSocket,
 	createReceiveMessagePacket,
 	SendMessagePacket,
+	toMessageDTO,
 	UserParamsSchema,
 } from "@ft_transcendence/shared";
 import { msgService } from "./msg.service";
@@ -26,7 +27,10 @@ export async function getMsgHistory(
 
 		if (!sender) throw new RequireAuthError();
 		const result = await msgService.getConversation(sender, receiver);
-		res.status(200).send({ chatHistory: result });
+		const msgHistory = result.map((e) =>
+			toMessageDTO(e.uuid, e.senderId, e.receiverId, e.content),
+		);
+		res.status(200).send({ msgHistory: msgHistory });
 	} catch (err) {
 		next(err);
 	}
