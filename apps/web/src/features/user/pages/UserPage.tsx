@@ -1,10 +1,11 @@
-import type {
-	Achievement,
-	FriendshipDTO,
-	GameHistoryEntry,
-	GameParticipant,
-	PublicUserDTO,
-	Stat,
+import {
+	AppDomainError,
+	type Achievement,
+	type FriendshipDTO,
+	type GameHistoryEntry,
+	type GameParticipant,
+	type PublicUserDTO,
+	type Stat,
 } from "@ft_transcendence/shared";
 import {
 	Check,
@@ -23,15 +24,18 @@ import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
 import { Link, Navigate, useParams } from "react-router";
 import { API_URL, AVATARS_PATH } from "../../../config";
-import {
-	PartialProfileError,
-	UserNotFoundError,
-	UserProfileError,
-} from "../../../shared/types/errors";
+import { PartialProfileError } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useFriends } from "../../friends/context/FriendContext";
 import { FriendActionButton } from "../../friends/components/FriendActionButton";
+import {
+	getAchievements,
+	getFriends,
+	getHistory,
+	getStats,
+	getUser,
+} from "../services/user.service";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
@@ -311,49 +315,31 @@ export default function UserPage() {
 			try {
 				setLoading(true);
 				setError(null);
-				const userEndpoint = `${API_URL}/users/${uuid}`;
-				const fetches = [
-					fetch(`${userEndpoint}`),
-					fetch(`${userEndpoint}/history`),
-					fetch(`${userEndpoint}/stats`),
-					fetch(`${userEndpoint}/achievements`),
-					!isOwnProfile
-						? fetch(`${userEndpoint}/friends`)
-						: Promise.resolve(null),
-				];
+				const resUser = await getUser(uuid);
+				const resHistory = await getHistory(uuid);
+				const resStats = await getStats(uuid);
+				const resAchievements = await getAchievements(uuid);
+				let resFriends = undefined;
+				if (!isOwnProfile) resFriends = await getFriends(uuid);
 
-				const [
-					resUser,
-					resHistory,
-					resStats,
-					resAchievements,
-					resFriends,
-				] = await Promise.all(fetches);
-				if (!resUser.ok) {
-					if (resUser.status === 404) throw new UserNotFoundError();
-					throw new UserProfileError();
-				}
+				if (resUser.ok === false)
+					throw new AppDomainError(resUser.error);
 
-				const resultUser = await resUser.json();
-				const resultHistory = resHistory.ok
-					? await resHistory.json()
-					: { history: [] };
-				const resultStats = resStats.ok
-					? await resStats.json()
-					: { stats: [] };
+				const resultUser = resUser.data;
+				const resultHistory = resHistory.ok ? resHistory.data : [];
+				const resultStats = resStats.ok ? resStats.data : [];
 				const resultAchievements = resAchievements.ok
-					? await resAchievements.json()
-					: { achievements: [] };
+					? resAchievements.data
+					: [];
 				let loadedFriends: FriendshipDTO[] = [];
 				if (resFriends && resFriends.ok) {
-					const friendsData = await resFriends.json();
-					loadedFriends = friendsData.friends || [];
+					loadedFriends = resFriends || [];
 				}
 				if (isMounted) {
-					setUserData(resultUser.user);
-					setHistory(resultHistory.history || []);
-					setStats(resultStats.stats || []);
-					setAchievements(resultAchievements.achievements || []);
+					setUserData(resultUser);
+					setHistory(resultHistory || []);
+					setStats(resultStats || []);
+					setAchievements(resultAchievements || []);
 					if (!isOwnProfile) setProfileFriends(loadedFriends);
 				}
 				if (!resHistory.ok || !resStats.ok || !resAchievements.ok)
