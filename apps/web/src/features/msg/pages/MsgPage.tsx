@@ -2,23 +2,64 @@ import {
 	createSendMessagePacket,
 	toMessageDTO,
 	type MessageDTO,
+	type PublicUserDTO,
 	type ReceiveMessagePacket,
 } from "@ft_transcendence/shared";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useWsEvent } from "../../websocket/hooks/useWsEvent";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useEffect, useState } from "react";
-import { API_URL } from "../../../config";
 import { useWebSocket } from "../../websocket/context/WebSocketContext";
+import { getUser } from "../../user/services/user.service";
+import { getMessages } from "../services/messages.service";
 
 export default function MsgPage() {
+	const navigate = useNavigate();
 	const { user } = useAuth();
 	const { sendPacket } = useWebSocket();
-	const { uuid } = useParams<{ uuid: string }>(); //TODO: GET USER DATA
+	const { uuid } = useParams<{ uuid: string }>();
 
 	const [isLoading, setLoading] = useState(false);
 	const [messages, setMessages] = useState<MessageDTO[]>([]);
 	const [content, setContent] = useState("");
+	const [otherUser, setOtherUser] = useState<PublicUserDTO | undefined>();
+	const [error, setError] = useState<string | null>(null);
+
+	useEffect(() => {
+		let isMounted = true;
+
+		const fetchData = async () => {
+			if (!uuid) return;
+			try {
+				setLoading(true);
+				setError(null);
+
+				const resUser = await getUser(uuid);
+				if (resUser.ok === false) {
+					navigate("/not-found", { replace: true });
+					return;
+				}
+				const resMessages = await getMessages(uuid);
+
+				const resultUser = resUser.data;
+				const resultMessages = resMessages.ok ? resMessages.data : [];
+
+				if (isMounted) {
+					setOtherUser(resultUser);
+					setMessages(resultMessages);
+				}
+			} catch (error) {
+				if (isMounted) setError(error.message || "An error occured");
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		};
+
+		fetchData();
+		return () => {
+			isMounted = false;
+		};
+	}, [uuid]);
 
 	useWsEvent<ReceiveMessagePacket>("RECEIVE_MESSAGE", (packet) => {
 		if (packet.sender !== uuid && packet.receiver !== uuid) return;
@@ -30,43 +71,6 @@ export default function MsgPage() {
 		);
 		setMessages((prevMessages) => [...prevMessages, message]);
 	});
-
-	useEffect(() => {
-		let isMounted = true;
-
-		const fetchMsgs = async () => {
-			if (!uuid) return;
-			try {
-				setLoading(true);
-
-				const response = await fetch(`${API_URL}/msg/${uuid}`, {
-					credentials: "include",
-				});
-
-				if (!response.ok) {
-					//TODO: SHOW ERROR ?
-				}
-
-				const data = await response.json();
-
-				if (isMounted) {
-					setMessages(data.msgHistory || []);
-				}
-			} catch (error) {
-				console.error(error);
-			} finally {
-				if (isMounted) {
-					setLoading(false);
-				}
-			}
-		};
-
-		fetchMsgs();
-
-		return () => {
-			isMounted = false;
-		};
-	}, [uuid]);
 
 	const send = () => {
 		if (content.trim().length === 0) return;
@@ -92,9 +96,13 @@ export default function MsgPage() {
 						msg.sender === user.uuid ? "bg-primary" : "bg-gray-300"
 					}
 				>
-					{msg.content}
+					{msg.sender === user.uuid
+						? user.username
+						: otherUser.username}{" "}
+					- {msg.content}
 				</div>
 			))}
+			{error && <p className="text-red-500">{error}</p>}
 			<input
 				value={content}
 				onChange={(e) => setContent(e.target.value)}

@@ -27,10 +27,10 @@ export async function getMsgHistory(
 
 		if (!sender) throw new RequireAuthError();
 		const result = await msgService.getConversation(sender, receiver);
-		const msgHistory = result.map((e) =>
+		const messages = result.map((e) =>
 			toMessageDTO(e.uuid, e.senderId, e.receiverId, e.content),
 		);
-		res.status(200).send({ msgHistory: msgHistory });
+		res.status(200).send({ messages: messages });
 	} catch (err) {
 		next(err);
 	}
