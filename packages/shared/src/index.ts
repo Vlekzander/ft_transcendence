@@ -1,6 +1,6 @@
 export * from "./errors/domain.errors";
 export * from "./errors/validation.errors";
-
+export * from "./schemas/lobby.schemas";
 export * from "./schemas/user.schemas";
 
 export * from "./types/Achievement.types";
