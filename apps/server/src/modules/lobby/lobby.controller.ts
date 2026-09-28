@@ -7,10 +7,10 @@ import { lobbyService } from "./lobby.service";
 
 type LobbyBody = typeof CreateLobbySchema;
 
-type LobbyRequest<T extends LobbyBody = LobbyBody> = ParsedRequest<{ body: T }>;
+type LobbyRequest = ParsedRequest<{ body: typeof CreateLobbySchema }>;
 
-export async function createLobby(
-	req: LobbyRequest<typeof CreateLobbySchema>,
+export async function createLobbyController(
+	req: LobbyRequest,
 	res: Response,
 	next: NextFunction,
 ) {
@@ -24,27 +24,11 @@ export async function createLobby(
 			throw new Error("Invalid token");
 		}
 		const data = req.parsedBody!;
-		const user = await lobbyService.createLobby(payload.sub, data);
-		const dto = toLobbyResponseDTO(user);
+		const lobby = await lobbyService.createLobby(payload.sub, data);
+		const dto = toLobbyResponseDTO(lobby);
 
 		res.status(201).json({ data: dto });
 	} catch (err) {
 		next(err);
 	}
 }
-/*
-export async function Lobby(
-	req: LobbyRequest<typeof CreateLobbySchema>,
-	res: Response,
-	next: NextFunction,
-) {
-	try {
-		const data = req.parsedBody!;
-		const user = await lobbyService.createLobby(data);
-		const dto = toLobbyResponseDTO(user);
-
-		res.status(201).json({ data: dto });
-	} catch (err) {
-		next(err);
-	}
-}*/
