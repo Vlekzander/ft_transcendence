@@ -335,7 +335,7 @@ export default function UserPage() {
 					: [];
 				let loadedFriends: FriendshipDTO[] = [];
 				if (resFriends && resFriends.ok) {
-					loadedFriends = resFriends || [];
+					loadedFriends = resFriends.data || [];
 				}
 				if (isMounted) {
 					setUserData(resultUser);
