@@ -2,13 +2,33 @@ import {
 	AppPacket,
 	AppWebSocket,
 	createErrorPacket,
-	createMessagePacket,
 } from "@ft_transcendence/shared";
 import { Server } from "http";
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import { validateAccessToken } from "./utils/jwt.util";
+import { registerAllSockets } from "./socket";
 
 const HEARTBEAT_INTERVAL = 45000;
+
+export type PacketHandler<T extends AppPacket = AppPacket> = (
+	ws: AppWebSocket,
+	packet: T,
+) => void | Promise<void>;
+
+const handlers = new Map<string, PacketHandler<never>>();
+
+export function registerPacketHandler<T extends AppPacket["type"]>(
+	type: T,
+	handler: PacketHandler<Extract<AppPacket, { type: T }>>,
+) {
+	handlers.set(type, handler as PacketHandler<never>);
+}
+
+export function getPacketHandler(
+	type: string,
+): PacketHandler<AppPacket> | undefined {
+	return handlers.get(type) as PacketHandler<AppPacket> | undefined;
+}
 
 const presence = new Map<string, Set<AppWebSocket>>();
 
@@ -19,6 +39,13 @@ export function isUserOnline(uuid: string): boolean {
 
 export function getOnlineUsers(): string[] {
 	return Array.from(presence.keys());
+}
+
+export function sendToWs(uuid: string, packet: AppPacket) {
+	const sockets = presence.get(uuid);
+
+	if (!sockets) return;
+	for (const socket of sockets) socket.send(JSON.stringify(packet));
 }
 
 function addSocketToPresence(ws: AppWebSocket) {
@@ -62,7 +89,7 @@ function sendError(ws: AppWebSocket, text: string) {
 	ws.send(JSON.stringify(createErrorPacket(text)));
 }
 
-function handleMessage(ws: AppWebSocket, data: RawData) {
+async function handlePacket(ws: AppWebSocket, data: RawData) {
 	let packet: AppPacket;
 
 	try {
@@ -72,20 +99,23 @@ function handleMessage(ws: AppWebSocket, data: RawData) {
 		return;
 	}
 
-	switch (packet.type) {
-		case "MESSAGE":
-			ws.send(
-				JSON.stringify(
-					createMessagePacket(`Your message: ${packet.text}`),
-				),
-			);
-			break;
-		default:
-			sendError(ws, `Unknown packet type: ${packet.type}`);
+	const handler = getPacketHandler(packet.type);
+
+	if (!handler) {
+		sendError(ws, `Unknown packet type: ${packet.type}`);
+		return;
+	}
+
+	try {
+		await handler(ws, packet);
+	} catch (error) {
+		if (error instanceof Error) sendError(ws, error.message);
 	}
 }
 
 export const setupWebSocketServer = (httpserver: Server) => {
+	registerAllSockets();
+
 	const wss = new WebSocketServer({ server: httpserver });
 
 	wss.on("connection", (ws: AppWebSocket, req) => {
@@ -117,7 +147,7 @@ export const setupWebSocketServer = (httpserver: Server) => {
 		});
 
 		ws.on("message", (message: RawData) => {
-			handleMessage(ws, message);
+			handlePacket(ws, message);
 		});
 
 		ws.on("pong", () => {

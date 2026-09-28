@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { registerUser } from "../services/authApi";
 import { useAuth } from "../context/AuthContext";
 import { useForm } from "react-hook-form";
@@ -9,6 +9,7 @@ import {
 	type RegisterUserDTO,
 } from "@ft_transcendence/shared";
 import type { ApiResult } from "../../../shared/types/api";
+import { UserPlus } from "lucide-react";
 
 export default function RegisterForm() {
 	const { refreshUser } = useAuth();
@@ -57,51 +58,79 @@ export default function RegisterForm() {
 	};
 
 	return (
-		<form
-			onSubmit={handleSubmit(onSubmit)}
-			className="border flex flex-col"
-		>
-			<h2>Register</h2>
-			<p className="min-h-5 text-sm text-red-500">{serverError || " "}</p>
-			<div>
-				<label htmlFor="username">Username</label>
-				<input id="username" {...register("username")} />
-				<p className="min-h-5 text-sm text-red-500">
-					{errors.username?.message || " "}
-				</p>
+		<form onSubmit={handleSubmit(onSubmit)} className="form-card">
+			<h2 className="form-title">
+				<UserPlus className="text-primary" size={28} />
+				Register
+			</h2>
+			{serverError && (
+				<p className="form-alert-error">{serverError || " "}</p>
+			)}
+			<div className="form-field">
+				<label htmlFor="username" className="form-label">
+					Username
+				</label>
+				<input
+					id="username"
+					className="form-input"
+					{...register("username")}
+				/>
+				<p className="form-error">{errors.username?.message || " "}</p>
 			</div>
-			<div>
-				<label htmlFor="email">Email</label>
-				<input id="email" type="email" {...register("email")} />
-				<p className="min-h-5 text-sm text-red-500">
-					{errors.email?.message || " "}
-				</p>
+			<div className="form-field">
+				<label htmlFor="email" className="form-label">
+					Email
+				</label>
+				<input
+					id="email"
+					type="email"
+					className="form-input"
+					{...register("email")}
+				/>
+				<p className="form-error">{errors.email?.message || " "}</p>
 			</div>
-			<div>
-				<label htmlFor="password">Password</label>
+			<div className="form-field">
+				<label htmlFor="password" className="form-label">
+					Password
+				</label>
 				<input
 					id="password"
 					type="password"
+					className="form-input"
 					{...register("password")}
 				/>
-				<p className="min-h-5 text-sm text-red-500">
-					{errors.password?.message || " "}
-				</p>
+				<p className="form-error">{errors.password?.message || " "}</p>
 			</div>
-			<div>
-				<label htmlFor="confirmPassword">Confirm password</label>
+			<div className="form-field">
+				<label htmlFor="confirmPassword" className="form-label">
+					Confirm password
+				</label>
 				<input
 					id="confirmPassword"
 					type="password"
+					className="form-input"
 					{...register("confirmPassword")}
 				/>
-				<p className="min-h-5 text-sm text-red-500">
+				<p className="form-error">
 					{errors.confirmPassword?.message || " "}
 				</p>
 			</div>
-			<button type="submit" disabled={isSubmitting}>
+			<button
+				type="submit"
+				className="btn-primary mt-2"
+				disabled={isSubmitting}
+			>
 				{isSubmitting ? "Registering..." : "Register"}
 			</button>
+			<p className="text-sm text-gray-500 text-center mt-2">
+				Already have an account?{" "}
+				<Link
+					to="/login"
+					className="font-semibold text-primary hover:underline"
+				>
+					Login
+				</Link>
+			</p>
 		</form>
 	);
 }

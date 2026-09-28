@@ -3,6 +3,7 @@ import { uploadAvatar } from "../services/editApi";
 import { useAuth } from "../../auth/context/AuthContext";
 import type { ApiResult } from "../../../shared/types/api";
 import { AVATARS_PATH, DEFAULT_AVATAR } from "../../../config";
+import { ImageIcon, Upload } from "lucide-react";
 
 const MAX_FILE_SIZE_MB = 5;
 
@@ -61,28 +62,49 @@ export default function EditAvatarForm() {
 				e.preventDefault();
 				handleSubmit();
 			}}
-			className="border flex flex-col items-center"
+			className="form-card"
 		>
-			<h2>Edit Avatar</h2>
-			<p className="min-h-5 text-sm text-red-500">{serverError || " "}</p>
-			<img
-				src={
-					avatarPreview
-						? avatarPreview
-						: user.avatarPath
-							? `${AVATARS_PATH}/${user.avatarPath}`
-							: DEFAULT_AVATAR
-				}
-				alt="Avatar preview"
-				className="h-32 w-32 object-cover mb-3"
-			/>
-			<input
-				type="file"
-				accept="image/*"
-				onChange={handleAvatarChange}
-				disabled={isSubmitting}
-			/>
-			<button type="submit" disabled={isSubmitting}>
+			<h2 className="form-title">
+				<ImageIcon className="text-primary" size={28} />
+				Edit Avatar
+			</h2>
+			{serverError && (
+				<div className="form-alert-error">{serverError}</div>
+			)}
+			<div className="flex flex-col sm:flex-row items-center gap-6 my-2">
+				<div className="w-32 h-32 shrink-0 border border-gray-400 bg-gray-100 flex items-center justify-center overflow-hidden">
+					<img
+						src={
+							avatarPreview
+								? avatarPreview
+								: user.avatarPath
+									? `${AVATARS_PATH}/${user.avatarPath}`
+									: DEFAULT_AVATAR
+						}
+						alt="Avatar preview"
+						className="h-full w-full object-cover"
+					/>
+				</div>
+				<div className="form-field flex-1 w-full">
+					<label htmlFor="avatar-file" className="form-label">
+						Upload image (max {MAX_FILE_SIZE_MB} MB)
+					</label>
+					<input
+						id="avatar-file"
+						type="file"
+						accept="image/*"
+						onChange={handleAvatarChange}
+						disabled={isSubmitting}
+						className="form-input file:mr-4 file:py-1 file:px-3 file:border-0 file:bg-gray-200 file:text-foreground file:font-semibold hover:file:bg-gray-300 cursor-pointer"
+					/>
+				</div>
+			</div>
+			<button
+				type="submit"
+				disabled={isSubmitting || !avatarFile}
+				className="btn-primary mt-2"
+			>
+				<Upload size={18} />
 				{isSubmitting ? "Editing avatar..." : "Edit avatar"}
 			</button>
 		</form>

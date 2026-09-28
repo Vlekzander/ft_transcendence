@@ -35,6 +35,9 @@ model User {
 
 	friendshipsSent		Friendship[]	@relation("FriendshipSender")
 	friendshipsReceived	Friendship[]	@relation("FriendshipReceiver")
+
+	messagesSent		Message[]		@relation("MessageSender")
+	messagesReceived	Message[]		@relation("MessageReceiver")
 }
 
 model Game {
@@ -72,4 +75,14 @@ model Friendship {
 	@@index([uuid])
 	@@index([senderId, status])
 	@@index([receiverId, status])
+}
+
+model Message {
+	uuid		String	@id @default(uuid(7)) @db.Uuid
+	senderId	String	@db.Uuid
+	receiverId	String	@db.Uuid
+	content		String
+
+	sender		User	@relation("MessageSender", fields: [senderId], references: [uuid], onDelete: Cascade)
+	receiver	User	@relation("MessageReceiver", fields: [receiverId], references: [uuid], onDelete: Cascade)
 }
