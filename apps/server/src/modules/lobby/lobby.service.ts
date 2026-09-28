@@ -1,6 +1,6 @@
-import { CreateLobbySchema, toLobbyResponseDTO } from "@ft_transcendence/shared";
-import { Prisma } from "../../generated/prisma/client";
-import { prisma } from "../../lib/prisma.lib";
+import { CreateLobbyDTO } from "@ft_transcendence/shared";
+//import { Prisma } from "../../generated/prisma/client";
+//import { prisma } from "../../lib/prisma.lib";
 import { v7 as uuidv7 } from 'uuid';
 import { LobbyEntity } from "./lobby.mapper";
 
@@ -20,22 +20,21 @@ function generateJoinCode(): string {
 }
 
 export class LobbyService {
-	async createLobby(data: CreateLobbySchema): Promise<LobbyEntity> { // LobbyEntity to check
-		try {
+	async createLobby(hostId: string, data: CreateLobbyDTO): Promise<LobbyEntity> { // LobbyEntity to check
+		//add try catch here
 			const code = generateJoinCode();
-			const result = {
-				id: uuidv7(),
-				createdAt: new Date(),
+			const lobby: LobbyEntity = {
+				uuid: uuidv7(),
 				joinCode: code,
-				name: data.name,
+				hostId: hostId,
+				mode: data.mode,
+				visibility: data.visibility,
+				settings: data.settings,
+				createdAt: new Date(),
 				maxPlayers: data.maxPlayers,
 			};
-
-			return toLobbyResponseDTO(result);
-		} catch (error) {
-			////
-		}
-		return Promise.reject(new Error("Failed to create lobby"));
+			lobbiesByJoinCode.set(code, lobby);
+			return lobby;
 	}
 }
 

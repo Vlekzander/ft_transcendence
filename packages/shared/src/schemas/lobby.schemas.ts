@@ -5,7 +5,7 @@ import { PublicUserSchema } from "./user.schemas";
 export const GameModeSchema = z.enum(["SOLO", "DUO"]);
 export const VisibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
 
-export type GameModeLobby = z.infer<typeof GameModeSchema>;
+export type GameMode = z.infer<typeof GameModeSchema>;
 export type Visibility = z.infer<typeof VisibilitySchema>;
 
 // Settings to be specified
@@ -20,6 +20,7 @@ export const CreateLobbySchema = z.object({
     mode: GameModeSchema.default("SOLO"),
     visibility: VisibilitySchema.default("PUBLIC"),
     settings: LobbySettingsSchema.default({}),
+    maxPlayers: z.number().int().min(2).max(4).default(2), // need to define min max players for each game mode
 });
 
 export type CreateLobbyDTO = z.infer<typeof CreateLobbySchema>;
@@ -35,6 +36,8 @@ export const LobbyResponseSchema = z.object({
         .regex(/^[A-Z0-9]{6}$/, "Invalid lobby join code"),
     settings: LobbySettingsSchema,
     host: PublicUserSchema.optional(),
+    createdAt: z.iso.datetime(),
+    maxPlayers: z.number().int().min(1).max(4), // need to define min max players for each game mode
 });
 
 export type LobbyResponseDTO = z.infer<typeof LobbyResponseSchema>;
