@@ -1,6 +1,7 @@
 import { CreateLobbySchema } from "@ft_transcendence/shared";
 import { ParsedRequest } from "../../middlewares/validate.middleware";
-import { CookieOptions, NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
+import { validateAccessToken } from "../../utils/jwt.util";
 import { toLobbyResponseDTO } from "./lobby.mapper";
 import { lobbyService } from "./lobby.service";
 
@@ -14,8 +15,16 @@ export async function createLobby(
 	next: NextFunction,
 ) {
 	try {
+		const token = req.cookies?.token;
+		if (!token) {
+			throw new Error("Authentication required");
+		}
+		const payload = validateAccessToken(token);
+		if (typeof payload === "string") {
+			throw new Error("Invalid token");
+		}
 		const data = req.parsedBody!;
-		const user = await lobbyService.createLobby(data);
+		const user = await lobbyService.createLobby(payload.sub, data);
 		const dto = toLobbyResponseDTO(user);
 
 		res.status(201).json({ data: dto });
