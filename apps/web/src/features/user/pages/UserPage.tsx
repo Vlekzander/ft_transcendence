@@ -12,6 +12,7 @@ import {
 	ChevronDown,
 	Clock,
 	Medal,
+	MessageSquare,
 	Star,
 	Trophy,
 	UserRound,
@@ -22,7 +23,7 @@ import FriendComponent from "../../friends/components/Friend";
 import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
-import { Link, Navigate, useParams } from "react-router";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
 import { API_URL, AVATARS_PATH } from "../../../config";
 import { PartialProfileError } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
@@ -270,6 +271,7 @@ function GameHistoryItem({
 }
 
 export default function UserPage() {
+	const navigate = useNavigate();
 	const { user } = useAuth();
 	const { uuid } = useParams<{ uuid: string }>();
 	const isOwnProfile = user?.uuid === uuid;
@@ -400,11 +402,20 @@ export default function UserPage() {
 								{userData.username}
 							</h1>
 							{!isOwnProfile && (
-								<div className="order-1 sm:order-2">
+								<div className="order-1 sm:order-2 flex gap-2">
 									<FriendActionButton
 										uuid={uuid}
 										onSuccess={fetchProfileFriends}
 									/>
+									<div className="border-r border-gray-300 self-stretch my-1"></div>
+									<button
+										type="button"
+										onClick={() => navigate(`/msg/${uuid}`)}
+										title={`Chat with ${userData.username}`}
+										className="bg-primary/10 text-primary/90 border border-primary font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-primary/20 cursor-pointer disabled:opacity-50"
+									>
+										<MessageSquare strokeWidth={1} />
+									</button>
 								</div>
 							)}
 						</div>
