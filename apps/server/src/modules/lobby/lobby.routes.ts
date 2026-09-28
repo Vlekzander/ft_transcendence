@@ -10,7 +10,7 @@ lobbyRouter.post(
 	"/",
 	requireAuth,
 	validate({ body: CreateLobbySchema }),
-	lobbyController.createLobby,
+	lobbyController.createLobbyController,
 );
 
 export default lobbyRouter;
