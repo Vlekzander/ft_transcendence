@@ -33,6 +33,7 @@ export function mapError(err: Error): ErrorResponse {
 	if (err instanceof InvalidCredentialsError)
 		return ((error.status = 401), error);
 	if (err instanceof AppDomainError) return ((error.status = 400), error);
+	console.error(err);
 	return {
 		status: 500,
 		code: "InternalServerError",

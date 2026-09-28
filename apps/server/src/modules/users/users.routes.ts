@@ -1,4 +1,10 @@
-import { EditUserSchema, UserParamsSchema } from "@ft_transcendence/shared";
+import {
+	CreateFriendshipSchema,
+	EditFriendshipSchema,
+	EditUserSchema,
+	StringQuerySchema,
+	UserParamsSchema,
+} from "@ft_transcendence/shared";
 import { Router } from "express";
 import * as usersController from "./users.controller";
 import { validate } from "../../middlewares/validate.middleware";
@@ -57,7 +63,53 @@ usersRouter.get(
 usersRouter.get(
 	"/:uuid/friends",
 	validate({ params: UserParamsSchema }),
-	usersController.getUserFriends,
+	usersController.getFriends,
+);
+
+usersRouter.get(
+	"/:uuid/friends/pending",
+	requireAuth,
+	requireUserOwnership,
+	validate({ params: UserParamsSchema }),
+	usersController.getPendingFriendRequests,
+);
+
+usersRouter.get(
+	"/:uuid/friends/sent",
+	requireAuth,
+	requireUserOwnership,
+	validate({ params: UserParamsSchema }),
+	usersController.getSentFriendRequests,
+);
+
+usersRouter.post(
+	"/:uuid/friends",
+	requireAuth,
+	requireUserOwnership,
+	validate({ body: CreateFriendshipSchema, params: UserParamsSchema }),
+	usersController.sendFriendRequest,
+);
+
+usersRouter.patch(
+	"/:uuid/friends",
+	requireAuth,
+	requireUserOwnership,
+	validate({ body: EditFriendshipSchema, params: UserParamsSchema }),
+	usersController.acceptFriendRequest,
+);
+
+usersRouter.delete(
+	"/:uuid/friends",
+	requireAuth,
+	requireUserOwnership,
+	validate({ body: EditFriendshipSchema, params: UserParamsSchema }),
+	usersController.deleteFriendRequest,
+);
+
+usersRouter.get(
+	"",
+	validate({ query: StringQuerySchema }),
+	usersController.searchUser,
 );
 
 //TODO: REMOVE

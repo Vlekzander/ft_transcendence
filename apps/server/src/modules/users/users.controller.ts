@@ -1,13 +1,14 @@
 import { NextFunction, Response } from "express";
 import { sharedService } from "../shared/shared.service";
 import {
-	toPublicUserDTO,
 	toUserResponseDTO,
 	Achievement,
 	EditUserSchema,
 	Stat,
 	UserParamsSchema,
-	FriendDTO,
+	toFriendshipDTO,
+	toSentFriendRequestDTO,
+	toPendingFriendRequestDTO,
 } from "./users.mapper";
 import { ParsedRequest } from "../../middlewares/validate.middleware";
 import {
@@ -17,6 +18,16 @@ import {
 } from "../../errors";
 import { usersService } from "./users.service";
 import { AVATAR_DIR } from "../../config/upload.config";
+import {
+	CreateFriendshipSchema,
+	EditFriendshipSchema,
+	FriendshipDTO,
+	PendingFriendRequestDTO,
+	PublicUserDTO,
+	SentFriendRequestDTO,
+	StringQuerySchema,
+} from "@ft_transcendence/shared";
+import { toPublicUserDTO } from "../shared/shared.mapper";
 
 type UserRequest = ParsedRequest<
 	{ params: typeof UserParamsSchema },
@@ -26,6 +37,20 @@ type UserRequest = ParsedRequest<
 type UpdateUserRequest = ParsedRequest<{
 	body: typeof EditUserSchema;
 	params: typeof UserParamsSchema;
+}>;
+
+type CreateFriendshipRequest = ParsedRequest<{
+	body: typeof CreateFriendshipSchema;
+	params: typeof UserParamsSchema;
+}>;
+
+type EditFriendshipRequest = ParsedRequest<{
+	body: typeof EditFriendshipSchema;
+	params: typeof UserParamsSchema;
+}>;
+
+type StringQueryRequest = ParsedRequest<{
+	query: typeof StringQuerySchema;
 }>;
 
 export async function getUser(
@@ -134,44 +159,6 @@ export async function getUserAchievements(
 	res.status(200).json({ achievements: achievements });
 }
 
-export async function getUserFriends(
-	_req: UserRequest,
-	res: Response,
-	_next: NextFunction,
-) {
-	const friends: FriendDTO[] = [
-		{
-			user: {
-				uuid: crypto.randomUUID(),
-				username: "Another",
-				email: "spongybobby@gmail.com",
-				avatarPath: null,
-			},
-			status: "in_game",
-		},
-		{
-			user: {
-				uuid: crypto.randomUUID(),
-				username: "Blabla",
-				email: "spongybobby@gmail.com",
-				avatarPath: null,
-			},
-			status: "online",
-		},
-		{
-			user: {
-				uuid: crypto.randomUUID(),
-				username: "Nobody",
-				email: "spongybobby@gmail.com",
-				avatarPath: null,
-			},
-			status: "offline",
-		},
-	];
-
-	res.status(200).json({ friends: friends });
-}
-
 export async function updateUser(
 	req: UpdateUserRequest,
 	res: Response,
@@ -214,6 +201,138 @@ export async function updateAvatar(
 
 		const dto = toUserResponseDTO(user);
 		res.json({ user: dto });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function getFriends(
+	req: UserRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+
+		const friendships = await usersService.getFriendships(uuid);
+		const friends: FriendshipDTO[] = friendships.map((element) =>
+			toFriendshipDTO(element),
+		);
+
+		res.status(200).json({ friends: friends });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function getPendingFriendRequests(
+	req: UserRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+
+		const requests = await usersService.getPendingFriendRequests(uuid);
+		const pendingRequests: PendingFriendRequestDTO[] = requests.map(
+			(element) => toPendingFriendRequestDTO(element),
+		);
+
+		res.status(200).json({ pendingRequests: pendingRequests });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function getSentFriendRequests(
+	req: UserRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+
+		const requests = await usersService.getSentFriendRequests(uuid);
+		const sentRequests: SentFriendRequestDTO[] = requests.map((element) =>
+			toSentFriendRequestDTO(element),
+		);
+
+		res.status(200).json({ sentRequests: sentRequests });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function sendFriendRequest(
+	req: CreateFriendshipRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+		const { receiverId } = req.parsedBody!;
+
+		const friendRequest = await usersService.sendFriendRequest(
+			uuid,
+			receiverId,
+		);
+
+		res.status(200).json({
+			sentRequest: toSentFriendRequestDTO(friendRequest),
+		});
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function acceptFriendRequest(
+	req: EditFriendshipRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+		const { requestId } = req.parsedBody!;
+
+		const friend = await usersService.acceptFriendRequest(uuid, requestId);
+
+		res.status(200).json({ friend: toFriendshipDTO(friend) });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function deleteFriendRequest(
+	req: EditFriendshipRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { uuid } = req.parsedParams!;
+		const { requestId } = req.parsedBody!;
+
+		await usersService.deleteFriendRequest(uuid, requestId);
+
+		res.sendStatus(204);
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function searchUser(
+	req: StringQueryRequest,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const { query } = req.parsedQuery!;
+		const result = await usersService.searchUser(query);
+
+		const users: PublicUserDTO[] = result.map((element) =>
+			toPublicUserDTO(element),
+		);
+
+		res.status(200).json({ users: users });
 	} catch (err) {
 		next(err);
 	}

@@ -1,6 +1,6 @@
 import app from "./app";
 import dotenv from "dotenv";
-import { setupWebSocketServer } from "./websocket";
+import { setupWebSocketServer } from "./websocket.server";
 
 dotenv.config();
 const API_PORT = process.env.API_PORT || 3000;
