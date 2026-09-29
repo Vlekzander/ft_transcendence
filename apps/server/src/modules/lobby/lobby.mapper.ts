@@ -1,10 +1,10 @@
-import { GameMode, Visibility, LobbyResponseDTO } from "@ft_transcendence/shared";
+import { LobbyGameMode, LobbyVisibility, LobbyResponseDTO } from "@ft_transcendence/shared";
 export type LobbyEntity = {
 	uuid: string;
 	joinCode: string;
 	hostId: string;
-	mode: GameMode;
-	visibility: Visibility;
+	mode: LobbyGameMode;
+	visibility: LobbyVisibility;
 	settings: Record<string, unknown>;//temporaire
 	createdAt: Date;
 	maxPlayers: number;
