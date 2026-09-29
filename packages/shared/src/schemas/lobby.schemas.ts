@@ -1,12 +1,11 @@
 import z from "zod";
 import { PublicUserSchema } from "./user.schemas";
 
-// same enum values as in schema.prisma
 export const GameModeSchema = z.enum(["SOLO", "DUO"]);
 export const VisibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
 
-export type GameMode = z.infer<typeof GameModeSchema>;
-export type Visibility = z.infer<typeof VisibilitySchema>;
+export type LobbyGameMode = z.infer<typeof GameModeSchema>;
+export type LobbyVisibility = z.infer<typeof VisibilitySchema>;
 
 // Settings to be specified
 // This is a placeholder
@@ -42,7 +41,17 @@ export const LobbyResponseSchema = z.object({
 
 export type LobbyResponseDTO = z.infer<typeof LobbyResponseSchema>;
 
-// UUID used as a parameter in GET/PATCH/DELETE requests
 export const LobbyParamsSchema = z.object({
     uuid: z.uuid("Invalid lobby UUID"),
+});
+
+export const JoinLobbySchema = z.object({
+    joinCode: z
+        .string()
+        .regex(/^[A-Z0-9]{6}$/, "Invalid lobby join code"),
+});
+
+export const UpdateLobbySettingsSchema = z.object({
+    settings: LobbySettingsSchema,
+    maxPlayers: z.number().int().min(1).max(4), // need to define min max players for each game mode
 });

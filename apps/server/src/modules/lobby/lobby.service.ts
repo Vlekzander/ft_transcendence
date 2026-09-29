@@ -34,6 +34,19 @@ export class LobbyService {
 		lobbiesByJoinCode.set(code, lobby);
 		return lobby;
 	}
+	
+	async listLobbies(): Promise<LobbyEntity[]> {
+		return Array.from(lobbiesByJoinCode.values());
+	}
+
+	async getLobbyByJoinCode(joinCode: string): Promise<LobbyEntity | null> {
+		const lobby = lobbiesByJoinCode.get(joinCode);
+		return lobby || null;
+	}
+
+	async deleteLobby(joinCode: string): Promise<void> {
+		lobbiesByJoinCode.delete(joinCode);
+	}
 }
 
 
