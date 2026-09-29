@@ -3,6 +3,7 @@ import { PublicUserSchema } from "./user.schemas";
 
 export const GameModeSchema = z.enum(["SOLO", "DUO"]);
 export const VisibilitySchema = z.enum(["PUBLIC", "PRIVATE"]);
+export const CustomWordsSchema = z.array(z.string());
 
 export type LobbyGameMode = z.infer<typeof GameModeSchema>;
 export type LobbyVisibility = z.infer<typeof VisibilitySchema>;
@@ -18,8 +19,7 @@ export const LobbySettingsSchema = z.record(
 export const CreateLobbySchema = z.object({
     mode: GameModeSchema.default("SOLO"),
     visibility: VisibilitySchema.default("PUBLIC"),
-    settings: LobbySettingsSchema.default({}),
-    maxPlayers: z.number().int().min(2).max(4).default(2), // need to define min max players for each game mode
+    customWords: CustomWordsSchema,
 });
 
 export type CreateLobbyDTO = z.infer<typeof CreateLobbySchema>;
@@ -33,10 +33,9 @@ export const LobbyResponseSchema = z.object({
     joinCode: z
         .string()
         .regex(/^[A-Z0-9]{6}$/, "Invalid lobby join code"),
-    settings: LobbySettingsSchema,
+    customWords: CustomWordsSchema.optional(),
     host: PublicUserSchema.optional(),
-    createdAt: z.iso.datetime(),
-    maxPlayers: z.number().int().min(1).max(4), // need to define min max players for each game mode
+    maxPlayers: z.number().int().min(1),
 });
 
 export type LobbyResponseDTO = z.infer<typeof LobbyResponseSchema>;
@@ -51,7 +50,6 @@ export const JoinLobbySchema = z.object({
         .regex(/^[A-Z0-9]{6}$/, "Invalid lobby join code"),
 });
 
-export const UpdateLobbySettingsSchema = z.object({
-    settings: LobbySettingsSchema,
-    maxPlayers: z.number().int().min(1).max(4), // need to define min max players for each game mode
+export const UpdateLobbyCustomWordsSchema = z.object({
+    customWords: CustomWordsSchema.optional(),
 });

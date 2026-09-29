@@ -1,13 +1,14 @@
 import { LobbyGameMode, LobbyVisibility, LobbyResponseDTO } from "@ft_transcendence/shared";
+
+export const MAX_PLAYERS = 10;
+
 export type LobbyEntity = {
 	uuid: string;
 	joinCode: string;
 	hostId: string;
 	mode: LobbyGameMode;
 	visibility: LobbyVisibility;
-	settings: Record<string, unknown>;//temporaire
-	createdAt: Date;
-	maxPlayers: number;
+	customWords: string[];
 };
 
 export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
@@ -17,8 +18,7 @@ export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
 		hostId: lobby.hostId,
 		mode: lobby.mode,
 		visibility: lobby.visibility,
-		settings: lobby.settings,
-		createdAt: lobby.createdAt,
-		maxPlayers: lobby.maxPlayers,
+		customWords: lobby.customWords,
+		maxPlayers: MAX_PLAYERS,
 	};
 }

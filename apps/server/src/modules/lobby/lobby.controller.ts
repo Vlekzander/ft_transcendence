@@ -7,7 +7,7 @@ import { lobbyService } from "./lobby.service";
 
 type LobbyBody = typeof CreateLobbySchema;
 
-type LobbyRequest = ParsedRequest<{ body: typeof CreateLobbySchema }>;
+type LobbyRequest = ParsedRequest<{ body: LobbyBody }>;
 
 export async function createLobbyController(
 	req: LobbyRequest,

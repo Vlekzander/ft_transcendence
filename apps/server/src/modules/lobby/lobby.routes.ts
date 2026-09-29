@@ -38,9 +38,9 @@ lobbyRouter.patch(
     requireAuth,
     validate({
         params: LobbyParamsSchema,
-        body: UpdateLobbySettingsSchema,
+        body: UpdateLobbyCustomWordsSchema,
     }),
-    lobbyController.updateLobbySettingsController,
+    lobbyController.updateLobbyCustomWordsController,
 );
 
 lobbyRouter.delete(
