@@ -1,6 +1,6 @@
 import { CreateLobbyDTO } from "@ft_transcendence/shared";
 import { v7 as uuidv7 } from 'uuid';
-import { LobbyEntity } from "./lobby.mapper";
+import { LobbyEntity, MAX_PLAYERS } from "./lobby.mapper";
 
 export const lobbiesByJoinCode = new Map<string, LobbyEntity>();
 
@@ -27,9 +27,8 @@ export class LobbyService {
 			hostId: hostId,
 			mode: data.mode,
 			visibility: data.visibility,
-			settings: data.settings,
-			createdAt: new Date(),
-			maxPlayers: data.maxPlayers,
+			customWords: data.customWords,
+			maxPlayers: MAX_PLAYERS,
 		};
 		lobbiesByJoinCode.set(code, lobby);
 		return lobby;
