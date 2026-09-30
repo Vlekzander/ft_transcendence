@@ -1,15 +1,15 @@
 {
 	"name": "@ft_transcendence/web",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"private": true,
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
-		"build": "tsc -b && vite build",
+		"build": "tsc && vite build",
 		"lint": "eslint ."
 	},
 	"dependencies": {
-		"@ft_transcendence/shared": "0.0.0",
+		"@ft_transcendence/shared": "*",
 		"@tailwindcss/vite": "^4.3.0",
 		"lucide-react": "^1.30.0",
 		"react": "^19.2.7",

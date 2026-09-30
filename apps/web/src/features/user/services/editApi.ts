@@ -7,7 +7,7 @@ export async function editUser(
 	uuid: string,
 	data: EditUserDTO,
 ): Promise<ApiResult> {
-	Object.keys(data).forEach((key) =>
+	(Object.keys(data) as Array<keyof typeof data>).forEach((key) =>
 		data[key] === "" ? delete data[key] : {},
 	);
 	try {

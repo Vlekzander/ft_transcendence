@@ -15,7 +15,7 @@ import { getMessages } from "../services/messages.service";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { MessageSquare, Send } from "lucide-react";
 import { FriendActionButton } from "../../friends/components/FriendActionButton";
-import { AVATARS_PATH } from "../../../config";
+import { AVATARS_PATH, getErrorMessage } from "../../../config";
 import UserStatusComponent from "../../user/components/UserStatus";
 
 export default function MsgPage() {
@@ -59,8 +59,9 @@ export default function MsgPage() {
 					);
 				}
 			} catch (error) {
+				const message = getErrorMessage(error);
 				if (isMounted)
-					setError(error.message || "Unable to load conversation");
+					setError(message || "Unable to load conversation");
 			} finally {
 				if (isMounted) setLoading(false);
 			}

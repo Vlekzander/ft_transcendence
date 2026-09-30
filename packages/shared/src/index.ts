@@ -11,6 +11,4 @@ export * from "./types/Status.types";
 export * from "./types/User.types";
 export * from "./types/WebSocket.types";
 
-export * from "./validators/user.validators";
-
 export const hello = (name: string) => `Hello ${name}`;

@@ -1,5 +1,5 @@
-import { UserResponseDTO } from "../schemas/user.schemas";
-import { Status } from "./Status.types";
+import { type UserResponseDTO } from "../schemas/user.schemas";
+import { type Status } from "./Status.types";
 
 export type FriendDTO = {
 	user: UserResponseDTO;

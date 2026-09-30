@@ -24,7 +24,7 @@ import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
-import { API_URL, AVATARS_PATH } from "../../../config";
+import { API_URL, AVATARS_PATH, getErrorMessage } from "../../../config";
 import { PartialProfileError } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { useAuth } from "../../auth/context/AuthContext";
@@ -347,7 +347,8 @@ export default function UserPage() {
 				if (!resHistory.ok || !resStats.ok || !resAchievements.ok)
 					throw new PartialProfileError();
 			} catch (error) {
-				if (isMounted) setError(error.message || "An error occured");
+				const message = getErrorMessage(error);
+				if (isMounted) setError(message || "An error occured");
 			} finally {
 				if (isMounted) setLoading(false);
 			}
@@ -367,7 +368,7 @@ export default function UserPage() {
 		);
 	}
 
-	if (userData === null) return <Navigate to="/not-found" replace />;
+	if (!uuid || userData === null) return <Navigate to="/not-found" replace />;
 
 	if (error)
 		return (

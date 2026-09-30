@@ -6,8 +6,10 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { editUser } from "../services/editApi";
 import type { ApiResult } from "../../../shared/types/api";
 import { UserCheck } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export default function EditAccountForm() {
+	const navigate = useNavigate();
 	const { user, refreshUser } = useAuth();
 
 	const [serverError, setServerError] = useState("");
@@ -20,13 +22,18 @@ export default function EditAccountForm() {
 	} = useForm<EditUserDTO>({
 		resolver: zodResolver(EditUserSchema),
 		defaultValues: {
-			email: user.email,
-			username: user.username,
+			email: user?.email,
+			username: user?.username,
 			password: "",
 			confirmPassword: "",
 			currentPassword: "",
 		},
 	});
+
+	if (!user) {
+		navigate("/");
+		return;
+	}
 
 	const onSubmit = async (data: EditUserDTO) => {
 		setServerError("");

@@ -4,10 +4,12 @@ import { useAuth } from "../../auth/context/AuthContext";
 import type { ApiResult } from "../../../shared/types/api";
 import { AVATARS_PATH, DEFAULT_AVATAR } from "../../../config";
 import { ImageIcon, Upload } from "lucide-react";
+import { useNavigate } from "react-router";
 
 const MAX_FILE_SIZE_MB = 5;
 
 export default function EditAvatarForm() {
+	const navigate = useNavigate();
 	const { user, refreshUser } = useAuth();
 
 	const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -15,6 +17,11 @@ export default function EditAvatarForm() {
 
 	const [serverError, setServerError] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
+
+	if (!user) {
+		navigate("/");
+		return;
+	}
 
 	const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setServerError("");

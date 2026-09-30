@@ -1,12 +1,11 @@
 {
 	"name": "@ft_transcendence/server",
-	"version": "0.0.0",
+	"version": "1.0.0",
 	"private": true,
 	"type": "module",
-	"main": "dist/server.js",
 	"scripts": {
 		"dev": "tsx watch src/server.ts",
-		"build": "tsc && tsc-alias",
+		"build": "tsc -p tsconfig.build.json",
 		"start": "node dist/server.js",
 		"lint": "eslint .",
 		"test": "vitest run --maxWorkers=1 --watch",
@@ -16,7 +15,7 @@
 		"postinstall": "prisma generate || true"
 	},
 	"dependencies": {
-		"@ft_transcendence/shared": "0.0.0",
+		"@ft_transcendence/shared": "*",
 		"@prisma/adapter-pg": "^7.9.1",
 		"@prisma/client": "^7.9.1",
 		"bcryptjs": "^3.0.3",
