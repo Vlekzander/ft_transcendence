@@ -1,7 +1,7 @@
 import type { PublicUserDTO } from "@ft_transcendence/shared";
 import { X } from "lucide-react";
 import { useState } from "react";
-import { AVATARS_PATH } from "../../../config";
+import { getAvatarUrl } from "../../../config";
 import UserStatusComponent from "../../user/components/UserStatus";
 
 type FriendProps = {
@@ -27,11 +27,7 @@ export default function FriendComponent({ friend, onDelete }: FriendProps) {
 			<div className="flex gap-2 items-center">
 				<div className="w-12 h-12">
 					<img
-						src={
-							friend.avatarPath
-								? `${AVATARS_PATH}/${friend.avatarPath}`
-								: "/assets/default_avatar.jpg"
-						}
+						src={getAvatarUrl(friend.avatarPath)}
 						alt={friend.username}
 						className="w-full h-full object-cover border"
 					/>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { uploadAvatar } from "../services/editApi";
 import { useAuth } from "../../auth/context/AuthContext";
 import type { ApiResult } from "../../../shared/types/api";
-import { AVATARS_PATH, DEFAULT_AVATAR } from "../../../config";
+import { getAvatarUrl } from "../../../config";
 import { ImageIcon, Upload } from "lucide-react";
 import { useNavigate } from "react-router";
 
@@ -84,9 +84,7 @@ export default function EditAvatarForm() {
 						src={
 							avatarPreview
 								? avatarPreview
-								: user.avatarPath
-									? `${AVATARS_PATH}/${user.avatarPath}`
-									: DEFAULT_AVATAR
+								: getAvatarUrl(user.avatarPath)
 						}
 						alt="Avatar preview"
 						className="h-full w-full object-cover"

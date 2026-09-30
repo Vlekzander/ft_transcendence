@@ -24,7 +24,7 @@ import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
 import { Link, Navigate, useNavigate, useParams } from "react-router";
-import { API_URL, AVATARS_PATH, getErrorMessage } from "../../../config";
+import { API_URL, getAvatarUrl, getErrorMessage } from "../../../config";
 import { PartialProfileError } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { useAuth } from "../../auth/context/AuthContext";
@@ -143,11 +143,7 @@ function GameRankingRowComponent({
 			<div className="flex items-center gap-5">
 				<div className="w-5 h-5">
 					<img
-						src={
-							participant.user.avatarPath === null
-								? "/assets/default_avatar.jpg"
-								: AVATARS_PATH + participant.user.avatarPath
-						}
+						src={getAvatarUrl(participant.user.avatarPath)}
 						alt=""
 						width={20}
 						height={20}
@@ -387,11 +383,7 @@ export default function UserPage() {
 				<div className="flex flex-col sm:flex-row gap-3 items-center">
 					<div className="w-32 h-32 shrink-0">
 						<img
-							src={
-								userData.avatarPath === null
-									? "/assets/default_avatar.jpg"
-									: AVATARS_PATH + userData.avatarPath
-							}
+							src={getAvatarUrl(userData.avatarPath)}
 							width={128}
 							height={128}
 							className="w-full h-full object-cover border"
