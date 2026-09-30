@@ -9,6 +9,8 @@ export type LobbyEntity = {
 	mode: LobbyGameMode;
 	visibility: LobbyVisibility;
 	customWords: string[];
+    connectedPlayers: Set<string>;
+	maxPlayers: number;
 };
 
 export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
@@ -19,6 +21,7 @@ export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
 		mode: lobby.mode,
 		visibility: lobby.visibility,
 		customWords: lobby.customWords,
+		players: Array.from(lobby.connectedPlayers),
 		maxPlayers: MAX_PLAYERS,
 	};
 }
