@@ -29,6 +29,7 @@ export class LobbyService {
 			visibility: data.visibility,
 			customWords: data.customWords,
 			connectedPlayers: new Set<string>(),
+			bannedPlayers: new Set<string>(),
 			maxPlayers: MAX_PLAYERS,
 		};
 		lobbiesByJoinCode.set(code, lobby);
@@ -53,6 +54,37 @@ export class LobbyService {
 			(lobby) => lobby.uuid === uuid,
 		);
 		return lobby || null;
+	}
+
+	async joinLobby(lobbyUuid: string, userId: string): Promise<void> {
+		const lobby = await this.getLobbyByUuid(lobbyUuid);
+		if (!lobby) {
+			throw new Error("Lobby not found");
+		} else if (lobby.connectedPlayers.has(userId)) {
+			throw new Error("User is already in the lobby");
+		} else if (lobby.bannedPlayers.has(userId)) {
+			throw new Error("User is banned from this lobby");
+		} else if (lobby.connectedPlayers.size >= lobby.maxPlayers) {
+			throw new Error("Lobby is full");
+		}
+		lobby.connectedPlayers.add(userId);
+	}
+
+	async leaveLobby(lobbyUuid: string, userId: string): Promise<void> {
+		const lobby = await this.getLobbyByUuid(lobbyUuid);
+		if (!lobby) {
+			throw new Error("Lobby not found");
+		} else if (!lobby.connectedPlayers.has(userId)) {
+			throw new Error("User is not in the lobby");
+		}
+		if (
+			lobby.connectedPlayers.size === 1 &&
+			lobby.connectedPlayers.has(userId)
+		) {
+			await this.deleteLobby(lobby.joinCode);
+			return;
+		}
+		lobby.connectedPlayers.delete(userId);
 	}
 
 	async deleteLobby(joinCode: string): Promise<void> {
