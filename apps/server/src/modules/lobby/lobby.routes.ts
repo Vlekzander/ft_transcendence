@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware";
-import { CreateLobbySchema, LobbyParamsSchema, JoinLobbySchema, UpdateLobbySettingsSchema } from "@ft_transcendence/shared";
+import { CreateLobbySchema, LobbyParamsSchema, JoinLobbySchema, UpdateLobbyCustomWordsSchema } from "@ft_transcendence/shared";
 import * as lobbyController from "./lobby.controller";
 import { validate } from "../../middlewares/validate.middleware";
 

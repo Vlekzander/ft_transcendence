@@ -9,6 +9,11 @@ type LobbyBody = typeof CreateLobbySchema;
 
 type LobbyRequest = ParsedRequest<{ body: LobbyBody }>;
 
+function checkpayload(payload: any) {
+	if (typeof payload === "string" || payload.sub !== "string")
+		throw new Error("Invalid token");
+}
+
 export async function createLobbyController(
 	req: LobbyRequest,
 	res: Response,
@@ -16,6 +21,7 @@ export async function createLobbyController(
 ) {
 	try {
 		const payload = validateAccessToken(req.cookies?.token);
+		checkpayload(payload);
 		const data = req.parsedBody!;
 		const lobby = await lobbyService.createLobby(payload.sub, data);
 		const dto = toLobbyResponseDTO(lobby);
@@ -48,7 +54,7 @@ export async function getByUuidLobbyController(
 ) {
 	try {
 		const { uuid } = req.parsedParams!;
-		const lobby = await lobbyService.getLobbyByJoinCode(uuid);
+		const lobby = await lobbyService.getLobbyByUuid(uuid);
 		if (!lobby) {
 			res.status(404).json({ message: "Lobby not found" });
 			return;
