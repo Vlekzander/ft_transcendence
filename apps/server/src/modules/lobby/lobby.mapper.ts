@@ -1,4 +1,8 @@
-import { LobbyGameMode, LobbyVisibility, LobbyResponseDTO } from "@ft_transcendence/shared";
+import {
+	LobbyGameMode,
+	LobbyVisibility,
+	LobbyResponseDTO,
+} from "@ft_transcendence/shared";
 
 export const MAX_PLAYERS = 10;
 
@@ -9,7 +13,8 @@ export type LobbyEntity = {
 	mode: LobbyGameMode;
 	visibility: LobbyVisibility;
 	customWords: string[];
-    connectedPlayers: Set<string>;
+	connectedPlayers: Set<string>;
+	bannedPlayers: Set<string>;
 	maxPlayers: number;
 };
 
@@ -21,6 +26,7 @@ export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
 		mode: lobby.mode,
 		visibility: lobby.visibility,
 		customWords: lobby.customWords,
+		bannedPlayers: Array.from(lobby.bannedPlayers),
 		players: Array.from(lobby.connectedPlayers),
 		maxPlayers: MAX_PLAYERS,
 	};

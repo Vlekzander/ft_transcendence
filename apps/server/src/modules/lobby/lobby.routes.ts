@@ -1,6 +1,11 @@
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware";
-import { CreateLobbySchema, LobbyParamsSchema, JoinLobbySchema, UpdateLobbyCustomWordsSchema } from "@ft_transcendence/shared";
+import {
+	CreateLobbySchema,
+	LobbyParamsSchema,
+	JoinLobbySchema,
+	UpdateLobbyCustomWordsSchema,
+} from "@ft_transcendence/shared";
 import * as lobbyController from "./lobby.controller";
 import { validate } from "../../middlewares/validate.middleware";
 
@@ -13,41 +18,44 @@ lobbyRouter.post(
 	lobbyController.createLobbyController,
 );
 
-lobbyRouter.get(
-    "/",
-    requireAuth,
-    lobbyController.listLobbiesController,
-);
+lobbyRouter.get("/", requireAuth, lobbyController.listLobbiesController);
 
 lobbyRouter.get(
-    "/:uuid",
+	"/:uuid",
 	requireAuth,
-    validate({ params: LobbyParamsSchema }),
-    lobbyController.getByUuidLobbyController,
+	validate({ params: LobbyParamsSchema }),
+	lobbyController.getByUuidLobbyController,
 );
 
 lobbyRouter.post(
-    "/join",
-    requireAuth,
-    validate({ body: JoinLobbySchema }),
-    lobbyController.joinLobbyController,
+	"/join",
+	requireAuth,
+	validate({ body: JoinLobbySchema }),
+	lobbyController.joinLobbyController,
+);
+
+lobbyRouter.post(
+	"/:uuid/leave",
+	requireAuth,
+	validate({ params: LobbyParamsSchema }),
+	lobbyController.leaveLobbyController,
 );
 
 lobbyRouter.patch(
-    "/:uuid/settings",
-    requireAuth,
-    validate({
-        params: LobbyParamsSchema,
-        body: UpdateLobbyCustomWordsSchema,
-    }),
-    lobbyController.updateLobbyCustomWordsController,
+	"/:uuid/settings",
+	requireAuth,
+	validate({
+		params: LobbyParamsSchema,
+		body: UpdateLobbyCustomWordsSchema,
+	}),
+	lobbyController.updateLobbyCustomWordsController,
 );
 
 lobbyRouter.delete(
-    "/:uuid",
-    requireAuth,
-    validate({ params: LobbyParamsSchema }),
-    lobbyController.deleteLobbyController,
+	"/:uuid",
+	requireAuth,
+	validate({ params: LobbyParamsSchema }),
+	lobbyController.deleteLobbyController,
 );
 
 export default lobbyRouter;
