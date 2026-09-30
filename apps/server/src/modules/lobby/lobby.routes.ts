@@ -51,11 +51,4 @@ lobbyRouter.patch(
 	lobbyController.updateLobbyCustomWordsController,
 );
 
-lobbyRouter.delete(
-	"/:uuid",
-	requireAuth,
-	validate({ params: LobbyParamsSchema }),
-	lobbyController.deleteLobbyController,
-);
-
 export default lobbyRouter;
