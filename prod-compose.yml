@@ -1,8 +1,8 @@
-name: ft_transcendence
+name: ft_transcendence-prod
 
 services:
     frontend:
-        container_name: ft_transcendence-frontend
+        container_name: ft_transcendence-frontend-prod
         build:
             context: .
             dockerfile: ./docker/prod-frontend.Dockerfile
@@ -10,7 +10,7 @@ services:
             - "80:80"
             - "443:443"
         networks:
-            - ft_network
+            - ft_network-bf-prod
         depends_on:
             - backend
         secrets:
@@ -18,14 +18,15 @@ services:
             - ssl_key
 
     backend:
-        container_name: ft_transcendence-backend
+        container_name: ft_transcendence-backend-prod
         build:
             context: .
             dockerfile: ./docker/prod-backend.Dockerfile
         volumes:
             - avatars_data:/home/node/apps/server/uploads/avatars
         networks:
-            - ft_network
+            - ft_network-prod
+            - ft_network-bf-prod
         secrets:
             - db_username
             - db_password
@@ -38,12 +39,12 @@ services:
                 condition: service_healthy
 
     database:
-        container_name: ft_transcendence-database
+        container_name: ft_transcendence-database-prod
         image: postgres:latest
         volumes:
-            - postgres_data:/var/lib/postgresql/18/docker
+            - database_data:/var/lib/postgresql/18/docker
         networks:
-            - ft_network
+            - ft_network-prod
         secrets:
             - db_username
             - db_password
@@ -61,11 +62,13 @@ services:
             retries: 3
 
 volumes:
-    postgres_data:
+    database_data:
     avatars_data:
 
 networks:
-    ft_network:
+    ft_network-prod:
+        driver: bridge
+    ft_network-bf-prod:
         driver: bridge
 
 secrets:
