@@ -1,0 +1,81 @@
+name: ft_transcendence
+
+services:
+    frontend:
+        container_name: ft_transcendence-frontend
+        build:
+            context: .
+            dockerfile: ./docker/prod-frontend.Dockerfile
+        ports:
+            - "80:80"
+            - "443:443"
+        networks:
+            - ft_network
+        depends_on:
+            - backend
+        secrets:
+            - ssl_crt
+            - ssl_key
+
+    backend:
+        container_name: ft_transcendence-backend
+        build:
+            context: .
+            dockerfile: ./docker/prod-backend.Dockerfile
+        volumes:
+            - avatars_data:/home/node/apps/server/uploads/avatars
+        networks:
+            - ft_network
+        secrets:
+            - db_username
+            - db_password
+            - jwt_secret
+        environment:
+            DB_HOST: database
+            DB_NAME: ft_transcendence
+        depends_on:
+            database:
+                condition: service_healthy
+
+    database:
+        container_name: ft_transcendence-database
+        image: postgres:latest
+        volumes:
+            - postgres_data:/var/lib/postgresql/18/docker
+        networks:
+            - ft_network
+        secrets:
+            - db_username
+            - db_password
+        environment:
+            POSTGRES_USER_FILE: /run/secrets/db_username
+            POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "sh -c 'pg_isready -U $(cat /run/secrets/db_username) -d ft_transcendence'",
+                ]
+            interval: 10s
+            timeout: 3s
+            retries: 3
+
+volumes:
+    postgres_data:
+    avatars_data:
+
+networks:
+    ft_network:
+        driver: bridge
+
+secrets:
+    db_username:
+        file: docker/secrets/db_username.txt
+    db_password:
+        file: docker/secrets/db_password.txt
+    jwt_secret:
+        file: docker/secrets/jwt_secret.txt
+    ssl_crt:
+        file: docker/secrets/ssl.crt
+    ssl_key:
+        file: docker/secrets/ssl.key
