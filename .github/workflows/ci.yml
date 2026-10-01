@@ -13,8 +13,8 @@ concurrency:
     cancel-in-progress: true
 
 jobs:
-    build:
-        name: Typecheck & Build
+    test-server:
+        name: Unit tests (Server)
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
@@ -23,7 +23,17 @@ jobs:
                   node-version: 20
                   cache: "npm"
             - run: npm ci
-            - run: npm run typecheck --if-present
+            - run: npm run test:unit -w @ft_transcendence/server
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: "npm"
+            - run: npm ci
             - run: npm run build
               env:
                   CI: true
