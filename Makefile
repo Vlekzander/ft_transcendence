@@ -77,7 +77,7 @@ test-logs:
 
 secrets:
 	@mkdir -p ./docker/secrets
-	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./docker/secrets/ssl.key -out ./docker/secrets/ssl.crt -subj "/C=BE/ST=Brussels/L=Brussels/O=ft_transcendence/CN=localhost" -addext "subjectAltName=DNS:localhost" 3> /dev/null
+	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./docker/secrets/ssl.key -out ./docker/secrets/ssl.crt -subj "/C=BE/ST=Brussels/L=Brussels/O=ft_transcendence/CN=localhost" -addext "subjectAltName=DNS:localhost" 2> /dev/null
 	@export DB_USERNAME='$(P_DB_USERNAME)'; echo "$$DB_USERNAME" > ./docker/secrets/db_username.txt
 	@export DB_PASSWORD='$(P_DB_PASSWORD)'; echo "$$DB_PASSWORD" > ./docker/secrets/db_password.txt
 	@export JWT_SECRET='$(P_JWT_SECRET)'; echo "$$JWT_SECRET" > ./docker/secrets/jwt_secret.txt
