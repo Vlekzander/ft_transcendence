@@ -31,6 +31,12 @@ export class LobbyService {
 			connectedPlayers: new Set<string>(),
 			bannedPlayers: new Set<string>(),
 			maxPlayers: MAX_PLAYERS,
+
+			usingDictionary: data.usingDictionary,
+			drawTime: data.drawTime,
+			numberOfRounds: data.numberOfRounds,
+			wordChoicesPerTurn: data.wordChoicesPerTurn,
+			timeToChooseWord: data.timeToChooseWord,
 		};
 		lobbiesByJoinCode.set(code, lobby);
 		return lobby;
