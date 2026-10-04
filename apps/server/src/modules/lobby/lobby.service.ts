@@ -1,6 +1,11 @@
-import { CreateLobbyDTO } from "@ft_transcendence/shared";
+import {
+	CreateLobbyDTO,
+	MAX_CUSTOM_WORDS,
+	MAX_PLAYERS,
+} from "@ft_transcendence/shared";
 import { v7 as uuidv7 } from "uuid";
-import { LobbyEntity, MAX_PLAYERS } from "./lobby.mapper";
+import { LobbyEntity } from "./lobby.mapper";
+import { DEFAULT_DICTIONARY } from "./dictionary";
 
 export const lobbiesByJoinCode = new Map<string, LobbyEntity>();
 
@@ -14,32 +19,66 @@ function generateJoinCode(): string {
 	return joinCode;
 }
 
+function parseCustomWords(input: string): string[] {
+	if (input.trim().length === 0) return [];
+	let res = input.toLocaleLowerCase().trim().split(/\s+/).filter(Boolean);
+	res = Array.from(new Set(res));
+	if (res.length > MAX_CUSTOM_WORDS) {
+		throw new Error("Too many custom words. Maximum is 100.");
+	}
+	return res;
+}
+
+//Fishers-Yates shuffle algorithm
+function mixAllWords(allWords: Set<string>): string[] {
+	const copy = Array.from(allWords);
+
+	for (let i = copy.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+
+		[copy[i], copy[j]] = [copy[j], copy[i]];
+	}
+
+	return copy;
+}
+
 export class LobbyService {
 	async createLobby(
 		hostId: string,
 		data: CreateLobbyDTO,
 	): Promise<LobbyEntity> {
-		//add try catch here if needed
-		const code = generateJoinCode();
-		const lobby: LobbyEntity = {
-			uuid: uuidv7(),
-			joinCode: code,
-			hostId: hostId,
-			mode: data.mode,
-			visibility: data.visibility,
-			customWords: data.customWords,
-			connectedPlayers: new Set<string>(),
-			bannedPlayers: new Set<string>(),
-			maxPlayers: MAX_PLAYERS,
-
-			usingDictionary: data.usingDictionary,
-			drawTime: data.drawTime,
-			numberOfRounds: data.numberOfRounds,
-			wordChoicesPerTurn: data.wordChoicesPerTurn,
-			timeToChooseWord: data.timeToChooseWord,
-		};
-		lobbiesByJoinCode.set(code, lobby);
-		return lobby;
+		try {
+			const code = generateJoinCode();
+			const localCustomWords = parseCustomWords(data.customWords);
+			const lobby: LobbyEntity = {
+				uuid: uuidv7(),
+				joinCode: code,
+				hostId: hostId,
+				mode: data.mode,
+				visibility: data.visibility,
+				connectedPlayers: new Set<string>().add(hostId),
+				bannedPlayers: new Set<string>(),
+				maxPlayers: MAX_PLAYERS,
+				customWords: localCustomWords,
+				usingDictionary: data.usingDictionary,
+				drawTime: data.drawTime,
+				numberOfRounds: data.numberOfRounds,
+				wordChoicesPerTurn: data.wordChoicesPerTurn,
+				timeToChooseWord: data.timeToChooseWord,
+				allWords: mixAllWords(
+					new Set(
+						DEFAULT_DICTIONARY[data.usingDictionary].concat(
+							localCustomWords,
+						),
+					),
+				),
+			};
+			lobbiesByJoinCode.set(code, lobby);
+			return lobby;
+		} catch (error) {
+			console.error("Error creating lobby:", error);
+			throw error;
+		}
 	}
 
 	async listLobbies(): Promise<LobbyEntity[]> {
@@ -89,6 +128,9 @@ export class LobbyService {
 		) {
 			await this.deleteLobby(lobby.joinCode);
 			return;
+		}
+		if (lobby.connectedPlayers.size > 1 && lobby.hostId === userId) {
+			lobby.hostId = Array.from(lobby.connectedPlayers)[1];
 		}
 		lobby.connectedPlayers.delete(userId);
 	}

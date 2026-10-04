@@ -4,10 +4,6 @@ import {
 	LobbyResponseDTO,
 } from "@ft_transcendence/shared";
 
-import { DEFAULT_DICTIONARY } from "./dictionary";
-
-export const MAX_PLAYERS = 10;
-
 export type LobbyEntity = {
 	uuid: string;
 	joinCode: string;
@@ -23,6 +19,7 @@ export type LobbyEntity = {
 	numberOfRounds: number;
 	wordChoicesPerTurn: number;
 	timeToChooseWord: number;
+	allWords: string[];
 };
 
 export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
@@ -33,15 +30,13 @@ export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
 		mode: lobby.mode,
 		visibility: lobby.visibility,
 		usingDictionary: lobby.usingDictionary,
-		customWords: lobby.customWords,
 		connectedPlayers: Array.from(lobby.connectedPlayers),
 		bannedPlayers: Array.from(lobby.bannedPlayers),
-		maxPlayers: MAX_PLAYERS,
-		drawTime: 60,
+		maxPlayers: lobby.maxPlayers,
+		drawTime: lobby.drawTime,
 		numberOfRounds: lobby.numberOfRounds,
 		wordChoicesPerTurn: lobby.wordChoicesPerTurn,
 		timeToChooseWord: lobby.timeToChooseWord,
-
-		dictionary: DEFAULT_DICTIONARY[lobby.usingDictionary],
+		allWords: lobby.allWords,
 	};
 }

@@ -4,7 +4,7 @@ import {
 	CreateLobbySchema,
 	LobbyParamsSchema,
 	JoinLobbySchema,
-	UpdateLobbyCustomWordsSchema,
+	UpdateLobbySchema,
 } from "@ft_transcendence/shared";
 import * as lobbyController from "./lobby.controller";
 import { validate } from "../../middlewares/validate.middleware";
@@ -46,9 +46,9 @@ lobbyRouter.patch(
 	requireAuth,
 	validate({
 		params: LobbyParamsSchema,
-		body: UpdateLobbyCustomWordsSchema,
+		body: UpdateLobbySchema,
 	}),
-	lobbyController.updateLobbyCustomWordsController,
+	lobbyController.updateLobbyController,
 );
 
 export default lobbyRouter;
