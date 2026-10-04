@@ -6,11 +6,15 @@ import {
 } from "@ft_transcendence/shared";
 import { ParsedRequest } from "../../middlewares/validate.middleware";
 import { NextFunction, Response } from "express";
-import { validateAccessToken } from "../../utils/jwt.util";
 import type { JwtPayload } from "jsonwebtoken";
 import { toLobbyResponseDTO } from "./lobby.mapper";
-import { InvalidTokenError, LobbyNotFoundError } from "@/errors";
+import {
+	InvalidTokenError,
+	LobbyNotFoundError,
+	RequireAuthError,
+} from "@/errors";
 import { lobbyService } from "./lobby.service";
+import { getTokenUuid } from "@/middlewares/auth.middleware";
 
 type CreateLobbyRequest = ParsedRequest<{ body: typeof CreateLobbySchema }>;
 
@@ -28,13 +32,11 @@ export async function createLobbyController(
 	next: NextFunction,
 ) {
 	try {
-		if (!req.cookies?.token) throw new InvalidTokenError();
-		const payload = validateAccessToken(req.cookies?.token);
-		checkPayload(payload);
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
 		const data = req.parsedBody!;
-		const lobby = await lobbyService.createLobby(payload.sub, data);
+		const lobby = await lobbyService.createLobby(userId, data);
 		const dto = toLobbyResponseDTO(lobby);
-
 		res.status(201).json({ data: dto });
 	} catch (err) {
 		next(err);
@@ -47,9 +49,6 @@ export async function listLobbiesController(
 	next: NextFunction,
 ) {
 	try {
-		if (!req.cookies?.token) throw new InvalidTokenError();
-		const payload = validateAccessToken(req.cookies?.token);
-		checkPayload(payload);
 		const lobbies = await lobbyService.listLobbies();
 		const dtos = lobbies.map(toLobbyResponseDTO);
 		res.status(200).json({ data: dtos });
@@ -64,9 +63,6 @@ export async function getByUuidLobbyController(
 	next: NextFunction,
 ) {
 	try {
-		if (!req.cookies?.token) throw new InvalidTokenError();
-		const payload = validateAccessToken(req.cookies?.token);
-		checkPayload(payload);
 		const { uuid } = req.parsedParams!;
 		const lobby = await lobbyService.getLobbyByUuid(uuid);
 		if (!lobby) throw new LobbyNotFoundError();
@@ -83,15 +79,14 @@ export async function joinLobbyController(
 	next: NextFunction,
 ) {
 	try {
-		if (!req.cookies?.token) throw new InvalidTokenError();
-		const payload = validateAccessToken(req.cookies?.token);
-		checkPayload(payload);
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
 		const { joinCode } = req.parsedBody!;
 		const lobby = await lobbyService.getLobbyByJoinCode(joinCode);
 		if (!lobby) {
 			throw new LobbyNotFoundError();
 		}
-		await lobbyService.joinLobby(lobby.uuid, payload.sub);
+		await lobbyService.joinLobby(lobby.uuid, userId);
 		const dto = toLobbyResponseDTO(lobby);
 		res.status(200).json({ data: dto });
 	} catch (err) {
@@ -105,11 +100,10 @@ export async function leaveLobbyController(
 	next: NextFunction,
 ) {
 	try {
-		if (!req.cookies?.token) throw new InvalidTokenError();
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
 		const { uuid: lobbyUuid } = req.parsedParams!;
-		const payload = validateAccessToken(req.cookies?.token);
-		checkPayload(payload);
-		await lobbyService.leaveLobby(lobbyUuid, payload.sub);
+		await lobbyService.leaveLobby(lobbyUuid, userId);
 		res.status(200).json({ message: "Left lobby successfully" });
 	} catch (err) {
 		next(err);
@@ -125,15 +119,14 @@ export async function updateLobbyController(
 	next: NextFunction,
 ) {
 	try {
-		if (!req.cookies?.token) throw new InvalidTokenError();
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
 		const { uuid: lobbyUuid } = req.parsedParams!;
-		const payload = validateAccessToken(req.cookies?.token);
-		checkPayload(payload);
 		const updatedData = req.parsedBody!;
 		const lobby = await lobbyService.updateLobby(
 			lobbyUuid,
 			updatedData,
-			payload.sub,
+			userId,
 		);
 		const dto = toLobbyResponseDTO(lobby);
 		res.status(200).json({ data: dto });
