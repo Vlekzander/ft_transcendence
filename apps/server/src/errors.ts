@@ -146,3 +146,67 @@ export class SelfMessageError extends AppDomainError {
 		this.name = "SelfMessageError";
 	}
 }
+
+//Lobby errors
+export class LobbyNotFoundError extends AppDomainError {
+	constructor() {
+		super("Lobby not found");
+		this.name = "LobbyNotFoundError";
+	}
+}
+
+export class NotHostError extends AppDomainError {
+	constructor() {
+		super("Only the host can perform this action");
+		this.name = "NotHostError";
+	}
+}
+
+export class UserAlreadyInLobbyError extends AppDomainError {
+	constructor() {
+		super("User is already in the lobby");
+		this.name = "UserAlreadyInLobbyError";
+	}
+}
+
+export class UserBannedFromLobbyError extends AppDomainError {
+	constructor() {
+		super("User is banned from this lobby");
+		this.name = "UserBannedFromLobbyError";
+	}
+}
+
+export class LobbyFullError extends AppDomainError {
+	constructor() {
+		super("Lobby is full");
+		this.name = "LobbyFullError";
+	}
+}
+
+export class UnauthorizedLobbyAccessError extends AppDomainError {
+	constructor() {
+		super("User is not authorized to access this lobby");
+		this.name = "UnauthorizedLobbyAccessError";
+	}
+}
+
+export class UnauthorizedUserActionError extends AppDomainError {
+	constructor() {
+		super("User is not authorized to perform this action");
+		this.name = "UnauthorizedUserActionError";
+	}
+}
+
+export class TooManyCustomWordsError extends AppDomainError {
+	constructor() {
+		super("Too many custom words provided");
+		this.name = "TooManyCustomWordsError";
+	}
+}
+
+export class InvalidTokenError extends AppDomainError {
+	constructor() {
+		super("Invalid token");
+		this.name = "InvalidTokenError";
+	}
+}

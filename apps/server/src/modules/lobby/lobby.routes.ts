@@ -41,7 +41,7 @@ lobbyRouter.post(
 	lobbyController.leaveLobbyController,
 );
 
-lobbyRouter.patch(
+lobbyRouter.put(
 	"/:uuid/settings",
 	requireAuth,
 	validate({
