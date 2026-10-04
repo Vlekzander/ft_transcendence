@@ -1,4 +1,8 @@
-import { CreateLobbySchema } from "@ft_transcendence/shared";
+import {
+	CreateLobbySchema,
+	LobbyParamsSchema,
+	JoinLobbySchema,
+} from "@ft_transcendence/shared";
 import { ParsedRequest } from "../../middlewares/validate.middleware";
 import { NextFunction, Response } from "express";
 import { validateAccessToken } from "../../utils/jwt.util";
@@ -9,7 +13,7 @@ type LobbyBody = typeof CreateLobbySchema;
 
 type LobbyRequest = ParsedRequest<{ body: LobbyBody }>;
 
-async function checkpayload(payload: any) {
+function checkpayload(payload: any) {
 	if (typeof payload === "string" || payload.sub !== "string")
 		throw new Error("Invalid token");
 }
@@ -49,7 +53,7 @@ export async function listLobbiesController(
 }
 
 export async function getByUuidLobbyController(
-	req: ParsedRequest<{ params: { uuid: string } }>,
+	req: ParsedRequest<{ params: typeof LobbyParamsSchema }>,
 	res: Response,
 	next: NextFunction,
 ) {
@@ -68,18 +72,20 @@ export async function getByUuidLobbyController(
 }
 
 export async function joinLobbyController(
-	req: ParsedRequest<{ body: { joinCode: string } }>,
+	req: ParsedRequest<{ body: typeof JoinLobbySchema }>,
 	res: Response,
 	next: NextFunction,
 ) {
 	try {
+		const payload = validateAccessToken(req.cookies?.token);
+		checkpayload(payload);
 		const { joinCode } = req.parsedBody!;
 		const lobby = await lobbyService.getLobbyByJoinCode(joinCode);
 		if (!lobby) {
 			res.status(404).json({ message: "Lobby not found" });
 			return;
 		}
-		await lobbyService.joinLobby(lobby.uuid, req.parsedBody!.userId);
+		await lobbyService.joinLobby(lobby.uuid, payload.sub);
 		const dto = toLobbyResponseDTO(lobby);
 		res.status(200).json({ data: dto });
 	} catch (err) {
@@ -88,7 +94,7 @@ export async function joinLobbyController(
 }
 
 export async function leaveLobbyController(
-	req: ParsedRequest<{ params: { uuid: string } }>,
+	req: ParsedRequest<{ params: typeof LobbyParamsSchema }>,
 	res: Response,
 	next: NextFunction,
 ) {
