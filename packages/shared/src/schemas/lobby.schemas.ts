@@ -121,5 +121,11 @@ export const JoinLobbySchema = z.object({
 });
 
 export const UpdateLobbySchema = z.object({
-	//
+	visibility: VisibilitySchema,
+	numberOfRounds: NumberOfRoundsSchema,
+	wordChoicesPerTurn: WordChoicesPerTurnSchema,
+	timeToChooseWord: TimeToChooseWordSchema,
+	drawTime: DrawTimeSchema,
 });
+
+export type UpdateLobbyDTO = z.infer<typeof UpdateLobbySchema>;

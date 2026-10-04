@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { jwt } from "jsonwebtoken";
 import { readEnv, readSecret } from "./env.util";
 import { AppDomainError } from "@ft_transcendence/shared";
 import { InvalidJWTError } from "@/errors";
