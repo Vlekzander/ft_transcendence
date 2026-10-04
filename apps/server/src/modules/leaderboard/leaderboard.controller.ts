@@ -1,8 +1,8 @@
-import { Response, NextFunction } from "express";
+import { Request, Response, NextFunction } from "express";
 import * as leaderboardService from "./leaderboard.service";
 
 export async function getLeaderboard(
-	// req: Request,	//Q? neededhere ?
+	_req: Request,
 	res: Response,
 	next: NextFunction,
 ) {
