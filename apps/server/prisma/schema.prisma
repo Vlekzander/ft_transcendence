@@ -87,31 +87,6 @@ model Message {
 	receiver	User	@relation("MessageReceiver", fields: [receiverId], references: [uuid], onDelete: Cascade)
 }
 
-model Friendship {
-	uuid		String				@id @default(uuid(7)) @db.Uuid
-	senderId	String				@db.Uuid
-	receiverId	String				@db.Uuid
-	status		FriendshipStatus	@default(PENDING)
-
-	sender		User				@relation("FriendshipSender", fields: [senderId], references: [uuid], onDelete: Cascade)
-	receiver	User				@relation("FriendshipReceiver", fields: [receiverId], references: [uuid], onDelete: Cascade)
-
-	@@unique([senderId, receiverId])
-	@@index([uuid])
-	@@index([senderId, status])
-	@@index([receiverId, status])
-}
-
-model Message {
-	uuid		String	@id @default(uuid(7)) @db.Uuid
-	senderId	String	@db.Uuid
-	receiverId	String	@db.Uuid
-	content		String
-
-	sender		User	@relation("MessageSender", fields: [senderId], references: [uuid], onDelete: Cascade)
-	receiver	User	@relation("MessageReceiver", fields: [receiverId], references: [uuid], onDelete: Cascade)
-}
-
 enum Visibility {
 	PUBLIC
 	PRIVATE

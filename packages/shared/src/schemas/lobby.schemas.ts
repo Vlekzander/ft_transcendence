@@ -99,7 +99,7 @@ export const LobbyResponseSchema = z.object({
 	mode: GameModeSchema,
 	visibility: VisibilitySchema,
 	joinCode: JoinCodeSchema,
-	maxPlayers: z.literal(MAX_PLAYERS),
+	maxPlayers: z.int().min(1).max(MAX_PLAYERS),
 	connectedPlayers: z.array(z.uuid()),
 	bannedPlayers: z.array(z.uuid()),
 	usingDictionary: UsingDictionarySchema,

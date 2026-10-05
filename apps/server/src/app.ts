@@ -6,11 +6,8 @@ import { errorHandler } from "./middlewares/errorHandler.middleware";
 import { AVATAR_DIR } from "./config/upload.config";
 import authRouter from "./modules/auth/auth.routes";
 import usersRouter from "./modules/users/users.routes";
-<<<<<<< HEAD
 import msgRouter from "./modules/msg/msg.routes";
-=======
 import lobbyRouter from "./modules/lobby/lobby.routes";
->>>>>>> 94bb6aa (cleaned up incoherent code for lobby part. added Lobby array as component of a user in prisma scheme. For the moment, Lobbies are store on server memory, not saved in DB.)
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
 
