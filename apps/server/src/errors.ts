@@ -203,10 +203,3 @@ export class TooManyCustomWordsError extends AppDomainError {
 		this.name = "TooManyCustomWordsError";
 	}
 }
-
-export class InvalidTokenError extends AppDomainError {
-	constructor() {
-		super("Invalid token");
-		this.name = "InvalidTokenError";
-	}
-}

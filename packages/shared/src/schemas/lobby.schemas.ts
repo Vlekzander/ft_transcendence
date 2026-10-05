@@ -129,3 +129,7 @@ export const UpdateLobbySchema = z.object({
 });
 
 export type UpdateLobbyDTO = z.infer<typeof UpdateLobbySchema>;
+
+export const LobbyPlayerBodySchema = z.object({
+	userId: z.uuid(),
+});
