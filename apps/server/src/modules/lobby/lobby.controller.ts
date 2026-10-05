@@ -3,28 +3,16 @@ import {
 	LobbyParamsSchema,
 	JoinLobbySchema,
 	UpdateLobbySchema,
+	LobbyPlayerBodySchema,
 } from "@ft_transcendence/shared";
 import { ParsedRequest } from "../../middlewares/validate.middleware";
 import { NextFunction, Response } from "express";
-import type { JwtPayload } from "jsonwebtoken";
 import { toLobbyResponseDTO } from "./lobby.mapper";
-import {
-	InvalidTokenError,
-	LobbyNotFoundError,
-	RequireAuthError,
-} from "@/errors";
+import { LobbyNotFoundError, RequireAuthError } from "@/errors";
 import { lobbyService } from "./lobby.service";
 import { getTokenUuid } from "@/middlewares/auth.middleware";
 
 type CreateLobbyRequest = ParsedRequest<{ body: typeof CreateLobbySchema }>;
-
-function checkPayload(
-	payload: string | JwtPayload,
-): asserts payload is JwtPayload & { sub: string } {
-	if (typeof payload === "string" || typeof payload.sub !== "string") {
-		throw new InvalidTokenError();
-	}
-}
 
 export async function createLobbyController(
 	req: CreateLobbyRequest,
@@ -130,6 +118,46 @@ export async function updateLobbyController(
 		);
 		const dto = toLobbyResponseDTO(lobby);
 		res.status(200).json({ data: dto });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function banLobbyController(
+	req: ParsedRequest<{
+		params: typeof LobbyParamsSchema;
+		body: typeof LobbyPlayerBodySchema;
+	}>,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
+		const { uuid: lobbyUuid } = req.parsedParams!;
+		const { userId: targetUserId } = req.parsedBody!;
+		await lobbyService.banLobby(lobbyUuid, userId, targetUserId);
+		res.status(200).json({ message: "Lobby banned successfully" });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function unbanLobbyController(
+	req: ParsedRequest<{
+		params: typeof LobbyParamsSchema;
+		body: typeof LobbyPlayerBodySchema;
+	}>,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
+		const { uuid: lobbyUuid } = req.parsedParams!;
+		const { userId: targetUserId } = req.parsedBody!;
+		await lobbyService.unbanLobby(lobbyUuid, userId, targetUserId);
+		res.status(200).json({ message: "Lobby unbanned successfully" });
 	} catch (err) {
 		next(err);
 	}

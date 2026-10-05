@@ -5,6 +5,7 @@ import {
 	LobbyParamsSchema,
 	JoinLobbySchema,
 	UpdateLobbySchema,
+	LobbyPlayerBodySchema,
 } from "@ft_transcendence/shared";
 import * as lobbyController from "./lobby.controller";
 import { validate } from "../../middlewares/validate.middleware";
@@ -49,6 +50,20 @@ lobbyRouter.put(
 		body: UpdateLobbySchema,
 	}),
 	lobbyController.updateLobbyController,
+);
+
+lobbyRouter.post(
+	"/:uuid/ban",
+	requireAuth,
+	validate({ params: LobbyParamsSchema, body: LobbyPlayerBodySchema }),
+	lobbyController.banLobbyController,
+);
+
+lobbyRouter.post(
+	"/:uuid/unban",
+	requireAuth,
+	validate({ params: LobbyParamsSchema, body: LobbyPlayerBodySchema }),
+	lobbyController.unbanLobbyController,
 );
 
 export default lobbyRouter;

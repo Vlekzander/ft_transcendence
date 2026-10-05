@@ -14,7 +14,6 @@ import {
 	LobbyNotFoundError,
 	LobbyFullError,
 	UserAlreadyInLobbyError,
-	InvalidTokenError,
 	UserBannedFromLobbyError,
 } from "../errors";
 
@@ -40,13 +39,9 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 403), error);
 	if (err instanceof InvalidCredentialsError)
 		return ((error.status = 401), error);
-	if (err instanceof AppDomainError) return ((error.status = 400), error);
 
 	//lobby errors >>>>
-	if (
-		err instanceof TooManyCustomWordsError ||
-		err instanceof InvalidTokenError
-	)
+	if (err instanceof TooManyCustomWordsError)
 		return ((error.status = 400), error);
 	if (
 		err instanceof UnauthorizedLobbyAccessError ||
@@ -59,6 +54,8 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 409), error);
 
 	//lobby errors <<<<
+
+	if (err instanceof AppDomainError) return ((error.status = 400), error);
 
 	console.error(err);
 	return {
