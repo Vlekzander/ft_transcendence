@@ -114,14 +114,44 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	}, [wsUrl, scheduleReconnect]);
 
 	useEffect(() => {
+		connectRef.current = connect;
+	}, [connect]);
+
+	useEffect(() => {
 		connect();
 
 		return () => {
 			clearReconnectTimeout();
-			socketRef.current?.close();
+			socketRef.current?.close(1000, "Component unmounted");
 			socketRef.current = null;
 		};
-	}, [connect]);
+	}, [connect, clearReconnectTimeout]);
+
+	useEffect(() => {
+		const handlePageHide = () => {
+			clearReconnectTimeout();
+			if (
+				socketRef.current &&
+				socketRef.current.readyState === WebSocket.OPEN
+			)
+				socketRef.current.close(1000, "Page entering bfcache");
+		};
+
+		const handlePageShow = (event: PageTransitionEvent) => {
+			if (event.persisted) {
+				reconnectAttemptsRef.current = 0;
+				connect();
+			}
+		};
+
+		window.addEventListener("pagehide", handlePageHide);
+		window.addEventListener("pageshow", handlePageShow);
+
+		return () => {
+			window.removeEventListener("pagehide", handlePageHide);
+			window.removeEventListener("pageshow", handlePageShow);
+		};
+	}, [connect, clearReconnectTimeout]);
 
 	const sendPacket = useCallback((packet: AppPacket) => {
 		const socket = socketRef.current;

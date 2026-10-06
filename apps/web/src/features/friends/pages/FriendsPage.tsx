@@ -3,7 +3,7 @@ import { useFriends } from "../context/FriendContext";
 import { useEffect, useState } from "react";
 import type { PublicUserDTO } from "@ft_transcendence/shared";
 import { Link } from "react-router";
-import { AVATARS_PATH } from "../../../config";
+import { getAvatarUrl } from "../../../config";
 import { searchUserRequest } from "../services/friends.service";
 import { FriendActionButton } from "../components/FriendActionButton";
 import FriendComponent from "../components/Friend";
@@ -19,11 +19,7 @@ function UserPreviewComponent({ user }: { user: PublicUserDTO }) {
 				className="flex items-center gap-3 hover:underline"
 			>
 				<img
-					src={
-						user.avatarPath === null
-							? "/assets/default_avatar.jpg"
-							: AVATARS_PATH + user.avatarPath
-					}
+					src={getAvatarUrl(user.avatarPath)}
 					alt=""
 					width={32}
 					height={32}

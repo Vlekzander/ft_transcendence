@@ -15,7 +15,7 @@ import { getMessages } from "../services/messages.service";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import { MessageSquare, Send } from "lucide-react";
 import { FriendActionButton } from "../../friends/components/FriendActionButton";
-import { AVATARS_PATH } from "../../../config";
+import { getAvatarUrl, getErrorMessage } from "../../../config";
 import UserStatusComponent from "../../user/components/UserStatus";
 
 export default function MsgPage() {
@@ -59,8 +59,9 @@ export default function MsgPage() {
 					);
 				}
 			} catch (error) {
+				const message = getErrorMessage(error);
 				if (isMounted)
-					setError(error.message || "Unable to load conversation");
+					setError(message || "Unable to load conversation");
 			} finally {
 				if (isMounted) setLoading(false);
 			}
@@ -143,11 +144,7 @@ export default function MsgPage() {
 						className="flex items-center gap-3 hover:opacity-80 transition-opacity"
 					>
 						<img
-							src={
-								otherUser.avatarPath === null
-									? "/assets/default_avatar.jpg"
-									: AVATARS_PATH + otherUser.avatarPath
-							}
+							src={getAvatarUrl(otherUser.avatarPath)}
 							alt={otherUser.username}
 							width={40}
 							height={40}
