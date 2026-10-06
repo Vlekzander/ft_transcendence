@@ -6,9 +6,13 @@ import {
 	LobbyPlayerBodySchema,
 } from "@ft_transcendence/shared";
 import { ParsedRequest } from "../../middlewares/validate.middleware";
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { toLobbyResponseDTO } from "./lobby.mapper";
-import { LobbyNotFoundError, RequireAuthError } from "@/errors";
+import {
+	LobbyNotFoundError,
+	RequireAuthError,
+	UnauthorizedLobbyAccessError,
+} from "@/errors";
 import { lobbyService } from "./lobby.service";
 import { getTokenUuid } from "@/middlewares/auth.middleware";
 
@@ -32,7 +36,7 @@ export async function createLobbyController(
 }
 
 export async function listLobbiesController(
-	req: ParsedRequest<{}>,
+	_req: Request,
 	res: Response,
 	next: NextFunction,
 ) {
@@ -51,9 +55,13 @@ export async function getByUuidLobbyController(
 	next: NextFunction,
 ) {
 	try {
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
 		const { uuid } = req.parsedParams!;
 		const lobby = await lobbyService.getLobbyByUuid(uuid);
 		if (!lobby) throw new LobbyNotFoundError();
+		if (!lobby.connectedPlayers.has(userId))
+			throw new UnauthorizedLobbyAccessError();
 		const dto = toLobbyResponseDTO(lobby);
 		res.status(200).json({ data: dto });
 	} catch (err) {

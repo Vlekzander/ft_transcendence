@@ -15,6 +15,8 @@ import {
 	LobbyFullError,
 	UserAlreadyInLobbyError,
 	UserBannedFromLobbyError,
+	UserNotInLobbyError,
+	NotHostError,
 } from "../errors";
 
 type ErrorResponse = {
@@ -46,9 +48,12 @@ export function mapError(err: Error): ErrorResponse {
 	if (
 		err instanceof UnauthorizedLobbyAccessError ||
 		err instanceof UnauthorizedUserActionError ||
+		err instanceof NotHostError ||
 		err instanceof UserBannedFromLobbyError
 	)
 		return ((error.status = 403), error);
+	if (err instanceof LobbyNotFoundError || err instanceof UserNotInLobbyError)
+		return ((error.status = 404), error);
 	if (err instanceof LobbyNotFoundError) return ((error.status = 404), error);
 	if (err instanceof LobbyFullError || err instanceof UserAlreadyInLobbyError)
 		return ((error.status = 409), error);

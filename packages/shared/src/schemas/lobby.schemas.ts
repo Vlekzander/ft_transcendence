@@ -68,15 +68,17 @@ export const CreateLobbySchema = z
 		visibility: VisibilitySchema.default("PUBLIC"),
 		usingDictionary: UsingDictionarySchema.default(1),
 		customWords: CustomWordsSchema.default(""),
-		drawTime: DrawTimeSchema.default(DRAW_TIME[DRAW_TIME.length / 2]),
+		drawTime: DrawTimeSchema.default(
+			DRAW_TIME[Math.floor(DRAW_TIME.length / 2)],
+		),
 		numberOfRounds: NumberOfRoundsSchema.default(
-			NB_ROUNDS[NB_ROUNDS.length / 2],
+			NB_ROUNDS[Math.floor(NB_ROUNDS.length / 2)],
 		),
 		wordChoicesPerTurn: WordChoicesPerTurnSchema.default(
-			WORD_OPTIONS_PER_TURN[WORD_OPTIONS_PER_TURN.length / 2],
+			WORD_OPTIONS_PER_TURN[Math.floor(WORD_OPTIONS_PER_TURN.length / 2)],
 		),
 		timeToChooseWord: TimeToChooseWordSchema.default(
-			TIME_TO_CHOOSE_WORD[TIME_TO_CHOOSE_WORD.length / 2],
+			TIME_TO_CHOOSE_WORD[Math.floor(TIME_TO_CHOOSE_WORD.length / 2)],
 		),
 	})
 	.refine(
@@ -107,7 +109,6 @@ export const LobbyResponseSchema = z.object({
 	numberOfRounds: NumberOfRoundsSchema,
 	wordChoicesPerTurn: WordChoicesPerTurnSchema,
 	timeToChooseWord: TimeToChooseWordSchema,
-	allWords: z.array(z.string()),
 });
 
 export type LobbyResponseDTO = z.infer<typeof LobbyResponseSchema>;
@@ -120,13 +121,15 @@ export const JoinLobbySchema = z.object({
 	joinCode: JoinCodeSchema,
 });
 
-export const UpdateLobbySchema = z.object({
-	visibility: VisibilitySchema,
-	numberOfRounds: NumberOfRoundsSchema,
-	wordChoicesPerTurn: WordChoicesPerTurnSchema,
-	timeToChooseWord: TimeToChooseWordSchema,
-	drawTime: DrawTimeSchema,
-});
+export const UpdateLobbySchema = z
+	.object({
+		visibility: VisibilitySchema,
+		numberOfRounds: NumberOfRoundsSchema,
+		wordChoicesPerTurn: WordChoicesPerTurnSchema,
+		timeToChooseWord: TimeToChooseWordSchema,
+		drawTime: DrawTimeSchema,
+	})
+	.partial();
 
 export type UpdateLobbyDTO = z.infer<typeof UpdateLobbySchema>;
 

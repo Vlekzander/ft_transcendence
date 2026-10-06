@@ -10,9 +10,11 @@ import { DEFAULT_DICTIONARY } from "./dictionary";
 import {
 	LobbyFullError,
 	LobbyNotFoundError,
+	NotHostError,
+	CannotBanHostError,
+	UserNotInLobbyError,
 	TooManyCustomWordsError,
 	UnauthorizedLobbyAccessError,
-	UnauthorizedUserActionError,
 	UserAlreadyInLobbyError,
 	UserBannedFromLobbyError,
 } from "@/errors";
@@ -49,11 +51,18 @@ function mixAllWords(allWords: Set<string>): string[] {
 	return copy;
 }
 
+function findLobbyOfUser(userId: string): LobbyEntity | undefined {
+	return Array.from(lobbiesByJoinCode.values()).find((lobby) =>
+		lobby.connectedPlayers.has(userId),
+	);
+}
+
 export class LobbyService {
 	async createLobby(
 		hostId: string,
 		data: CreateLobbyDTO,
 	): Promise<LobbyEntity> {
+		if (findLobbyOfUser(hostId)) throw new UserAlreadyInLobbyError();
 		const code = generateJoinCode();
 		const localCustomWords = parseCustomWords(data.customWords);
 		const lobby: LobbyEntity = {
@@ -106,8 +115,7 @@ export class LobbyService {
 	async joinLobby(lobbyUuid: string, userId: string): Promise<void> {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
-		if (lobby.connectedPlayers.has(userId))
-			throw new UserAlreadyInLobbyError();
+		if (findLobbyOfUser(userId)) throw new UserAlreadyInLobbyError();
 		if (lobby.bannedPlayers.has(userId))
 			throw new UserBannedFromLobbyError();
 		if (lobby.connectedPlayers.size >= lobby.maxPlayers)
@@ -127,10 +135,10 @@ export class LobbyService {
 			await this.deleteLobby(lobby.joinCode);
 			return;
 		}
-		if (lobby.connectedPlayers.size > 1 && lobby.hostId === userId) {
-			lobby.hostId = Array.from(lobby.connectedPlayers)[1];
-		}
 		lobby.connectedPlayers.delete(userId);
+		if (lobby.hostId === userId) {
+			lobby.hostId = lobby.connectedPlayers.values().next().value!;
+		}
 	}
 
 	async deleteLobby(joinCode: string): Promise<void> {
@@ -144,7 +152,7 @@ export class LobbyService {
 	): Promise<LobbyEntity> {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
-		if (lobby.hostId !== userId) throw new UnauthorizedUserActionError();
+		if (lobby.hostId !== userId) throw new NotHostError();
 		Object.assign(lobby, data);
 		return lobby;
 	}
@@ -156,9 +164,10 @@ export class LobbyService {
 	): Promise<void> {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
-		if (lobby.hostId !== userId) throw new UnauthorizedUserActionError();
+		if (lobby.hostId !== userId) throw new NotHostError();
+		if (targetUserId === lobby.hostId) throw new CannotBanHostError();
 		if (!lobby.connectedPlayers.has(targetUserId))
-			throw new UnauthorizedUserActionError();
+			throw new UserNotInLobbyError();
 		lobby.connectedPlayers.delete(targetUserId);
 		lobby.bannedPlayers.add(targetUserId);
 	}
@@ -170,7 +179,7 @@ export class LobbyService {
 	): Promise<void> {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
-		if (lobby.hostId !== userId) throw new UnauthorizedUserActionError();
+		if (lobby.hostId !== userId) throw new NotHostError();
 		lobby.bannedPlayers.delete(targetUserId);
 	}
 }
