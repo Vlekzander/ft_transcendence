@@ -86,8 +86,3 @@ model Message {
 	sender		User	@relation("MessageSender", fields: [senderId], references: [uuid], onDelete: Cascade)
 	receiver	User	@relation("MessageReceiver", fields: [receiverId], references: [uuid], onDelete: Cascade)
 }
-
-enum Visibility {
-	PUBLIC
-	PRIVATE
-}

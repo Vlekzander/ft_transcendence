@@ -37,6 +37,5 @@ export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
 		numberOfRounds: lobby.numberOfRounds,
 		wordChoicesPerTurn: lobby.wordChoicesPerTurn,
 		timeToChooseWord: lobby.timeToChooseWord,
-		allWords: lobby.allWords,
 	};
 }

@@ -162,6 +162,20 @@ export class NotHostError extends AppDomainError {
 	}
 }
 
+export class UserNotInLobbyError extends AppDomainError {
+	constructor() {
+		super("User is not in the lobby");
+		this.name = "UserNotInLobbyError";
+	}
+}
+
+export class CannotBanHostError extends AppDomainError {
+	constructor() {
+		super("The host cannot be banned");
+		this.name = "CannotBanHostError";
+	}
+}
+
 export class UserAlreadyInLobbyError extends AppDomainError {
 	constructor() {
 		super("User is already in the lobby");
