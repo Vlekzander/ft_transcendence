@@ -55,7 +55,7 @@ const TimeToChooseWordSchema = z
 	.refine((value) => TIME_TO_CHOOSE_WORD.includes(value), {
 		message: "Invalid time to choose word",
 	});
-const UsingDictionarySchema = z.int().min(0).max(2);
+const UsingDictionarySchema = z.int().min(0);
 const JoinCodeSchema = z
 	.string()
 	.regex(/^[A-Z0-9]{6}$/, "Invalid lobby join code");
