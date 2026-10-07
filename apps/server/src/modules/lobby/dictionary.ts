@@ -1,100 +1,32 @@
-export const DEFAULT_DICTIONARY: Record<number, string[]> = {
-	// by levels 0 being empty, 1 being easy, 2 being hard
-	0: [],
-	1: [
-		"carrot",
-		"fish",
-		"waffle",
-		"strawberry",
-		"guitar",
-		"kite",
-		"balloon",
-		"butterfly",
-		"hot",
-		"cookie",
-		"donut",
-		"elephant",
-		"pineapple",
-		"cupcake",
-		"dog",
-		"banana",
-		"frog",
-		"lion",
-		"owl",
-		"book",
-		"cake",
-		"candle",
-		"shoes",
-		"penguin",
-		"bicycle",
-		"sheep",
-		"table",
-		"monkey",
-		"sandwich",
-		"camera",
-		"phone",
-		"cream",
-		"horse",
-		"snake",
-		"glasses",
-		"hamburger",
-		"pancake",
-		"rabbit",
-		"bird",
-		"cat",
-		"hat",
-		"ice",
-		"popcorn",
-		"apple",
-		"bear",
-		"pizza",
-		"clock",
-		"duck",
-		"cow",
-		"chair",
-		"key",
-		"watermelon",
-		"tiger",
-		"umbrella",
-		"dog",
-		"pig",
-	],
-	2: [
-		"hedgehog",
-		"lamp",
-		"lava",
-		"sum",
-		"ferris",
-		"submarine",
-		"peacock",
-		"ramen",
-		"kimchi",
-		"fondue",
-		"hot",
-		"platypus",
-		"flamingo",
-		"wheel",
-		"tiramisu",
-		"capybara",
-		"hourglass",
-		"air",
-		"narwhal",
-		"walrus",
-		"meerkat",
-		"baklava",
-		"falafel",
-		"armadillo",
-		"dim",
-		"sloth",
-		"trampoline",
-		"treehouse",
-		"octopus",
-		"croissant",
-		"gnocchi",
-		"balloon",
-		"chameleon",
-		"paella",
-		"telescope",
-		"churros",
-	],
+import fs from "node:fs";
+import path from "node:path";
+
+const DICTIONARY_DIR = path.resolve(process.cwd(), "data/dictionaries");
+
+const FILES: Record<number, string | null> = {
+	0: null,
 };
+
+const dictionaryFiles = fs
+	.readdirSync(DICTIONARY_DIR, { withFileTypes: true })
+	.filter((entry) => entry.isFile() && entry.name.endsWith(".txt"))
+	.map((entry) => entry.name);
+
+const uniqueFiles = [...new Set(dictionaryFiles)];
+
+uniqueFiles.forEach((file, index) => {
+	FILES[index + 1] = file;
+});
+
+function load(file: string | null): string[] {
+	if (!file) return [];
+	const content = fs.readFileSync(path.join(DICTIONARY_DIR, file), "utf-8");
+	return content
+		.split("\n")
+		.map((w) => w.trim().toLowerCase())
+		.filter(Boolean);
+}
+
+export const DEFAULT_DICTIONARY: Record<number, string[]> = Object.fromEntries(
+	Object.entries(FILES).map(([level, file]) => [level, load(file)]),
+);
