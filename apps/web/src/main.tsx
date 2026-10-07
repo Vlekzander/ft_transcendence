@@ -19,6 +19,10 @@ import AccountPage from "./features/user/pages/AccountPage";
 import { FriendProvider } from "./features/friends/context/FriendContext";
 import FriendsPage from "./features/friends/pages/FriendsPage";
 import MsgPage from "./features/msg/pages/MsgPage";
+import LobbiesPage from "./features/lobby/pages/LobbiesPage";
+import CreateLobbyPage from "./features/lobby/pages/CreateLobbyPage";
+import LobbyPage from "./features/lobby/pages/LobbyPage";
+import JoinLobbyPage from "./features/lobby/pages/JoinLobbyPage";
 
 const router = createBrowserRouter([
 	{
@@ -39,6 +43,22 @@ const router = createBrowserRouter([
 					{
 						path: "/msg/:uuid",
 						element: <MsgPage />,
+					},
+					{
+						path: "/lobbies",
+						element: <LobbiesPage />,
+					},
+					{
+						path: "/lobbies/new",
+						element: <CreateLobbyPage />,
+					},
+					{
+						path: "/lobbies/join/:joinCode",
+						element: <JoinLobbyPage />,
+					},
+					{
+						path: "/lobbies/:uuid",
+						element: <LobbyPage />,
 					},
 				],
 			},
