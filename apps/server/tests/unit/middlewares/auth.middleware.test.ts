@@ -5,13 +5,21 @@ import {
 	requireUserOwnership,
 } from "@/middlewares/auth.middleware";
 import { validateAccessToken } from "@/utils/jwt.util";
+import { sharedService } from "@/modules/shared/shared.service";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/utils/jwt.util", () => ({
 	validateAccessToken: vi.fn(),
 }));
 
+vi.mock("@/modules/shared/shared.service", () => ({
+	sharedService: {
+		getUserById: vi.fn(),
+	},
+}));
+
 const mockedValidateAccessToken = vi.mocked(validateAccessToken);
+const mockedGetUserById = vi.mocked(sharedService.getUserById);
 
 function createMockReqRes(
 	options: {
@@ -74,15 +82,17 @@ describe("auth.middleware", () => {
 	});
 
 	describe("requireGuest", () => {
-		it("calls next() with AlreadyAuthError if user is authenticated", () => {
+		it("calls next() with AlreadyAuthError if user is authenticated and exists", async () => {
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "user-123",
 			} as any);
+			mockedGetUserById.mockResolvedValue({ id: "user-123" } as any);
+
 			const { req, res, next } = createMockReqRes({
 				cookies: { token: "valid-token" },
 			});
 
-			requireGuest(req, res, next);
+			await requireGuest(req, res, next);
 
 			expect(next).toHaveBeenCalledOnce();
 			expect(next.mock.calls[0][0]).toMatchObject({
@@ -90,33 +100,68 @@ describe("auth.middleware", () => {
 			});
 		});
 
-		it("calls next() without error if user is unauthenticated", () => {
+		it("calls next() without error if user is unauthenticated", async () => {
 			const { req, res, next } = createMockReqRes();
 
-			requireGuest(req, res, next);
+			await requireGuest(req, res, next);
+
+			expect(next).toHaveBeenCalledWith();
+		});
+
+		it("calls next() without error if token is valid but user does not exist in DB", async () => {
+			mockedValidateAccessToken.mockReturnValue({
+				sub: "user-unknown",
+			} as any);
+			mockedGetUserById.mockResolvedValue(null);
+
+			const { req, res, next } = createMockReqRes({
+				cookies: { token: "valid-token" },
+			});
+
+			await requireGuest(req, res, next);
 
 			expect(next).toHaveBeenCalledWith();
 		});
 	});
 
 	describe("requireAuth", () => {
-		it("calls next() without error when authenticated", () => {
+		it("calls next() without error when authenticated and user exists", async () => {
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "user-123",
 			} as any);
+			mockedGetUserById.mockResolvedValue({ id: "user-123" } as any);
+
 			const { req, res, next } = createMockReqRes({
 				cookies: { token: "valid-token" },
 			});
 
-			requireAuth(req, res, next);
+			await requireAuth(req, res, next);
 
 			expect(next).toHaveBeenCalledWith();
 		});
 
-		it("calls next() with RequireAuthError when not authenticated", () => {
+		it("calls next() with RequireAuthError when not authenticated", async () => {
 			const { req, res, next } = createMockReqRes();
 
-			requireAuth(req, res, next);
+			await requireAuth(req, res, next);
+
+			expect(next).toHaveBeenCalledOnce();
+			expect(next.mock.calls[0][0]).toMatchObject({
+				name: "RequireAuthError",
+			});
+		});
+
+		it("calls next() with RequireAuthError when token is valid but user is missing in DB", async () => {
+			mockedValidateAccessToken.mockReturnValue({
+				sub: "deleted-user",
+			} as any);
+			mockedGetUserById.mockResolvedValue(null);
+
+			const { req, res, next } = createMockReqRes({
+				cookies: { token: "valid-token" },
+			});
+
+			await requireAuth(req, res, next);
 
 			expect(next).toHaveBeenCalledOnce();
 			expect(next.mock.calls[0][0]).toMatchObject({
