@@ -1,6 +1,8 @@
-//Should we put players with no wins in lb ?
+//Add some confettis if the current player is 1st ? need dependencies if yes ...
 
-import { Trophy } from "lucide-react";
+import { Trophy, Crown, Medal } from "lucide-react";
+
+import { useAuth } from "../auth/context/AuthContext";
 
 import { useEffect, useState } from "react";
 
@@ -15,27 +17,12 @@ type LeaderboardEntry = {
 
 export default function LeaderboardPage() {
 	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-	const [currentUser, setCurrentUser] = useState<{
-		uuid: string;
-		username: string;
-	} | null>(null);
+	const { user } = useAuth();
 
 	useEffect(() => {
-		Promise.all([
-			fetch("http://localhost:3000/leaderboard"),
-			fetch("http://localhost:3000/auth/whoami", {
-				credentials: "include",
-			}),
-		]).then(async ([leaderboardResponse, whoamiResponse]) => {
-			const leaderboardData = await leaderboardResponse.json();
-			const whoamiData = await whoamiResponse.json();
-
-			setLeaderboard(leaderboardData.leaderboard);
-
-			if (whoamiData.authenticated) {
-				setCurrentUser(whoamiData.user);
-			}
-		});
+		fetch("http://localhost:3000/leaderboard")
+			.then((response) => response.json())
+			.then((data) => setLeaderboard(data.leaderboard));
 	}, []);
 
 	// console.log(currentUser);
@@ -50,25 +37,42 @@ export default function LeaderboardPage() {
 
 			<div className="flex flex-col gap-2">
 				{leaderboard.map((player, index) => {
-					const isCurrentUser = currentUser?.uuid === player.uuid;
+					const isCurrentUser = user?.uuid === player.uuid;
 					return (
 						<div
 							key={player.uuid}
-							className={`flex items-center justify-between border p-4 transition hover:scale-102 hover:shadow-lg
+							className={`flex items-center justify-between border-2 p-3 transition hover:scale-102 hover:shadow-lg
 							${
 								index === 0
-									? "border-yellow-400 bg-yellow-50"
+									? "border-yellow-400"
 									: index === 1
-										? "border-gray-400 bg-gray-50"
+										? "border-gray-400"
 										: index === 2
-											? "border-orange-400 bg-orange-50"
+											? "border-orange-400"
 											: ""
 							}
-							${isCurrentUser ? "border-4" : ""}
-						`}
+							${isCurrentUser ? "border-5 bg-green-50 text-xl font-bold scale-101" : ""}
+									`}
 						>
 							<div className="flex items-center gap-3">
-								#{index + 1}
+								{index === 0 ? (
+									<Crown
+										className="text-yellow-400"
+										size={30}
+									/>
+								) : index === 1 ? (
+									<Medal
+										className="text-gray-400"
+										size={29}
+									/>
+								) : index === 2 ? (
+									<Medal
+										className="text-orange-300"
+										size={27}
+									/>
+								) : (
+									`#${index + 1}`
+								)}
 								<img
 									src={
 										player.avatarPath
@@ -78,9 +82,15 @@ export default function LeaderboardPage() {
 									alt={`${player.username}'s avatar`}
 									width={20}
 									height={20}
-									className="w-5 h-5 object-cover border"
+									className="w-10 h-10 object-cover border"
 								/>
-								<span className="font-medium">
+								<span
+									className={
+										isCurrentUser
+											? "font-[600] text-xl"
+											: "font-medium"
+									}
+								>
 									{player.username}
 								</span>
 							</div>
@@ -93,20 +103,3 @@ export default function LeaderboardPage() {
 		</div>
 	);
 }
-
-// <div className="flex flex-col gap-2">
-// 	{leaderboard.map((player, index) => (
-
-// 		<div
-// 			key={player.uuid}
-// 			className={`flex items-center justify-between border p-4 transition hover:scale-102 hover:shadow-lg
-// 				${index === 0
-// 				? "border-yellow-400 bg-yellow-50"
-// 				: index === 1
-// 					? "border-gray-400 bg-gray-50"
-// 					: index === 2
-// 						? "border-orange-400 bg-orange-50"
-// 						: ""
-// 				}
-// 			`}
-// 		>
