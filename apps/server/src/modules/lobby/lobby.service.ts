@@ -17,6 +17,8 @@ import {
 	UnauthorizedLobbyAccessError,
 	UserAlreadyInLobbyError,
 	UserBannedFromLobbyError,
+	InvalidElementError,
+	NoWordsErrorInCustomWords,
 } from "@/errors";
 
 export const lobbiesByJoinCode = new Map<string, LobbyEntity>();
@@ -51,6 +53,16 @@ function mixAllWords(allWords: Set<string>): string[] {
 	return copy;
 }
 
+function buildAllWords(
+	usignDictionary: number,
+	customWords: string[],
+): string[] {
+	const dictionaryWords = DEFAULT_DICTIONARY[usignDictionary];
+	if (!dictionaryWords) throw new InvalidElementError("Dictionary not found");
+	const allWordsSet = new Set<string>([...dictionaryWords, ...customWords]);
+	return mixAllWords(allWordsSet);
+}
+
 function findLobbyOfUser(userId: string): LobbyEntity | undefined {
 	return Array.from(lobbiesByJoinCode.values()).find((lobby) =>
 		lobby.connectedPlayers.has(userId),
@@ -80,13 +92,7 @@ export class LobbyService {
 			numberOfRounds: data.numberOfRounds,
 			wordChoicesPerTurn: data.wordChoicesPerTurn,
 			timeToChooseWord: data.timeToChooseWord,
-			allWords: mixAllWords(
-				new Set(
-					DEFAULT_DICTIONARY[data.usingDictionary].concat(
-						localCustomWords,
-					),
-				),
-			),
+			allWords: buildAllWords(data.usingDictionary, localCustomWords),
 		};
 		lobbiesByJoinCode.set(code, lobby);
 		return lobby;
@@ -153,6 +159,30 @@ export class LobbyService {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
 		if (lobby.hostId !== userId) throw new NotHostError();
+		const { customWords, usingDictionary, ...otherSettings } = data;
+		const newDictionary = usingDictionary ?? lobby.usingDictionary;
+		const newWords = customWords
+			? parseCustomWords(customWords)
+			: lobby.customWords;
+		if (newWords.length > MAX_CUSTOM_WORDS)
+			throw new TooManyCustomWordsError();
+		if (newDictionary === 0 && newWords.length === 0)
+			throw new NoWordsErrorInCustomWords();
+
+		const changedWords =
+			newDictionary !== lobby.usingDictionary ||
+			newWords.length !== lobby.customWords.length ||
+			newWords.some((word, index) => word !== lobby.customWords[index]);
+		const newAllWords = changedWords
+			? buildAllWords(newDictionary, newWords)
+			: lobby.allWords;
+
+		Object.assign(lobby, {
+			...otherSettings,
+			customWords: newWords,
+			usingDictionary: newDictionary,
+			allWords: newAllWords,
+		});
 		Object.assign(lobby, data);
 		return lobby;
 	}

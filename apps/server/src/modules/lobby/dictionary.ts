@@ -5,6 +5,9 @@ const DICTIONARY_DIR = path.resolve(process.cwd(), "data/dictionaries");
 
 const FILES: Record<number, string | null> = {
 	0: null,
+	1: "easy.txt",
+	2: "medium.txt",
+	3: "hard.txt",
 };
 
 const dictionaryFiles = fs
