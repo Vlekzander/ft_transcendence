@@ -42,7 +42,7 @@ export async function listLobbiesController(
 ) {
 	try {
 		const lobbies = await lobbyService.listLobbies();
-		const dtos = lobbies.map(toLobbyResponseDTO);
+		const dtos = lobbies.map((lobby) => toLobbyResponseDTO(lobby));
 		res.status(200).json({ data: dtos });
 	} catch (err) {
 		next(err);
@@ -62,7 +62,7 @@ export async function getByUuidLobbyController(
 		if (!lobby) throw new LobbyNotFoundError();
 		if (!lobby.connectedPlayers.has(userId))
 			throw new UnauthorizedLobbyAccessError();
-		const dto = toLobbyResponseDTO(lobby);
+		const dto = toLobbyResponseDTO(lobby, lobby.hostId === userId);
 		res.status(200).json({ data: dto });
 	} catch (err) {
 		next(err);
@@ -124,7 +124,7 @@ export async function updateLobbyController(
 			updatedData,
 			userId,
 		);
-		const dto = toLobbyResponseDTO(lobby);
+		const dto = toLobbyResponseDTO(lobby, lobby.hostId === userId);
 		res.status(200).json({ data: dto });
 	} catch (err) {
 		next(err);

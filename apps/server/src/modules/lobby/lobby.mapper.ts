@@ -22,7 +22,10 @@ export type LobbyEntity = {
 	allWords: string[];
 };
 
-export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
+export function toLobbyResponseDTO(
+	lobby: LobbyEntity,
+	includeCustomWords = false,
+): LobbyResponseDTO {
 	return {
 		uuid: lobby.uuid,
 		joinCode: lobby.joinCode,
@@ -37,5 +40,8 @@ export function toLobbyResponseDTO(lobby: LobbyEntity): LobbyResponseDTO {
 		numberOfRounds: lobby.numberOfRounds,
 		wordChoicesPerTurn: lobby.wordChoicesPerTurn,
 		timeToChooseWord: lobby.timeToChooseWord,
+		customWords: includeCustomWords
+			? lobby.customWords.join("\n")
+			: undefined,
 	};
 }
