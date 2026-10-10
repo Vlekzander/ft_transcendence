@@ -111,6 +111,7 @@ export const LobbyResponseSchema = z.object({
 	numberOfRounds: NumberOfRoundsSchema,
 	wordChoicesPerTurn: WordChoicesPerTurnSchema,
 	timeToChooseWord: TimeToChooseWordSchema,
+	customWords: CustomWordsSchema.optional(),
 });
 
 export type LobbyResponseDTO = z.infer<typeof LobbyResponseSchema>;
@@ -130,6 +131,8 @@ export const UpdateLobbySchema = z
 		wordChoicesPerTurn: WordChoicesPerTurnSchema,
 		timeToChooseWord: TimeToChooseWordSchema,
 		drawTime: DrawTimeSchema,
+		usingDictionary: UsingDictionarySchema,
+		customWords: CustomWordsSchema,
 	})
 	.partial();
 

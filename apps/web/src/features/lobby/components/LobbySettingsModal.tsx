@@ -11,6 +11,8 @@ import {
 import { X } from "lucide-react";
 import LobbyOptionSelect from "./LobbyOptionSelect";
 import ToggleButtons from "./ToggleButtons";
+import { DICTIONARY } from "../constants";
+import WordsFields from "./WordsFields";
 
 type LobbySettingsModalProps = {
 	lobby: LobbyResponseDTO;
@@ -34,10 +36,23 @@ export default function LobbySettingsModal({
 	const [timeToChooseWord, setTimeToChooseWord] = useState(
 		lobby.timeToChooseWord,
 	);
+	const [onlyCustomWords, setOnlyCustomWords] = useState(
+		lobby.usingDictionary === 0,
+	);
+	const [customWords, setCustomWords] = useState(lobby.customWords ?? "");
+	const [dictionary, setDictionary] = useState(
+		lobby.usingDictionary === 0
+			? DICTIONARY[0].value
+			: lobby.usingDictionary,
+	);
 	const [error, setError] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState(false);
 
 	const handleSave = async () => {
+		if (onlyCustomWords && customWords.trim() === "") {
+			setError("At least one custom word is required");
+			return;
+		}
 		setIsSaving(true);
 		setError(null);
 		const err = await onSave({
@@ -46,6 +61,8 @@ export default function LobbySettingsModal({
 			numberOfRounds,
 			wordChoicesPerTurn,
 			timeToChooseWord,
+			usingDictionary: onlyCustomWords ? 0 : dictionary,
+			customWords,
 		});
 		setIsSaving(false);
 		if (err) setError(err);
@@ -111,6 +128,15 @@ export default function LobbySettingsModal({
 					value={timeToChooseWord}
 					options={TIME_TO_CHOOSE_WORD}
 					onChange={setTimeToChooseWord}
+				/>
+				<WordsFields
+					idPrefix="settings"
+					dictionary={dictionary}
+					onDictionaryChange={setDictionary}
+					onlyCustomWords={onlyCustomWords}
+					onOnlyCustomWordsChange={setOnlyCustomWords}
+					customWords={customWords}
+					onCustomWordsChange={setCustomWords}
 				/>
 
 				{error && <p className="form-alert-error">{error}</p>}

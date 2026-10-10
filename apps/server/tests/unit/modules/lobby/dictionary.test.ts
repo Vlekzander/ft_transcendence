@@ -1,4 +1,3 @@
-// command to run this test: npm run test:server -- tests/unit/modules/lobby/dictionary.test.ts --run
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import os from "node:os";
@@ -6,8 +5,8 @@ import path from "node:path";
 
 let tmpRoot: string;
 
-// The module reads the disk at import: we point process.cwd() to a temporary
-// directory containing data/dictionaries, then we (re)import the module.
+// The module reads the disk at import time: process.cwd() is pointed to a
+// temporary folder holding data/dictionaries, then the module is re-imported.
 async function loadWith(files: Record<string, string>) {
 	const dir = path.join(tmpRoot, "data", "dictionaries");
 	fs.mkdirSync(dir, { recursive: true });
@@ -19,6 +18,12 @@ async function loadWith(files: Record<string, string>) {
 	return (await import("@/modules/lobby/dictionary")).DEFAULT_DICTIONARY;
 }
 
+const ALL_FILES = {
+	"easy.txt": "cat\ndog",
+	"medium.txt": "hedgehog\nlamp",
+	"hard.txt": "cosmos\nasteroid",
+};
+
 describe("modules/lobby/dictionary", () => {
 	beforeEach(() => {
 		tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), "dict-test-"));
@@ -29,58 +34,64 @@ describe("modules/lobby/dictionary", () => {
 	});
 
 	it("Level 0 is always empty", async () => {
-		const dict = await loadWith({ "easy.txt": "cat\ndog" });
+		const dict = await loadWith(ALL_FILES);
 
 		expect(dict[0]).toEqual([]);
 	});
 
-	it("Assigns levels 1..n to the .txt files", async () => {
-		const dict = await loadWith({
-			"easy.txt": "cat\ndog",
-			"medium.txt": "hedgehog\nlamp",
-		});
+	it("Maps levels 1, 2 and 3 to easy, medium and hard", async () => {
+		const dict = await loadWith(ALL_FILES);
 
-		expect(Object.keys(dict)).toEqual(["0", "1", "2"]);
-		expect(dict[1].length).toBe(2);
-		expect(dict[2].length).toBe(2);
+		expect(dict[1]).toEqual(["cat", "dog"]);
+		expect(dict[2]).toEqual(["hedgehog", "lamp"]);
+		expect(dict[3]).toEqual(["cosmos", "asteroid"]);
+		expect(Object.keys(dict)).toEqual(["0", "1", "2", "3"]);
 	});
 
-	it("Maps easy.txt to level 1 and medium.txt to level 2", async () => {
-		// Fails if the order of readdirSync is not alphabetical (not guaranteed by the OS)
+	it("Does not depend on the order files were created in", async () => {
 		const dict = await loadWith({
-			"medium.txt": "hedgehog",
-			"easy.txt": "cat",
+			"hard.txt": "zzz",
+			"medium.txt": "mmm",
+			"easy.txt": "aaa",
 		});
 
-		expect(dict[1]).toEqual(["cat"]);
-		expect(dict[2]).toEqual(["hedgehog"]);
+		expect(dict[1]).toEqual(["aaa"]);
+		expect(dict[2]).toEqual(["mmm"]);
+		expect(dict[3]).toEqual(["zzz"]);
 	});
 
 	it("Trims, lowercases and drops empty lines (incl. CRLF)", async () => {
 		const dict = await loadWith({
+			...ALL_FILES,
 			"easy.txt": "  Cat \r\n\r\nDOG\n\n   \nBird\r\n",
 		});
 
 		expect(dict[1]).toEqual(["cat", "dog", "bird"]);
 	});
 
-	it("Ignores non-.txt files and directories", async () => {
-		const dir = path.join(tmpRoot, "data", "dictionaries");
-		fs.mkdirSync(path.join(dir, "sub.txt"), { recursive: true });
+	it("Ignores files that are not referenced", async () => {
 		const dict = await loadWith({
-			"easy.txt": "cat",
+			...ALL_FILES,
+			"extra.txt": "ignored",
 			"notes.md": "ignored",
-			".gitkeep": "",
 		});
 
-		expect(Object.keys(dict)).toEqual(["0", "1"]);
-		expect(dict[1]).toEqual(["cat"]);
+		expect(Object.keys(dict)).toEqual(["0", "1", "2", "3"]);
+		expect(Object.values(dict).flat()).not.toContain("ignored");
 	});
 
-	it("Only has level 0 when the folder has no .txt file", async () => {
-		const dict = await loadWith({});
+	it("Throws at import when a referenced file is missing", async () => {
+		const { "hard.txt": _hard, ...withoutHard } = ALL_FILES;
+		const dir = path.join(tmpRoot, "data", "dictionaries");
+		fs.mkdirSync(dir, { recursive: true });
+		for (const [name, content] of Object.entries(withoutHard))
+			fs.writeFileSync(path.join(dir, name), content);
+		vi.spyOn(process, "cwd").mockReturnValue(tmpRoot);
+		vi.resetModules();
 
-		expect(dict).toEqual({ 0: [] });
+		await expect(import("@/modules/lobby/dictionary")).rejects.toThrow(
+			/ENOENT/,
+		);
 	});
 
 	it("Throws at import when the dictionary folder is missing", async () => {
@@ -93,15 +104,27 @@ describe("modules/lobby/dictionary", () => {
 	});
 });
 
-// This test is not run in CI because the dictionary files are not present in the Docker image.
+// Checks the real files of the repo (cwd = apps/server)
 describe("modules/lobby/dictionary (real data)", () => {
-	it("Provides non-empty levels 1 and 2, as allowed by CreateLobbySchema", async () => {
+	it("Provides non-empty easy, medium and hard dictionaries", async () => {
 		vi.resetModules();
 		const { DEFAULT_DICTIONARY } =
 			await import("@/modules/lobby/dictionary");
 
 		expect(DEFAULT_DICTIONARY[0]).toEqual([]);
-		expect(DEFAULT_DICTIONARY[1]?.length).toBeGreaterThan(0);
-		expect(DEFAULT_DICTIONARY[2]?.length).toBeGreaterThan(0);
+		for (const level of [1, 2, 3])
+			expect(DEFAULT_DICTIONARY[level].length).toBeGreaterThan(0);
+	});
+
+	it("Only has lowercase, trimmed, non-empty words", async () => {
+		vi.resetModules();
+		const { DEFAULT_DICTIONARY } =
+			await import("@/modules/lobby/dictionary");
+
+		for (const words of Object.values(DEFAULT_DICTIONARY))
+			for (const word of words) {
+				expect(word).toBe(word.trim().toLowerCase());
+				expect(word.length).toBeGreaterThan(0);
+			}
 	});
 });

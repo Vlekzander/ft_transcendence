@@ -48,6 +48,8 @@ export const listLobbies = () => lobbyRequest<LobbyResponseDTO[]>("");
 export const getLobby = (uuid: string) =>
 	lobbyRequest<LobbyResponseDTO>(`/${uuid}`);
 
+export const getMyLobby = () => lobbyRequest<LobbyResponseDTO | null>("/me");
+
 export const createLobby = (data: CreateLobbyDTO) =>
 	lobbyRequest<LobbyResponseDTO>("", "POST", data);
 

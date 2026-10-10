@@ -170,3 +170,20 @@ export async function unbanLobbyController(
 		next(err);
 	}
 }
+
+export async function getMyLobbyController(
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
+		const lobby = await lobbyService.getLobbyOfUser(userId);
+		res.status(200).json({
+			data: lobby ? toLobbyResponseDTO(lobby) : null,
+		});
+	} catch (err) {
+		next(err);
+	}
+}

@@ -58,7 +58,7 @@ function buildAllWords(
 	customWords: string[],
 ): string[] {
 	const dictionaryWords = DEFAULT_DICTIONARY[usignDictionary];
-	if (!dictionaryWords) throw new InvalidElementError("Dictionary not found");
+	if (!dictionaryWords) throw new InvalidElementError("Dictionary");
 	const allWordsSet = new Set<string>([...dictionaryWords, ...customWords]);
 	return mixAllWords(allWordsSet);
 }
@@ -118,6 +118,10 @@ export class LobbyService {
 		return lobby || null;
 	}
 
+	async getLobbyOfUser(userId: string): Promise<LobbyEntity | null> {
+		return findLobbyOfUser(userId) ?? null;
+	}
+
 	async joinLobby(lobbyUuid: string, userId: string): Promise<void> {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
@@ -161,11 +165,10 @@ export class LobbyService {
 		if (lobby.hostId !== userId) throw new NotHostError();
 		const { customWords, usingDictionary, ...otherSettings } = data;
 		const newDictionary = usingDictionary ?? lobby.usingDictionary;
-		const newWords = customWords
-			? parseCustomWords(customWords)
-			: lobby.customWords;
-		if (newWords.length > MAX_CUSTOM_WORDS)
-			throw new TooManyCustomWordsError();
+		const newWords =
+			customWords !== undefined
+				? parseCustomWords(customWords)
+				: lobby.customWords;
 		if (newDictionary === 0 && newWords.length === 0)
 			throw new NoWordsErrorInCustomWords();
 
@@ -183,7 +186,6 @@ export class LobbyService {
 			usingDictionary: newDictionary,
 			allWords: newAllWords,
 		});
-		Object.assign(lobby, data);
 		return lobby;
 	}
 
