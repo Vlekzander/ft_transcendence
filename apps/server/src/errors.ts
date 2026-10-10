@@ -217,3 +217,12 @@ export class TooManyCustomWordsError extends AppDomainError {
 		this.name = "TooManyCustomWordsError";
 	}
 }
+
+export class NoWordsErrorInCustomWords extends AppDomainError {
+	constructor() {
+		super(
+			"No valid words found in custom words. At least one valid word is required.",
+		);
+		this.name = "NoWordsErrorInCustomWords";
+	}
+}

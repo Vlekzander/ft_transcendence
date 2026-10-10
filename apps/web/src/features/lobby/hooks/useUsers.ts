@@ -4,7 +4,6 @@ import { getUser } from "../../user/services/user.service";
 
 const cache = new Map<string, PublicUserDTO>();
 
-/** Resolves user uuids to their public profile (cached across renders). */
 export function useUsers(uuids: string[]): Record<string, PublicUserDTO> {
 	const [users, setUsers] = useState<Record<string, PublicUserDTO>>({});
 	const key = Array.from(new Set(uuids)).sort().join(",");

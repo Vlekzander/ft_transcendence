@@ -4,6 +4,8 @@ import { MAX_PLAYERS, type LobbyResponseDTO } from "@ft_transcendence/shared";
 import { Plus, RefreshCw } from "lucide-react";
 import { joinLobby, listLobbies } from "../services/lobby.service";
 import { useUsers } from "../hooks/useUsers";
+import ActiveLobbyPrompt from "../components/ActiveLobbyPrompt";
+import { useActiveLobbyGuard } from "../hooks/useActiveLobbyGuard";
 
 const REFRESH_INTERVAL_MS = 5000;
 
@@ -12,6 +14,7 @@ export default function LobbiesPage() {
 	const [lobbies, setLobbies] = useState<LobbyResponseDTO[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
+	const guard = useActiveLobbyGuard();
 	const users = useUsers(lobbies.map((lobby) => lobby.hostId));
 
 	const refresh = useCallback(async () => {
@@ -34,14 +37,23 @@ export default function LobbiesPage() {
 		};
 	}, [refresh]);
 
-	const handleJoin = async (joinCode: string) => {
-		const res = await joinLobby(joinCode);
-		if (res.ok) navigate(`/lobbies/${res.data.uuid}`);
-		else setError(res.error);
-	};
+	const handleJoin = (joinCode: string) =>
+		guard.run(async () => {
+			const res = await joinLobby(joinCode);
+			if (res.ok) navigate(`/lobbies/${res.data.uuid}`);
+			else setError(res.error);
+		}, joinCode);
 
 	return (
 		<div className="p-5 flex flex-col gap-6">
+			{guard.isPrompting && (
+				<ActiveLobbyPrompt
+					error={guard.error}
+					isBusy={guard.isBusy}
+					onContinue={() => void guard.confirm()}
+					onBack={guard.goBack}
+				/>
+			)}
 			<div className="flex items-center justify-between gap-3">
 				<h1 className="text-3xl font-extrabold">Lobbies</h1>
 				<div className="flex gap-2">

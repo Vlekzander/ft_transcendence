@@ -17,6 +17,7 @@ import {
 	UserBannedFromLobbyError,
 	UserNotInLobbyError,
 	NotHostError,
+	NoWordsErrorInCustomWords,
 } from "../errors";
 
 type ErrorResponse = {
@@ -43,7 +44,10 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 401), error);
 
 	//lobby errors >>>>
-	if (err instanceof TooManyCustomWordsError)
+	if (
+		err instanceof TooManyCustomWordsError ||
+		err instanceof NoWordsErrorInCustomWords
+	)
 		return ((error.status = 400), error);
 	if (
 		err instanceof UnauthorizedLobbyAccessError ||

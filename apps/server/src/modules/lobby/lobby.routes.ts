@@ -21,6 +21,8 @@ lobbyRouter.post(
 
 lobbyRouter.get("/", requireAuth, lobbyController.listLobbiesController);
 
+lobbyRouter.get("/me", requireAuth, lobbyController.getMyLobbyController);
+
 lobbyRouter.get(
 	"/:uuid",
 	requireAuth,

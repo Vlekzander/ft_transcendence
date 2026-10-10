@@ -10,17 +10,6 @@ const FILES: Record<number, string | null> = {
 	3: "hard.txt",
 };
 
-const dictionaryFiles = fs
-	.readdirSync(DICTIONARY_DIR, { withFileTypes: true })
-	.filter((entry) => entry.isFile() && entry.name.endsWith(".txt"))
-	.map((entry) => entry.name);
-
-const uniqueFiles = [...new Set(dictionaryFiles)];
-
-uniqueFiles.forEach((file, index) => {
-	FILES[index + 1] = file;
-});
-
 function load(file: string | null): string[] {
 	if (!file) return [];
 	const content = fs.readFileSync(path.join(DICTIONARY_DIR, file), "utf-8");
@@ -31,5 +20,5 @@ function load(file: string | null): string[] {
 }
 
 export const DEFAULT_DICTIONARY: Record<number, string[]> = Object.fromEntries(
-	Object.entries(FILES).map(([level, file]) => [level, load(file)]),
+	Object.entries(FILES).map(([index, file]) => [index, load(file)]),
 );

@@ -40,7 +40,6 @@ export default function LobbyPage() {
 			setLobby(res.data);
 			setError(null);
 		} else if (res.status === 403 || res.status === 404) {
-			// closed lobby, or we were banned / removed from it
 			navigate("/lobbies", { replace: true });
 		} else {
 			setError(res.error);

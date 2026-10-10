@@ -1,9 +1,8 @@
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { useNavigate } from "react-router";
 import {
 	CreateLobbySchema,
 	DRAW_TIME,
-	MAX_CUSTOM_WORDS,
 	NB_ROUNDS,
 	TIME_TO_CHOOSE_WORD,
 	WORD_OPTIONS_PER_TURN,
@@ -14,15 +13,16 @@ import {
 import { createLobby } from "../services/lobby.service";
 import LobbyOptionSelect from "../components/LobbyOptionSelect";
 import ToggleButtons from "../components/ToggleButtons";
+import WordsFields from "../components/WordsFields";
+import ActiveLobbyPrompt from "../components/ActiveLobbyPrompt";
+import { useActiveLobbyGuard } from "../hooks/useActiveLobbyGuard";
 
 const DEFAULTS = CreateLobbySchema.parse({});
-const DIFFICULTIES = [
-	{ value: 1, label: "Easy" },
-	{ value: 2, label: "Medium" },
-];
 
 export default function CreateLobbyPage() {
 	const navigate = useNavigate();
+	const guard = useActiveLobbyGuard();
+
 	const [mode, setMode] = useState<LobbyGameMode>(DEFAULTS.mode);
 	const [visibility, setVisibility] = useState<LobbyVisibility>(
 		DEFAULTS.visibility,
@@ -37,13 +37,13 @@ export default function CreateLobbyPage() {
 	const [timeToChooseWord, setTimeToChooseWord] = useState(
 		DEFAULTS.timeToChooseWord,
 	);
-	const [difficulty, setDifficulty] = useState(DEFAULTS.usingDictionary);
+	const [dictionary, setDictionary] = useState(DEFAULTS.usingDictionary);
 	const [onlyCustomWords, setOnlyCustomWords] = useState(false);
 	const [customWords, setCustomWords] = useState("");
 	const [error, setError] = useState<string | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const handleSubmit = async (e: FormEvent) => {
+	const handleSubmit = async (e: SubmitEvent) => {
 		e.preventDefault();
 		setError(null);
 
@@ -54,7 +54,7 @@ export default function CreateLobbyPage() {
 			numberOfRounds,
 			wordChoicesPerTurn,
 			timeToChooseWord,
-			usingDictionary: onlyCustomWords ? 0 : difficulty,
+			usingDictionary: onlyCustomWords ? 0 : dictionary,
 			customWords,
 		} satisfies CreateLobbyDTO);
 		if (!parsed.success) {
@@ -62,15 +62,25 @@ export default function CreateLobbyPage() {
 			return;
 		}
 
-		setIsSubmitting(true);
-		const res = await createLobby(parsed.data);
-		setIsSubmitting(false);
-		if (res.ok) navigate(`/lobbies/${res.data.uuid}`);
-		else setError(res.error);
+		await guard.run(async () => {
+			setIsSubmitting(true);
+			const res = await createLobby(parsed.data);
+			setIsSubmitting(false);
+			if (res.ok) navigate(`/lobbies/${res.data.uuid}`);
+			else setError(res.error);
+		});
 	};
 
 	return (
 		<div className="p-5 flex justify-center">
+			{guard.isPrompting && (
+				<ActiveLobbyPrompt
+					error={guard.error}
+					isBusy={guard.isBusy}
+					onContinue={() => void guard.confirm()}
+					onBack={guard.goBack}
+				/>
+			)}
 			<form
 				onSubmit={(e) => void handleSubmit(e)}
 				className="form-card"
@@ -126,51 +136,15 @@ export default function CreateLobbyPage() {
 					options={TIME_TO_CHOOSE_WORD}
 					onChange={setTimeToChooseWord}
 				/>
-
-				<div className="form-field">
-					<label htmlFor="difficulty" className="form-label">
-						Difficulty
-					</label>
-					<select
-						id="difficulty"
-						className="form-input"
-						value={difficulty}
-						disabled={onlyCustomWords}
-						onChange={(e) => setDifficulty(Number(e.target.value))}
-					>
-						{DIFFICULTIES.map(({ value, label }) => (
-							<option key={value} value={value}>
-								{label}
-							</option>
-						))}
-					</select>
-					<label className="flex items-center gap-2 text-sm cursor-pointer">
-						<input
-							type="checkbox"
-							checked={onlyCustomWords}
-							onChange={(e) =>
-								setOnlyCustomWords(e.target.checked)
-							}
-						/>
-						Only custom words
-					</label>
-				</div>
-
-				<div className="form-field">
-					<label htmlFor="custom-words" className="form-label">
-						Custom words
-					</label>
-					<textarea
-						id="custom-words"
-						className="form-input"
-						rows={3}
-						value={customWords}
-						onChange={(e) => setCustomWords(e.target.value)}
-					/>
-					<p className="text-xs text-gray-500">
-						enter max {MAX_CUSTOM_WORDS} words separated by a space
-					</p>
-				</div>
+				<WordsFields
+					idPrefix="words"
+					dictionary={dictionary}
+					onDictionaryChange={setDictionary}
+					onlyCustomWords={onlyCustomWords}
+					onOnlyCustomWordsChange={setOnlyCustomWords}
+					customWords={customWords}
+					onCustomWordsChange={setCustomWords}
+				/>
 
 				{error && <p className="form-alert-error">{error}</p>}
 
