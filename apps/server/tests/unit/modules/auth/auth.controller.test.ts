@@ -7,7 +7,11 @@ import {
 } from "@/modules/auth/auth.controller";
 import { authService } from "@/modules/auth/auth.service";
 import { sharedService } from "@/modules/shared/shared.service";
-import { generateAccessToken, validateAccessToken } from "@/utils/jwt.util";
+import {
+	generateAccessToken,
+	validateAccessToken,
+	JWT_MAX_AGE,
+} from "@/utils/jwt.util";
 import { toUserResponseDTO } from "@/modules/auth/auth.mapper";
 
 vi.mock("@/modules/auth/auth.service", () => ({
@@ -79,8 +83,7 @@ describe("auth/auth.controller", () => {
 	});
 
 	describe("register", () => {
-		it("Registers the user and returns HTTP 201", async () => {
-			// Arrange
+		it("Registers the user, sets cookie and returns HTTP 201", async () => {
 			mockedRegister.mockResolvedValue(user as any);
 
 			const req = {
@@ -94,10 +97,8 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await register(req, res as any, next);
 
-			// Assert
 			expect(mockedRegister).toHaveBeenCalledWith(req.parsedBody);
 			expect(mockedToUserResponseDTO).toHaveBeenCalledWith(user);
 			expect(mockedGenerateAccessToken).toHaveBeenCalledWith("user-uuid");
@@ -107,6 +108,7 @@ describe("auth/auth.controller", () => {
 				expect.objectContaining({
 					httpOnly: true,
 					sameSite: "strict",
+					maxAge: JWT_MAX_AGE,
 				}),
 			);
 			expect(res.status).toHaveBeenCalledWith(201);
@@ -117,7 +119,6 @@ describe("auth/auth.controller", () => {
 		});
 
 		it("Forwards service errors to next", async () => {
-			// Arrange
 			const error = new Error("Registration failed");
 			mockedRegister.mockRejectedValue(error);
 
@@ -132,17 +133,14 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await register(req, res as any, next);
 
-			// Assert
 			expect(next).toHaveBeenCalledWith(error);
 		});
 	});
 
 	describe("login", () => {
-		it("Logs in the user and returns HTTP 200", async () => {
-			// Arrange
+		it("Logs in the user, sets cookie and returns HTTP 200", async () => {
 			mockedLogin.mockResolvedValue(user as any);
 
 			const req = {
@@ -155,13 +153,20 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await login(req, res as any, next);
 
-			// Assert
 			expect(mockedLogin).toHaveBeenCalledWith(req.parsedBody);
 			expect(mockedToUserResponseDTO).toHaveBeenCalledWith(user);
 			expect(mockedGenerateAccessToken).toHaveBeenCalledWith("user-uuid");
+			expect(res.cookie).toHaveBeenCalledWith(
+				"token",
+				"access-token",
+				expect.objectContaining({
+					httpOnly: true,
+					sameSite: "strict",
+					maxAge: JWT_MAX_AGE,
+				}),
+			);
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.json).toHaveBeenCalledWith({
 				data: userDTO,
@@ -170,7 +175,6 @@ describe("auth/auth.controller", () => {
 		});
 
 		it("Forwards authentication errors to next", async () => {
-			// Arrange
 			const error = new Error("Invalid credentials");
 			mockedLogin.mockRejectedValue(error);
 
@@ -184,23 +188,18 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await login(req, res as any, next);
 
-			// Assert
 			expect(next).toHaveBeenCalledWith(error);
 		});
 	});
 
 	describe("logout", () => {
 		it("Clears the token cookie and returns HTTP 204", async () => {
-			// Arrange
 			const res = createResponseMock();
 
-			// Act
 			await logout({} as any, res as any);
 
-			// Assert
 			expect(res.clearCookie).toHaveBeenCalledWith(
 				"token",
 				expect.objectContaining({
@@ -214,7 +213,6 @@ describe("auth/auth.controller", () => {
 
 	describe("whoami", () => {
 		it("Returns unauthenticated when no token exists", async () => {
-			// Arrange
 			const req = {
 				cookies: {},
 			} as any;
@@ -222,10 +220,8 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await whoami(req, res as any, next);
 
-			// Assert
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.json).toHaveBeenCalledWith({
 				authenticated: false,
@@ -234,7 +230,6 @@ describe("auth/auth.controller", () => {
 		});
 
 		it("Returns unauthenticated when the token user does not exist", async () => {
-			// Arrange
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "unknown-uuid",
 			} as any);
@@ -249,10 +244,8 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await whoami(req, res as any, next);
 
-			// Assert
 			expect(mockedValidateAccessToken).toHaveBeenCalledWith(
 				"access-token",
 			);
@@ -263,7 +256,6 @@ describe("auth/auth.controller", () => {
 		});
 
 		it("Returns the authenticated user when the token is valid", async () => {
-			// Arrange
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "user-uuid",
 			} as any);
@@ -278,10 +270,8 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await whoami(req, res as any, next);
 
-			// Assert
 			expect(mockedGetUserById).toHaveBeenCalledWith("user-uuid");
 			expect(mockedToUserResponseDTO).toHaveBeenCalledWith(user);
 			expect(res.status).toHaveBeenCalledWith(200);
@@ -293,7 +283,6 @@ describe("auth/auth.controller", () => {
 		});
 
 		it("Forwards token validation errors to next", async () => {
-			// Arrange
 			const error = new Error("Invalid token");
 			mockedValidateAccessToken.mockImplementation(() => {
 				throw error;
@@ -308,10 +297,8 @@ describe("auth/auth.controller", () => {
 			const res = createResponseMock();
 			const next = vi.fn();
 
-			// Act
 			await whoami(req, res as any, next);
 
-			// Assert
 			expect(next).toHaveBeenCalledWith(error);
 		});
 	});

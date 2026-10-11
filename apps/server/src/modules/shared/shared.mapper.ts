@@ -1,4 +1,5 @@
 import { PublicUserDTO, UserResponseDTO } from "@ft_transcendence/shared";
+import { isUserOnline } from "@/websocket.server";
 
 export type UserEntity = {
 	uuid: string;
@@ -22,5 +23,6 @@ export function toPublicUserDTO(user: UserEntity): PublicUserDTO {
 		uuid: user.uuid,
 		username: user.username,
 		avatarPath: user.avatarPath,
+		online: isUserOnline(user.uuid),
 	};
 }

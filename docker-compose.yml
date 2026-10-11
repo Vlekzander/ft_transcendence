@@ -1,4 +1,5 @@
 name: ft_transcendence
+
 services:
     frontend:
         container_name: ft_transcendence-frontend
@@ -9,13 +10,16 @@ services:
         volumes:
             - ./apps/web:/home/node/apps/web
             - ./packages/shared:/home/node/packages/shared
+        networks:
+            - ft_bf_network
         ports:
             - "${WEB_PORT:-5173}:5173"
         environment:
-            VITE_API_URL: "http://localhost:${API_PORT:-3000}"
+            VITE_API_URL: "/api"
             VITE_WS_URL: "ws://localhost:${API_PORT:-3000}"
         env_file:
             - .env
+
     backend:
         container_name: ft_transcendence-backend
         build:
@@ -27,6 +31,8 @@ services:
             - ./packages/shared:/home/node/packages/shared
         networks:
             - ft_network
+            - ft_bf_network
+
         ports:
             - "${API_PORT:-3000}:${API_PORT:-3000}"
         secrets:
@@ -41,6 +47,7 @@ services:
         depends_on:
             database:
                 condition: service_healthy
+
     database:
         container_name: ft_transcendence-database
         image: postgres:latest
@@ -63,6 +70,7 @@ services:
             interval: 10s
             timeout: 3s
             retries: 3
+
     pgadmin:
         container_name: ft_transcendence-pgadmin
         image: dpage/pgadmin4:latest
@@ -71,7 +79,7 @@ services:
         networks:
             - ft_network
         ports:
-            - 80:80
+            - 8080:80
         depends_on:
             - database
         secrets:
@@ -88,6 +96,8 @@ volumes:
 
 networks:
     ft_network:
+        driver: bridge
+    ft_bf_network:
         driver: bridge
 
 secrets:

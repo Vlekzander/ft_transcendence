@@ -1,10 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	getTokenUuid,
 	requireAuth,
 	requireGuest,
 	requireUserOwnership,
 } from "@/middlewares/auth.middleware";
 import { validateAccessToken } from "@/utils/jwt.util";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/utils/jwt.util", () => ({
 	validateAccessToken: vi.fn(),
@@ -12,125 +13,112 @@ vi.mock("@/utils/jwt.util", () => ({
 
 const mockedValidateAccessToken = vi.mocked(validateAccessToken);
 
-describe("middlewares/auth.middleware", () => {
+function createMockReqRes(
+	options: {
+		cookies?: Record<string, string>;
+		params?: Record<string, string>;
+	} = {},
+) {
+	const req = {
+		cookies: options.cookies ?? {},
+		params: options.params ?? {},
+	} as any;
+	const res = {} as any;
+	const next = vi.fn();
+	return { req, res, next };
+}
+
+describe("auth.middleware", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	describe("requireGuest", () => {
-		it("Calls next without an error when no token exists", () => {
-			// Arrange
-			const req = {
-				cookies: {},
-			} as any;
-			const next = vi.fn();
-
-			// Act
-			requireGuest(req, {} as any, next);
-
-			// Assert
-			expect(next).toHaveBeenCalledOnce();
-			expect(next).toHaveBeenCalledWith();
+	describe("getTokenUuid", () => {
+		it("returns undefined if req.cookies is undefined", () => {
+			const req = {} as any;
+			expect(getTokenUuid(req)).toBeUndefined();
 		});
 
-		it("Calls next with AlreadyAuthError when the token is valid", () => {
-			// Arrange
+		it("returns undefined if token cookie is missing", () => {
+			const { req } = createMockReqRes({ cookies: {} });
+			expect(getTokenUuid(req)).toBeUndefined();
+		});
+
+		it("returns undefined if validateAccessToken throws", () => {
+			mockedValidateAccessToken.mockImplementation(() => {
+				throw new Error("Invalid JWT");
+			});
+			const { req } = createMockReqRes({
+				cookies: { token: "bad-token" },
+			});
+			expect(getTokenUuid(req)).toBeUndefined();
+		});
+
+		it("returns string sub from payload", () => {
 			mockedValidateAccessToken.mockReturnValue({
-				sub: "user-uuid",
+				sub: "user-123",
 			} as any);
+			const { req } = createMockReqRes({
+				cookies: { token: "valid-token" },
+			});
+			expect(getTokenUuid(req)).toBe("user-123");
+		});
 
-			const req = {
-				cookies: {
-					token: "valid-token",
-				},
-			} as any;
-			const next = vi.fn();
+		it("casts numeric sub to string", () => {
+			mockedValidateAccessToken.mockReturnValue({ sub: 12345 } as any);
+			const { req } = createMockReqRes({
+				cookies: { token: "valid-token" },
+			});
+			expect(getTokenUuid(req)).toBe("12345");
+		});
+	});
 
-			// Act
-			requireGuest(req, {} as any, next);
+	describe("requireGuest", () => {
+		it("calls next() with AlreadyAuthError if user is authenticated", () => {
+			mockedValidateAccessToken.mockReturnValue({
+				sub: "user-123",
+			} as any);
+			const { req, res, next } = createMockReqRes({
+				cookies: { token: "valid-token" },
+			});
 
-			// Assert
+			requireGuest(req, res, next);
+
 			expect(next).toHaveBeenCalledOnce();
 			expect(next.mock.calls[0][0]).toMatchObject({
 				name: "AlreadyAuthError",
 			});
 		});
 
-		it("Calls next without an error when the token is invalid", () => {
-			// Arrange
-			mockedValidateAccessToken.mockImplementation(() => {
-				throw new Error("Invalid token");
-			});
+		it("calls next() without error if user is unauthenticated", () => {
+			const { req, res, next } = createMockReqRes();
 
-			const req = {
-				cookies: {
-					token: "invalid-token",
-				},
-			} as any;
-			const next = vi.fn();
+			requireGuest(req, res, next);
 
-			// Act
-			requireGuest(req, {} as any, next);
-
-			// Assert
 			expect(next).toHaveBeenCalledWith();
 		});
 	});
 
 	describe("requireAuth", () => {
-		it("Calls next with RequireAuthError when no token exists", () => {
-			// Arrange
-			const req = {
-				cookies: {},
-			} as any;
-			const next = vi.fn();
-
-			// Act
-			requireAuth(req, {} as any, next);
-
-			// Assert
-			expect(next.mock.calls[0][0]).toMatchObject({
-				name: "RequireAuthError",
-			});
-		});
-
-		it("Calls next without an error when the token is valid", () => {
-			// Arrange
+		it("calls next() without error when authenticated", () => {
 			mockedValidateAccessToken.mockReturnValue({
-				sub: "user-uuid",
+				sub: "user-123",
 			} as any);
+			const { req, res, next } = createMockReqRes({
+				cookies: { token: "valid-token" },
+			});
 
-			const req = {
-				cookies: {
-					token: "valid-token",
-				},
-			} as any;
-			const next = vi.fn();
+			requireAuth(req, res, next);
 
-			// Act
-			requireAuth(req, {} as any, next);
-
-			// Assert
 			expect(next).toHaveBeenCalledWith();
 		});
 
-		it("Calls next with RequireAuthError when the token is invalid", () => {
-			// Arrange
-			mockedValidateAccessToken.mockImplementation(() => {
-				throw new Error("Invalid token");
-			});
+		it("calls next() with RequireAuthError when not authenticated", () => {
+			const { req, res, next } = createMockReqRes();
 
-			const req = {
-				cookies: {
-					token: "invalid-token",
-				},
-			} as any;
-			const next = vi.fn();
+			requireAuth(req, res, next);
 
-			// Act
-			requireAuth(req, {} as any, next);
-
-			// Assert
+			expect(next).toHaveBeenCalledOnce();
 			expect(next.mock.calls[0][0]).toMatchObject({
 				name: "RequireAuthError",
 			});
@@ -138,96 +126,61 @@ describe("middlewares/auth.middleware", () => {
 	});
 
 	describe("requireUserOwnership", () => {
-		it("Calls next with RequireAuthError when no token exists", () => {
-			// Arrange
-			const req = {
-				cookies: {},
-				params: {
-					uuid: "user-uuid",
-				},
-			} as any;
-			const next = vi.fn();
+		it("calls next() with RequireAuthError if token cookie is absent", () => {
+			const { req, res, next } = createMockReqRes({
+				params: { uuid: "user-1" },
+			});
 
-			// Act
-			requireUserOwnership(req, {} as any, next);
+			requireUserOwnership(req, res, next);
 
-			// Assert
+			expect(next).toHaveBeenCalledOnce();
 			expect(next.mock.calls[0][0]).toMatchObject({
 				name: "RequireAuthError",
 			});
 		});
 
-		it("Calls next without an error when the token belongs to the requested user", () => {
-			// Arrange
-			mockedValidateAccessToken.mockReturnValue({
-				sub: "user-uuid",
-			} as any);
+		it("calls next() with RequireAuthError if token validation fails", () => {
+			mockedValidateAccessToken.mockImplementation(() => {
+				throw new Error("Malformed JWT");
+			});
+			const { req, res, next } = createMockReqRes({
+				cookies: { token: "corrupt" },
+				params: { uuid: "user-1" },
+			});
 
-			const req = {
-				cookies: {
-					token: "valid-token",
-				},
-				params: {
-					uuid: "user-uuid",
-				},
-			} as any;
-			const next = vi.fn();
+			requireUserOwnership(req, res, next);
 
-			// Act
-			requireUserOwnership(req, {} as any, next);
-
-			// Assert
-			expect(next).toHaveBeenCalledWith();
+			expect(next).toHaveBeenCalledOnce();
+			expect(next.mock.calls[0][0]).toMatchObject({
+				name: "RequireAuthError",
+			});
 		});
 
-		it("Calls next with CannotEditUserError when the token belongs to another user", () => {
-			// Arrange
-			mockedValidateAccessToken.mockReturnValue({
-				sub: "another-user-uuid",
-			} as any);
+		it("calls next() with CannotEditUserError if sub does not match params.uuid", () => {
+			mockedValidateAccessToken.mockReturnValue({ sub: "user-1" } as any);
+			const { req, res, next } = createMockReqRes({
+				cookies: { token: "valid-token" },
+				params: { uuid: "user-2" },
+			});
 
-			const req = {
-				cookies: {
-					token: "valid-token",
-				},
-				params: {
-					uuid: "user-uuid",
-				},
-			} as any;
-			const next = vi.fn();
+			requireUserOwnership(req, res, next);
 
-			// Act
-			requireUserOwnership(req, {} as any, next);
-
-			// Assert
+			expect(next).toHaveBeenCalledOnce();
 			expect(next.mock.calls[0][0]).toMatchObject({
 				name: "CannotEditUserError",
 			});
 		});
 
-		it("Calls next with RequireAuthError when the token is invalid", () => {
-			// Arrange
-			mockedValidateAccessToken.mockImplementation(() => {
-				throw new Error("Invalid token");
+		it("calls next() without error when sub matches params.uuid", () => {
+			mockedValidateAccessToken.mockReturnValue({ sub: "user-1" } as any);
+			const { req, res, next } = createMockReqRes({
+				cookies: { token: "valid-token" },
+				params: { uuid: "user-1" },
 			});
 
-			const req = {
-				cookies: {
-					token: "invalid-token",
-				},
-				params: {
-					uuid: "user-uuid",
-				},
-			} as any;
-			const next = vi.fn();
+			requireUserOwnership(req, res, next);
 
-			// Act
-			requireUserOwnership(req, {} as any, next);
-
-			// Assert
-			expect(next.mock.calls[0][0]).toMatchObject({
-				name: "RequireAuthError",
-			});
+			expect(next).toHaveBeenCalledWith();
 		});
 	});
 });

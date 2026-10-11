@@ -14,35 +14,34 @@
 	--font-space-mono: "Space Mono", sans-serif;
 }
 
-form {
-	@apply w-full max-w-md rounded-2xl border border-border bg-background p-8 text-foreground shadow-sm;
+.form-card {
+	@apply w-full max-w-md p-6 sm:p-8 border border-gray-300 bg-background flex flex-col gap-5;
 }
 
-form h2 {
-	@apply mb-6 text-center text-3xl font-semibold tracking-tight;
+.form-title {
+	@apply text-2xl sm:text-3xl font-extrabold uppercase tracking-wide text-foreground flex items-center gap-2;
 }
 
-form label {
-	@apply mb-2 block text-sm font-medium text-foreground;
+.form-field {
+	@apply flex flex-col gap-1.5;
 }
 
-form input {
-	@apply w-full rounded-lg border border-border bg-secondary px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20;
+.form-label {
+	@apply text-xs uppercase font-bold tracking-wider text-gray-600;
 }
 
-form input[type="file"] {
-	@apply w-full rounded border border-border bg-secondary
-    text-sm text-muted-foreground outline-none
-    file:mr-3 file:cursor-pointer file:border-0
-    file:bg-primary file:px-3 file:py-2 file:text-sm
-    file:font-medium file:text-white file:transition
-    hover:file:opacity-90
-    focus:border-primary focus:ring-2 focus:ring-primary/20;
-}
-form div {
-	@apply mb-4;
+.form-input {
+	@apply w-full px-3 py-2 border border-gray-400 bg-background text-sm sm:text-base transition-colors placeholder:text-gray-400 focus:outline-none focus:border-primary disabled:opacity-50 disabled:cursor-not-allowed;
 }
 
-form button {
-	@apply mt-2 flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 font-medium text-white transition hover:opacity-90 active:scale-[0.99];
+.btn-primary {
+	@apply inline-flex items-center justify-center gap-2 px-5 py-2.5 font-semibold text-sm sm:text-base bg-primary text-white hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer;
+}
+
+.form-error {
+	@apply min-h-5 text-xs font-medium text-red-500 mt-0.5;
+}
+
+.form-alert-error {
+	@apply p-3 border border-red-500 bg-red-500/10 text-red-600 text-sm font-medium;
 }

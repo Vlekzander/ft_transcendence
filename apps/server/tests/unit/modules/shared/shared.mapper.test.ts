@@ -1,9 +1,16 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	toPublicUserDTO,
 	toUserResponseDTO,
 	UserEntity,
 } from "@/modules/shared/shared.mapper";
-import { describe, expect, it } from "vitest";
+import { isUserOnline } from "@/websocket.server";
+
+vi.mock("@/websocket.server", () => ({
+	isUserOnline: vi.fn(),
+}));
+
+const mockedIsUserOnline = vi.mocked(isUserOnline);
 
 const user: UserEntity = {
 	uuid: "user-uuid",
@@ -14,13 +21,13 @@ const user: UserEntity = {
 };
 
 describe("shared/shared.mapper", () => {
-	it("Converts a UserEntity into a UserResponseDTO", () => {
-		// Arrange
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
 
-		// Act
+	it("Converts a UserEntity into a UserResponseDTO", () => {
 		const result = toUserResponseDTO(user);
 
-		// Assert
 		expect(result).toEqual({
 			uuid: user.uuid,
 			email: user.email,
@@ -29,17 +36,31 @@ describe("shared/shared.mapper", () => {
 		});
 	});
 
-	it("Converts a UserEntity into a PublicUserDTO", () => {
-		// Arrange
+	it("Converts a UserEntity into a PublicUserDTO when offline", () => {
+		mockedIsUserOnline.mockReturnValue(false);
 
-		// Act
 		const result = toPublicUserDTO(user);
 
-		// Assert
+		expect(mockedIsUserOnline).toHaveBeenCalledWith(user.uuid);
 		expect(result).toEqual({
 			uuid: user.uuid,
 			username: user.username,
 			avatarPath: user.avatarPath,
+			online: false,
+		});
+	});
+
+	it("Converts a UserEntity into a PublicUserDTO when online", () => {
+		mockedIsUserOnline.mockReturnValue(true);
+
+		const result = toPublicUserDTO(user);
+
+		expect(mockedIsUserOnline).toHaveBeenCalledWith(user.uuid);
+		expect(result).toEqual({
+			uuid: user.uuid,
+			username: user.username,
+			avatarPath: user.avatarPath,
+			online: true,
 		});
 	});
 });

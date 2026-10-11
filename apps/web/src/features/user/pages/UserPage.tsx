@@ -1,35 +1,42 @@
-import type {
-	Achievement,
-	FriendDTO,
-	GameHistoryEntry,
-	GameParticipant,
-	PublicUserDTO,
-	Stat,
+import {
+	AppDomainError,
+	type Achievement,
+	type FriendshipDTO,
+	type GameHistoryEntry,
+	type GameParticipant,
+	type PublicUserDTO,
+	type Stat,
 } from "@ft_transcendence/shared";
 import {
 	Check,
 	ChevronDown,
 	Clock,
-	Crown,
 	Medal,
+	MessageSquare,
 	Star,
 	Trophy,
 	UserRound,
 	UserRoundPlus,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import FriendComponent from "../components/Friend";
+import { useCallback, useEffect, useState } from "react";
+import FriendComponent from "../../friends/components/Friend";
 import UserStatusComponent from "../components/UserStatus";
 import { DynamicIcon, type IconName } from "lucide-react/dynamic";
 import ProgressBarComponent from "../../../shared/components/Progressbar";
-import { Navigate, useParams } from "react-router";
-import { API_URL, AVATARS_PATH } from "../../../config";
-import {
-	PartialProfileError,
-	UserNotFoundError,
-	UserProfileError,
-} from "../../../shared/types/errors";
+import { Link, Navigate, useNavigate, useParams } from "react-router";
+import { API_URL, getAvatarUrl, getErrorMessage } from "../../../config";
+import { PartialProfileError } from "../../../shared/types/errors";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
+import { useAuth } from "../../auth/context/AuthContext";
+import { useFriends } from "../../friends/context/FriendContext";
+import { FriendActionButton } from "../../friends/components/FriendActionButton";
+import {
+	getAchievements,
+	getFriends,
+	getHistory,
+	getStats,
+	getUser,
+} from "../services/user.service";
 
 function getPlayerGameResult(game: GameHistoryEntry, userId: string) {
 	const index = game.participants.findIndex(
@@ -136,11 +143,7 @@ function GameRankingRowComponent({
 			<div className="flex items-center gap-5">
 				<div className="w-5 h-5">
 					<img
-						src={
-							participant.user.avatarPath === null
-								? "/assets/default_avatar.jpg"
-								: AVATARS_PATH + participant.user.avatarPath
-						}
+						src={getAvatarUrl(participant.user.avatarPath)}
 						alt=""
 						width={20}
 						height={20}
@@ -264,7 +267,11 @@ function GameHistoryItem({
 }
 
 export default function UserPage() {
+	const navigate = useNavigate();
+	const { user } = useAuth();
 	const { uuid } = useParams<{ uuid: string }>();
+	const isOwnProfile = user?.uuid === uuid;
+	const { friends, removeFriend } = useFriends();
 	const [isLoading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -272,7 +279,7 @@ export default function UserPage() {
 	const [history, setHistory] = useState<GameHistoryEntry[]>([]);
 	const [stats, setStats] = useState<Stat[]>([]);
 	const [achievements, setAchievements] = useState<Achievement[]>([]);
-	const [friends, setFriends] = useState<FriendDTO[] | null>(null);
+	const [profileFriends, setProfileFriends] = useState<FriendshipDTO[]>([]);
 
 	const [tab, setTab] = useState<"history" | "achievements" | "friends">(
 		"history",
@@ -284,6 +291,20 @@ export default function UserPage() {
 		else setOpenedGameId(gameId);
 	};
 
+	const fetchProfileFriends = useCallback(async () => {
+		if (!uuid || isOwnProfile) return;
+
+		try {
+			const res = await fetch(`${API_URL}/users/${uuid}/friends`);
+			if (res.ok) {
+				const friendsData = await res.json();
+				setProfileFriends(friendsData.friends || []);
+			}
+		} catch (err) {
+			console.error("Failed to refresh profile friends:", err);
+		}
+	}, [uuid, isOwnProfile]);
+
 	useEffect(() => {
 		let isMounted = true;
 
@@ -292,63 +313,48 @@ export default function UserPage() {
 			try {
 				setLoading(true);
 				setError(null);
-				const userEndpoint = `${API_URL}/users/${uuid}`;
-				const [
-					resUser,
-					resHistory,
-					resStats,
-					resAchievements,
-					resFriends,
-				] = await Promise.all([
-					fetch(`${userEndpoint}`),
-					fetch(`${userEndpoint}/history`),
-					fetch(`${userEndpoint}/stats`),
-					fetch(`${userEndpoint}/achievements`),
-					fetch(`${userEndpoint}/friends`),
-				]);
-				if (!resUser.ok) {
-					if (resUser.status === 404) throw new UserNotFoundError();
-					throw new UserProfileError();
-				}
+				const resUser = await getUser(uuid);
+				const resHistory = await getHistory(uuid);
+				const resStats = await getStats(uuid);
+				const resAchievements = await getAchievements(uuid);
+				let resFriends = undefined;
+				if (!isOwnProfile) resFriends = await getFriends(uuid);
 
-				const resultUser = await resUser.json();
-				const resultHistory = resHistory.ok
-					? await resHistory.json()
-					: { history: [] };
-				const resultStats = resStats.ok
-					? await resStats.json()
-					: { stats: [] };
+				if (resUser.ok === false)
+					throw new AppDomainError(resUser.error);
+
+				const resultUser = resUser.data;
+				const resultHistory = resHistory.ok ? resHistory.data : [];
+				const resultStats = resStats.ok ? resStats.data : [];
 				const resultAchievements = resAchievements.ok
-					? await resAchievements.json()
-					: { achievements: [] };
-				const resultFriends = resFriends.ok
-					? await resFriends.json()
-					: { friends: [] };
-				if (isMounted) {
-					setUserData(resultUser.user);
-					setHistory(resultHistory.history || []);
-					setStats(resultStats.stats || []);
-					setAchievements(resultAchievements.achievements || []);
-					setFriends(resultFriends.friends || []);
+					? resAchievements.data
+					: [];
+				let loadedFriends: FriendshipDTO[] = [];
+				if (resFriends && resFriends.ok) {
+					loadedFriends = resFriends.data || [];
 				}
-				if (
-					!resHistory.ok ||
-					!resStats.ok ||
-					!resAchievements.ok ||
-					!resFriends.ok
-				)
+				if (isMounted) {
+					setUserData(resultUser);
+					setHistory(resultHistory || []);
+					setStats(resultStats || []);
+					setAchievements(resultAchievements || []);
+					if (!isOwnProfile) setProfileFriends(loadedFriends);
+				}
+				if (!resHistory.ok || !resStats.ok || !resAchievements.ok)
 					throw new PartialProfileError();
 			} catch (error) {
-				if (isMounted) setError(error.message || "An error occured");
+				const message = getErrorMessage(error);
+				if (isMounted) setError(message || "An error occured");
 			} finally {
 				if (isMounted) setLoading(false);
 			}
 		};
+
 		fetchData();
 		return () => {
 			isMounted = false;
 		};
-	}, [uuid]);
+	}, [uuid, isOwnProfile]);
 
 	if (isLoading) {
 		return (
@@ -358,7 +364,7 @@ export default function UserPage() {
 		);
 	}
 
-	if (userData === null) return <Navigate to="/not-found" replace />;
+	if (!uuid || userData === null) return <Navigate to="/not-found" replace />;
 
 	if (error)
 		return (
@@ -369,17 +375,15 @@ export default function UserPage() {
 			/>
 		);
 
+	const displayedFriends = isOwnProfile ? friends : profileFriends;
+
 	return (
 		<div className="p-5 flex justify-center">
-			<div className="w-full sm:w-4/5">
+			<div className="w-full">
 				<div className="flex flex-col sm:flex-row gap-3 items-center">
 					<div className="w-32 h-32 shrink-0">
 						<img
-							src={
-								userData.avatarPath === null
-									? "/assets/default_avatar.jpg"
-									: AVATARS_PATH + userData.avatarPath
-							}
+							src={getAvatarUrl(userData.avatarPath)}
 							width={128}
 							height={128}
 							className="w-full h-full object-cover border"
@@ -390,13 +394,28 @@ export default function UserPage() {
 							<h1 className="text-3xl font-extrabold order-2 sm:order-1">
 								{userData.username}
 							</h1>
-							<span className="inline-flex items-center gap-1 text-xs border border-primary bg-primary/10 text-primary/90 p-1 whitespace-nowrap order-1 sm:order-2">
-								<Crown size={16} />
-								Top 10
-							</span>
+							{!isOwnProfile && (
+								<div className="order-1 sm:order-2 flex gap-2">
+									<FriendActionButton
+										uuid={uuid}
+										onSuccess={fetchProfileFriends}
+									/>
+									<div className="border-r border-gray-300 self-stretch my-1"></div>
+									<button
+										type="button"
+										onClick={() => navigate(`/msg/${uuid}`)}
+										title={`Chat with ${userData.username}`}
+										className="bg-primary/10 text-primary/90 border border-primary font-semibold flex items-center justify-center w-10 h-10 sm:w-7 sm:h-7 hover:bg-primary/20 cursor-pointer disabled:opacity-50"
+									>
+										<MessageSquare strokeWidth={1} />
+									</button>
+								</div>
+							)}
 						</div>
 						<div className="flex items-center justify-center sm:justify-start gap-1 m-1">
-							<UserStatusComponent status="online" />
+							<UserStatusComponent
+								status={userData.online ? "online" : "offline"}
+							/>
 						</div>
 						<div className="grid grid-cols-2 gap-4 mt-3">
 							<div className="flex items-center justify-center sm:justify-start gap-2">
@@ -483,19 +502,51 @@ export default function UserPage() {
 
 				{tab === "friends" && (
 					<div>
-						<button className="bg-primary/10 text-primary/90 border border-primary font-semibold flex gap-2 px-2 py-1.5 hover:bg-primary/20 cursor-pointer">
-							<UserRoundPlus />
-							Add friend
-						</button>
-						<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
-							{friends.map((friend) => (
-								<FriendComponent
-									key={friend.user.uuid}
-									user={friend.user}
-									status={friend.status}
-								/>
-							))}
-						</div>
+						{isOwnProfile && (
+							<Link
+								to="/friends"
+								className="inline-flex items-center gap-2 bg-primary/10 text-primary/90 border border-primary font-semibold px-2 py-1.5 hover:bg-primary/20"
+							>
+								<UserRoundPlus size={18} />
+								Manage friends
+							</Link>
+						)}
+						{displayedFriends.length > 0 ? (
+							<div className="grid grid-cols-1 md:grid-cols-3 bg-gray-200 gap-px border border-gray-200 mt-5">
+								{displayedFriends.map((friend) => (
+									<FriendComponent
+										key={friend.uuid}
+										friend={friend.user}
+										onDelete={
+											isOwnProfile
+												? () => {
+														void removeFriend(
+															friend.uuid,
+														);
+													}
+												: undefined
+										}
+									/>
+								))}
+								{displayedFriends.length % 3 > 0 &&
+									Array.from({
+										length:
+											3 - (displayedFriends.length % 3),
+									}).map((_, index) => (
+										<div
+											key={index}
+											className="bg-background hidden md:block"
+										></div>
+									))}
+							</div>
+						) : (
+							<div className="border border-gray-300 p-8 text-center bg-background mt-5">
+								<p className="text-gray-500">
+									{userData.username} don&apos;t have any
+									friends yet.
+								</p>
+							</div>
+						)}
 					</div>
 				)}
 			</div>

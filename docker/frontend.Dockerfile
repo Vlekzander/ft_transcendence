@@ -8,6 +8,8 @@ COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/package.json
 COPY packages/shared/package.json ./packages/shared/package.json
 
+COPY tsconfig.base.json ./tsconfig.base.json
+
 RUN npm install
 
 EXPOSE 5173

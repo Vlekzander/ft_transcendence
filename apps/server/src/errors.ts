@@ -1,9 +1,23 @@
 import { AppDomainError } from "@ft_transcendence/shared";
 
-export class UnknownUserIdError extends AppDomainError {
+export class UnknownElementError extends AppDomainError {
+	constructor(element: string) {
+		super(`Unknown ${element}`);
+		this.name = "UnknownElementError";
+	}
+}
+
+export class UnknownUserIdError extends UnknownElementError {
 	constructor() {
-		super("Unknown user id");
+		super("User Id");
 		this.name = "UnknownUserIdError";
+	}
+}
+
+export class UnknownFriendRequestError extends UnknownElementError {
+	constructor() {
+		super("FriendRequest");
+		this.name = "UnknownFriendRequestError";
 	}
 }
 
@@ -39,6 +53,13 @@ export class InvalidIdError extends InvalidElementError {
 	constructor() {
 		super("Id");
 		this.name = "InvalidIdError";
+	}
+}
+
+export class InvalidJWTError extends InvalidElementError {
+	constructor() {
+		super("JWT");
+		this.name = "InvalidJWTError";
 	}
 }
 
@@ -95,5 +116,33 @@ export class InvalidFileSizeError extends InvalidFileError {
 	constructor(size: number) {
 		super(`Invalid file size uploaded (max: ${size} MB)`);
 		this.name = "InvalidFileSizeError";
+	}
+}
+
+export class SelfFriendRequestError extends AppDomainError {
+	constructor() {
+		super("You can't send yourself a friend request");
+		this.name = "SelfFriendRequestError";
+	}
+}
+
+export class FriendshipAlreadyExistError extends AppDomainError {
+	constructor() {
+		super("This friendship already exist");
+		this.name = "FriendshipAlreadyExistError";
+	}
+}
+
+export class PendingFriendRequestExistError extends AppDomainError {
+	constructor() {
+		super("A pending friend request already exist");
+		this.name = "PendingFriendRequestExistError";
+	}
+}
+
+export class SelfMessageError extends AppDomainError {
+	constructor() {
+		super("You can't send a message to yourself");
+		this.name = "SelfMessageError";
 	}
 }

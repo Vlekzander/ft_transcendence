@@ -17,6 +17,9 @@ import GamePage from "./features/game/pages/GamePage";
 import { WebSocketProvider } from "./features/websocket/context/WebSocketContext";
 import { AuthProvider } from "./features/auth/context/AuthContext";
 import AccountPage from "./features/user/pages/AccountPage";
+import { FriendProvider } from "./features/friends/context/FriendContext";
+import FriendsPage from "./features/friends/pages/FriendsPage";
+import MsgPage from "./features/msg/pages/MsgPage";
 
 const router = createBrowserRouter([
 	{
@@ -29,6 +32,14 @@ const router = createBrowserRouter([
 					{
 						path: "/account",
 						element: <AccountPage />,
+					},
+					{
+						path: "/friends",
+						element: <FriendsPage />,
+					},
+					{
+						path: "/msg/:uuid",
+						element: <MsgPage />,
 					},
 				],
 			},
@@ -85,8 +96,10 @@ if (!root) throw new Error("root not found in DOM");
 
 ReactDOM.createRoot(root).render(
 	<AuthProvider>
-		<WebSocketProvider wsUrl={WS_URL}>
-			<RouterProvider router={router} />
-		</WebSocketProvider>
+		<FriendProvider>
+			<WebSocketProvider wsUrl={WS_URL}>
+				<RouterProvider router={router} />
+			</WebSocketProvider>
+		</FriendProvider>
 	</AuthProvider>,
 );

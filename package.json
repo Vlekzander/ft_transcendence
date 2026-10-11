@@ -1,17 +1,17 @@
 {
 	"name": "ft_transcendence",
 	"private": true,
-	"type": "module",
 	"workspaces": [
 		"apps/*",
 		"packages/*"
 	],
 	"scripts": {
-		"dev": "npm run dev:web & npm run dev:server",
-		"dev:web": "npm run dev -w @ft_transcendence/web",
+		"dev:shared": "npm run dev -w @ft_transcendence/shared",
 		"dev:server": "npm run dev -w @ft_transcendence/server",
-		"build": "npm run build --workspaces --if-present",
-		"start:server": "npm run start -w @ft_transcendence/server",
+		"dev:web": "npm run dev -w @ft_transcendence/web",
+		"dev": "npm run build -w @ft_transcendence/shared && concurrently -k \"npm run dev:shared\" \"npm run dev:server\" \"npm run dev:web\"",
+		"build": "npm run build -w @ft_transcendence/shared && npm run build -w @ft_transcendence/server && npm run build -w @ft_transcendence/web",
+		"start": "npm run start -w @ft_transcendence/server",
 		"test:server": "npm run test -w @ft_transcendence/server",
 		"lint": "npm run lint --workspaces --if-present",
 		"format": "prettier --write .",
@@ -27,6 +27,7 @@
 		"@types/multer": "^2.2.0",
 		"@types/uuid": "^10.0.0",
 		"@types/ws": "^8.18.1",
+		"concurrently": "^8.2.2",
 		"prettier": "^3.8.3"
 	},
 	"dependencies": {

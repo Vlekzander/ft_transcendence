@@ -6,16 +6,23 @@ import {
 	RequireAuthError,
 } from "../errors";
 
-function isAuthenticated(req: Request): boolean {
+export function getTokenUuid(req: Request): string | undefined {
 	const token = req.cookies?.token;
 
-	if (!token) return false;
+	if (!token) return undefined;
 	try {
-		validateAccessToken(token);
-		return true;
+		const payload = validateAccessToken(token);
+		return payload.sub?.toString();
 	} catch {
-		return false;
+		return undefined;
 	}
+}
+
+function isAuthenticated(req: Request): boolean {
+	const uuid = getTokenUuid(req);
+
+	if (!uuid) return false;
+	return true;
 }
 
 export function requireGuest(req: Request, _res: Response, next: NextFunction) {

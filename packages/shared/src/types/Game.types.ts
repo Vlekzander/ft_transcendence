@@ -1,4 +1,4 @@
-import { PublicUserDTO } from "./User.types";
+import { type PublicUserDTO } from "../schemas/user.schemas";
 
 export type GameMode = "SOLO" | "DUO";
 

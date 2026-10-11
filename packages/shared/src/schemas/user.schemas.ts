@@ -15,9 +15,33 @@ export const PublicUserSchema = z.object({
 	uuid: z.string(),
 	username: z.string(),
 	avatarPath: z.string().nullable(),
+	online: z.boolean(),
 });
 
 export type PublicUserDTO = z.infer<typeof PublicUserSchema>;
+
+export const FriendshipSchema = z.object({
+	uuid: z.string(),
+	user: PublicUserSchema,
+});
+
+export type FriendshipDTO = z.infer<typeof FriendshipSchema>;
+
+export const PendingFriendRequestSchema = z.object({
+	uuid: z.string(),
+	sender: PublicUserSchema,
+});
+
+export type PendingFriendRequestDTO = z.infer<
+	typeof PendingFriendRequestSchema
+>;
+
+export const SentFriendRequestSchema = z.object({
+	uuid: z.string(),
+	receiver: PublicUserSchema,
+});
+
+export type SentFriendRequestDTO = z.infer<typeof SentFriendRequestSchema>;
 
 // INPUTS SCHEMAS
 
@@ -98,3 +122,19 @@ export const UserParamsSchema = z.object({
 });
 
 export type UserParamsDTO = z.infer<typeof UserParamsSchema>;
+
+export const CreateFriendshipSchema = z.object({
+	receiverId: z.string(),
+});
+
+export type CreateFriendshipDTO = z.infer<typeof CreateFriendshipSchema>;
+
+export const EditFriendshipSchema = z.object({
+	requestId: z.string(),
+});
+
+export type EditFriendshipDTO = z.infer<typeof CreateFriendshipSchema>;
+
+export const StringQuerySchema = z.object({
+	query: z.string(),
+});

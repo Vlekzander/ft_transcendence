@@ -5,8 +5,11 @@ import { EditUserSchema, type EditUserDTO } from "@ft_transcendence/shared";
 import { useAuth } from "../../auth/context/AuthContext";
 import { editUser } from "../services/editApi";
 import type { ApiResult } from "../../../shared/types/api";
+import { UserCheck } from "lucide-react";
+import { useNavigate } from "react-router";
 
 export default function EditAccountForm() {
+	const navigate = useNavigate();
 	const { user, refreshUser } = useAuth();
 
 	const [serverError, setServerError] = useState("");
@@ -19,13 +22,18 @@ export default function EditAccountForm() {
 	} = useForm<EditUserDTO>({
 		resolver: zodResolver(EditUserSchema),
 		defaultValues: {
-			email: user.email,
-			username: user.username,
+			email: user?.email,
+			username: user?.username,
 			password: "",
 			confirmPassword: "",
 			currentPassword: "",
 		},
 	});
+
+	if (!user) {
+		navigate("/");
+		return;
+	}
 
 	const onSubmit = async (data: EditUserDTO) => {
 		setServerError("");
@@ -60,62 +68,84 @@ export default function EditAccountForm() {
 	};
 
 	return (
-		<form
-			onSubmit={handleSubmit(onSubmit)}
-			className="border flex flex-col"
-		>
-			<h2>Edit account</h2>
-			<p className="min-h-5 text-sm text-red-500">{serverError || " "}</p>
-			<div>
-				<label htmlFor="username">Username</label>
-				<input id="username" {...register("username")} />
-				<p className="min-h-5 text-sm text-red-500">
-					{errors.username?.message || " "}
-				</p>
+		<form onSubmit={handleSubmit(onSubmit)} className="form-card">
+			<h2 className="form-title">
+				<UserCheck className="text-primary" size={28} />
+				Edit account
+			</h2>
+			{serverError && (
+				<div className="form-alert-error">{serverError}</div>
+			)}
+			<div className="form-field">
+				<label htmlFor="username" className="form-label">
+					Username
+				</label>
+				<input
+					id="username"
+					className="form-input"
+					{...register("username")}
+				/>
+				<p className="form-error">{errors.username?.message || " "}</p>
 			</div>
-			<div>
-				<label htmlFor="email">Email</label>
-				<input id="email" type="email" {...register("email")} />
-				<p className="min-h-5 text-sm text-red-500">
-					{errors.email?.message || " "}
-				</p>
+			<div className="form-field">
+				<label htmlFor="email" className="form-label">
+					Email
+				</label>
+				<input
+					id="email"
+					type="email"
+					className="form-input"
+					{...register("email")}
+				/>
+				<p className="form-error">{errors.email?.message || " "}</p>
 			</div>
-			<div>
-				<label htmlFor="password">New password</label>
+			<div className="form-field">
+				<label htmlFor="password" className="form-label">
+					New password
+				</label>
 				<input
 					id="password"
 					type="password"
 					placeholder="Optional"
+					className="form-input"
 					{...register("password")}
 				/>
-				<p className="min-h-5 text-sm text-red-500">
-					{errors.password?.message || " "}
-				</p>
+				<p className="form-error">{errors.password?.message || " "}</p>
 			</div>
-			<div>
-				<label htmlFor="confirmPassword">Confirm new password</label>
+			<div className="form-field">
+				<label htmlFor="confirmPassword" className="form-label">
+					Confirm new password
+				</label>
 				<input
 					id="confirmPassword"
 					type="password"
 					placeholder="Optional"
+					className="form-input"
 					{...register("confirmPassword")}
 				/>
-				<p className="min-h-5 text-sm text-red-500">
+				<p className="form-error">
 					{errors.confirmPassword?.message || " "}
 				</p>
 			</div>
-			<div>
-				<label htmlFor="currentPassword">Current password</label>
+			<div className="form-field">
+				<label htmlFor="currentPassword" className="form-label">
+					Current password
+				</label>
 				<input
 					id="currentPassword"
 					type="password"
+					className="form-input"
 					{...register("currentPassword")}
 				/>
-				<p className="min-h-5 text-sm text-red-500">
+				<p className="form-error">
 					{errors.currentPassword?.message || " "}
 				</p>
 			</div>
-			<button type="submit" disabled={isSubmitting}>
+			<button
+				type="submit"
+				disabled={isSubmitting}
+				className="btn-primary mt-2"
+			>
 				{isSubmitting ? "Editing..." : "Edit"}
 			</button>
 		</form>
