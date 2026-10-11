@@ -58,7 +58,7 @@ const TimeToChooseWordSchema = z
 const UsingDictionarySchema = z.int().min(0);
 const JoinCodeSchema = z
 	.string()
-	.regex(/^[A-Z0-9]{6}$/, "Invalid lobby join code");
+	.regex(/^[A-Z0-9]{6}$/, "Invalid code");
 
 export type LobbyGameMode = z.infer<typeof GameModeSchema>;
 export type LobbyVisibility = z.infer<typeof VisibilitySchema>;

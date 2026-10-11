@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { MAX_PLAYERS, type LobbyResponseDTO } from "@ft_transcendence/shared";
-import { Plus, RefreshCw } from "lucide-react";
+import { Plus, RefreshCw, ChevronRight } from "lucide-react";
 import { joinLobby, listLobbies } from "../services/lobby.service";
 import { useUsers } from "../hooks/useUsers";
 import ActiveLobbyPrompt from "../components/ActiveLobbyPrompt";
@@ -78,10 +78,13 @@ export default function LobbiesPage() {
 			{error && <p className="form-alert-error">{listError}</p>}
 
 			<div className="border border-gray-300">
-				<div className="grid grid-cols-3 bg-secondary text-xs uppercase font-bold tracking-wider text-gray-600 px-4 py-2 border-b border-gray-300">
+				<div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_0.5fr] bg-secondary text-xs uppercase font-bold tracking-wider text-gray-600 px-4 py-2 border-b border-gray-300">
 					<span>Host</span>
-					<span>Join code</span>
-					<span className="text-right">Players</span>
+					<span className="text-center">Draw time</span>
+					<span className="text-center">Rounds</span>
+					<span className="text-center">Words/turn</span>
+					<span className="text-center">Players</span>
+					<span></span>
 				</div>
 				{isLoading ? (
 					<p className="p-4 text-sm text-gray-500">Loading...</p>
@@ -98,17 +101,26 @@ export default function LobbiesPage() {
 									onClick={() =>
 										void handleJoin(lobby.joinCode)
 									}
-									className="grid grid-cols-3 w-full px-4 py-3 text-left hover:bg-gray-400/5 cursor-pointer"
+									className="group grid grid-cols-[1fr_1fr_1fr_1fr_1fr_0.5fr] w-full px-4 py-3 text-left items-center hover:bg-gray-400/5 cursor-pointer"
 								>
 									<span className="font-semibold">
 										{users[lobby.hostId]?.username ?? "..."}
 									</span>
-									<span className="font-space-mono">
-										{lobby.joinCode}
+									<span className="text-center">
+										{lobby.drawTime}
 									</span>
-									<span className="text-right">
+									<span className="text-center">
+										{lobby.numberOfRounds}
+									</span>
+									<span className="text-center">
+										{lobby.wordChoicesPerTurn}
+									</span>
+									<span className="text-center">
 										{lobby.connectedPlayers.length}/
 										{lobby.maxPlayers ?? MAX_PLAYERS}
+									</span>
+									<span className="flex items-center justify-center group-hover:scale-150">
+										<ChevronRight size={18} className="text-gray-400" />
 									</span>
 								</button>
 							</li>
