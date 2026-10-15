@@ -4,7 +4,7 @@ import type {
 	LobbyResponseDTO,
 	UpdateLobbyDTO,
 } from "@ft_transcendence/shared";
-import { Check, Copy, Settings } from "lucide-react";
+import { Check, Copy, Settings, UserPlus } from "lucide-react";
 import { useAuth } from "../../auth/context/AuthContext";
 import ErrorComponent from "../../../shared/components/ErrorComponent";
 import LobbySettingsModal from "../components/LobbySettingsModal";
@@ -77,14 +77,24 @@ export default function LobbyPage() {
 		await refresh();
 	};
 
-	const handleCopy = async () => {
-		const link = `${window.location.origin}/lobbies/join/${lobby.joinCode}`;
+	const handleCopyCode = async () => {
 		try {
-			await navigator.clipboard.writeText(link);
+			await navigator.clipboard.writeText(lobby.joinCode);
 			setCopied(true);
 			setTimeout(() => setCopied(false), 2000);
 		} catch {
-			setActionError("Unable to copy the link");
+			setActionError("Unable to copy the join code");
+		}
+	};
+
+	const handleCopyInvite = async () => {
+		const link = `${window.location.origin}/lobbies/join/${lobby.joinCode}`;
+
+		try {
+			await navigator.clipboard.writeText(link);
+			setActionError(null);
+		} catch {
+			setActionError("Unable to copy the invitation link");
 		}
 	};
 
@@ -107,14 +117,25 @@ export default function LobbyPage() {
 			<div className="flex flex-wrap items-center justify-between gap-3">
 				<button
 					type="button"
-					onClick={() => void handleCopy()}
-					title="Copy the lobby link"
-					className="flex items-center gap-2 px-4 py-2 border border-primary bg-primary/10 text-primary font-space-mono text-2xl font-bold cursor-pointer hover:bg-primary/20"
+					onClick={() => void handleCopyCode()}
+					title="Copy the join code"
+					className="flex items-center gap-2 font-space-mono text-2xl font-bold"
 				>
 					{lobby.joinCode}
 					{copied ? <Check size={20} /> : <Copy size={20} />}
 				</button>
-				<div className="flex gap-2">
+
+				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => void handleCopyInvite()}
+						title="Copy invitation link"
+						className="btn-primary"
+					>
+						<UserPlus size={18} />
+						Invite
+					</button>
+
 					{isHost && (
 						<button
 							type="button"
@@ -125,10 +146,11 @@ export default function LobbyPage() {
 							Settings
 						</button>
 					)}
+
 					<button
 						type="button"
 						onClick={() => void handleLeave()}
-						className="px-5 py-2.5 border border-gray-400 font-semibold text-sm sm:text-base hover:bg-gray-400/10 cursor-pointer"
+						className="px-5 py-2.5 border border-gray-400 font-semibold text-sm hover:bg-gray-400/10 cursor-pointer"
 					>
 						Leave
 					</button>
