@@ -1,5 +1,6 @@
 import {
 	AppPacket,
+	AppPacketSchema,
 	AppWebSocket,
 	createErrorPacket,
 } from "@ft_transcendence/shared";
@@ -90,14 +91,25 @@ function sendError(ws: AppWebSocket, text: string) {
 }
 
 async function handlePacket(ws: AppWebSocket, data: RawData) {
-	let packet: AppPacket;
+	let rawJson: unknown;
 
 	try {
-		packet = JSON.parse(data.toString());
-	} catch (error) {
-		if (error instanceof Error) sendError(ws, error.message);
+		rawJson = JSON.parse(data.toString());
+	} catch {
+		sendError(ws, "Invalid JSON");
 		return;
 	}
+
+	const result = AppPacketSchema.safeParse(rawJson);
+	if (!result.success) {
+		const errorMessages = result.error.issues
+			.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+			.join(", ");
+		sendError(ws, `Invalid packet: ${errorMessages}`);
+		return;
+	}
+
+	const packet: AppPacket = result.data;
 
 	const handler = getPacketHandler(packet.type);
 

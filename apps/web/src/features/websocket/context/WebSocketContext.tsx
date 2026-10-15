@@ -1,4 +1,4 @@
-import type { AppPacket } from "@ft_transcendence/shared";
+import { AppPacketSchema, type AppPacket } from "@ft_transcendence/shared";
 import {
 	createContext,
 	useCallback,
@@ -75,13 +75,23 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	);
 
 	const handlePacket = useCallback((raw: string) => {
-		let packet: AppPacket;
+		let rawJson: unknown;
 		try {
-			packet = JSON.parse(raw);
+			rawJson = JSON.parse(raw);
 		} catch {
 			return;
 		}
 
+		const result = AppPacketSchema.safeParse(rawJson);
+		if (!result.success) {
+			const errorMessages = result.error.issues
+				.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+				.join(", ");
+			console.warn("Invalid packet from server:", errorMessages);
+			return;
+		}
+
+		const packet: AppPacket = result.data;
 		const set = handlersRef.current.get(packet.type);
 		if (!set) return;
 
@@ -154,9 +164,20 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	}, [connect, clearReconnectTimeout]);
 
 	const sendPacket = useCallback((packet: AppPacket) => {
+		const result = AppPacketSchema.safeParse(packet);
+
+		if (!result.success) {
+			const errorMessages = result.error.issues
+				.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+				.join(", ");
+			console.error("Attempt to send an invalid packet:", errorMessages);
+			return;
+		}
 		const socket = socketRef.current;
 		if (socket && socket.readyState === WebSocket.OPEN)
 			socket.send(JSON.stringify(packet));
+		else
+			console.error("Unable to send the packet: WebSocket not connected");
 	}, []);
 
 	const reconnect = useCallback(() => {

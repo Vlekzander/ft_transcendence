@@ -1,7 +1,5 @@
 import z from "zod";
 
-// OUTPUTS SCHEMAS
-
 export const UserResponseSchema = z.object({
 	uuid: z.string(),
 	email: z.email(),
@@ -42,8 +40,6 @@ export const SentFriendRequestSchema = z.object({
 });
 
 export type SentFriendRequestDTO = z.infer<typeof SentFriendRequestSchema>;
-
-// INPUTS SCHEMAS
 
 const emailSchema = z.email("Invalid email address");
 const usernameSchema = z
