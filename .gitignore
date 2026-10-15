@@ -3,6 +3,7 @@ dist
 .env
 .env.test
 secrets
+.vscode
 
 apps/server/src/generated
 apps/server/uploads

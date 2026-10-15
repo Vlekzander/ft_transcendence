@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { MAX_PLAYERS, type LobbyResponseDTO } from "@ft_transcendence/shared";
 import { Plus, RefreshCw, ChevronRight } from "lucide-react";
 import { joinLobby, listLobbies } from "../services/lobby.service";
@@ -7,18 +7,19 @@ import { useUsers } from "../hooks/useUsers";
 import ActiveLobbyPrompt from "../components/ActiveLobbyPrompt";
 import { useActiveLobbyGuard } from "../hooks/useActiveLobbyGuard";
 import JoinLobbyViaField from "../components/JoinLobbyViaField";
+import CreateLobbyModal from "../components/CreateLobbyModal";
 
 const REFRESH_INTERVAL_MS = 5000;
 
 export default function LobbiesPage() {
 	const navigate = useNavigate();
 	const [lobbies, setLobbies] = useState<LobbyResponseDTO[]>([]);
-	const [error, setError] = useState<string | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const guard = useActiveLobbyGuard();
 	const users = useUsers(lobbies.map((lobby) => lobby.hostId));
 	const [listError, setListError] = useState<string | null>(null);
 	const [joinError, setJoinError] = useState<string | null>(null);
+	const [showCreate, setShowCreate] = useState(false);
 	const refresh = useCallback(async () => {
 		const res = await listLobbies();
 		if (res.ok) {
@@ -68,14 +69,18 @@ export default function LobbiesPage() {
 						<RefreshCw size={18} />
 					</button>
 					<JoinLobbyViaField onJoin={handleJoin} error={joinError} />
-					<Link to="/lobbies/new" className="btn-primary">
+					<button
+						type="button"
+						onClick={() => setShowCreate(true)}
+						className="btn-primary"
+					>
 						<Plus size={18} />
 						Add a lobby
-					</Link>
+					</button>
 				</div>
 			</div>
 
-			{error && <p className="form-alert-error">{listError}</p>}
+			{listError && <p className="form-alert-error">{listError}</p>}
 
 			<div className="border border-gray-300">
 				<div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_0.5fr] bg-secondary text-xs uppercase font-bold tracking-wider text-gray-600 px-4 py-2 border-b border-gray-300">
@@ -120,7 +125,10 @@ export default function LobbiesPage() {
 										{lobby.maxPlayers ?? MAX_PLAYERS}
 									</span>
 									<span className="flex items-center justify-center group-hover:scale-150">
-										<ChevronRight size={18} className="text-gray-400" />
+										<ChevronRight
+											size={18}
+											className="text-gray-400"
+										/>
 									</span>
 								</button>
 							</li>
@@ -128,6 +136,9 @@ export default function LobbiesPage() {
 					</ul>
 				)}
 			</div>
+			{showCreate && (
+				<CreateLobbyModal onClose={() => setShowCreate(false)} />
+			)}
 		</div>
 	);
 }
