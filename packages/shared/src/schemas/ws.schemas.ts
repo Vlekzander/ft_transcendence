@@ -25,12 +25,16 @@ export const ReceiveMessagePacketSchema = z.object({
 	content: z.string(),
 });
 
-export const AppPacketSchema = z.discriminatedUnion("type", [
-	ErrorPacketSchema,
-	MessagePacketSchema,
-	SendMessagePacketSchema,
-	ReceiveMessagePacketSchema,
-]);
+export const AppPacketSchema = z.discriminatedUnion(
+	"type",
+	[
+		ErrorPacketSchema,
+		MessagePacketSchema,
+		SendMessagePacketSchema,
+		ReceiveMessagePacketSchema,
+	],
+	"Unknown type",
+);
 
 export type ErrorPacket = z.infer<typeof ErrorPacketSchema>;
 export type MessagePacket = z.infer<typeof MessagePacketSchema>;
