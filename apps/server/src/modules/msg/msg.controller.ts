@@ -9,7 +9,7 @@ import { msgService } from "./msg.service";
 import { RequireAuthError, SelfMessageError } from "@/errors";
 import { sendToWs } from "@/websocket.server";
 import { ParsedRequest } from "@/middlewares/validate.middleware";
-import { NextFunction, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { getTokenUuid } from "@/middlewares/auth.middleware";
 
 type UserParamRequest = ParsedRequest<{ params: typeof UserParamsSchema }>;
@@ -31,6 +31,25 @@ export async function getMsgHistory(
 			toMessageDTO(e.uuid, e.senderId, e.receiverId, e.content),
 		);
 		res.status(200).send({ messages: messages });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function getMsgPreview(
+	req: Request,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const sender = getTokenUuid(req);
+
+		if (!sender) throw new RequireAuthError();
+		const result = await msgService.getPreview(sender);
+		const messages = result.map((e) =>
+			toMessageDTO(e.uuid, e.senderId, e.receiverId, e.content),
+		);
+		res.status(200).send({ preview: messages });
 	} catch (err) {
 		next(err);
 	}

@@ -97,6 +97,17 @@ describe("msg/msg.service", () => {
 			});
 		});
 
+		it("should throw UnknownUserIdError when Prisma throws P2003 on receiverId", async () => {
+			mockedCreate.mockRejectedValue(createPrismaError("P2003"));
+			mockedGetPrismaConstraintFields.mockReturnValue(["receiverId"]);
+
+			await expect(
+				service.sendMessage("sender-uuid", "unknown-receiver", "Hi"),
+			).rejects.toMatchObject({
+				name: "UnknownUserIdError",
+			});
+		});
+
 		it("should throw UnknownElementError with field name on P2025 for other constraints", async () => {
 			mockedCreate.mockRejectedValue(createPrismaError("P2025"));
 			mockedGetPrismaConstraintFields.mockReturnValue(["someField"]);
@@ -171,6 +182,67 @@ describe("msg/msg.service", () => {
 
 			await expect(
 				service.getConversation("user-a", "unknown-user"),
+			).rejects.toMatchObject({
+				name: "UnknownUserIdError",
+			});
+		});
+	});
+
+	describe("getPreview", () => {
+		it("should return unique latest messages per conversation partner", async () => {
+			const messages = [
+				{
+					uuid: "msg-2",
+					senderId: "user-a",
+					receiverId: "user-b",
+					content: "Latest with b",
+					createdAt: new Date("2026-01-02"),
+				},
+				{
+					uuid: "msg-1",
+					senderId: "user-a",
+					receiverId: "user-b",
+					content: "Older with b",
+					createdAt: new Date("2026-01-01"),
+				},
+				{
+					uuid: "msg-3",
+					senderId: "user-c",
+					receiverId: "user-a",
+					content: "Latest with c",
+					createdAt: new Date("2026-01-03"),
+				},
+			];
+
+			mockedFindMany.mockResolvedValue(messages as any);
+
+			const result = await service.getPreview("user-a");
+
+			expect(mockedFindMany).toHaveBeenCalledWith({
+				where: {
+					OR: [{ senderId: "user-a" }, { receiverId: "user-a" }],
+				},
+				orderBy: { uuid: "desc" },
+			});
+			expect(result).toEqual([messages[0], messages[2]]);
+		});
+
+		it("should throw InvalidIdError when Prisma throws P2007", async () => {
+			mockedFindMany.mockRejectedValue(createPrismaError("P2007"));
+
+			await expect(
+				service.getPreview("invalid-id"),
+			).rejects.toMatchObject({
+				name: "InvalidIdError",
+			});
+		});
+
+		it("should throw UnknownUserIdError when Prisma throws P2025 referencing senderId", async () => {
+			mockedFindMany.mockRejectedValue(createPrismaError("P2025"));
+			mockedGetPrismaConstraintFields.mockReturnValue(["senderId"]);
+
+			await expect(
+				service.getPreview("unknown-user"),
 			).rejects.toMatchObject({
 				name: "UnknownUserIdError",
 			});

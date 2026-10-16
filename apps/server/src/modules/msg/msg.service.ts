@@ -72,6 +72,47 @@ export class MsgService {
 			throw error;
 		}
 	}
+
+	async getPreview(user: string) {
+		try {
+			const result = await prisma.message.findMany({
+				where: {
+					OR: [
+						{
+							senderId: user,
+						},
+						{
+							receiverId: user,
+						},
+					],
+				},
+				orderBy: { uuid: "desc" },
+			});
+
+			const previewMap = new Map();
+			for (const msg of result) {
+				const otherId =
+					msg.senderId === user ? msg.receiverId : msg.senderId;
+				if (!previewMap.has(otherId)) previewMap.set(otherId, msg);
+			}
+
+			return Array.from(previewMap.values());
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") {
+					const fields = getPrismaConstraintFields(error);
+					if (fields.includes("senderId"))
+						throw new UnknownUserIdError();
+					if (fields.includes("receiverId"))
+						throw new UnknownUserIdError();
+					if (fields.length) throw new UnknownElementError(fields[0]);
+					throw new UnknownElementError("unknown");
+				}
+			}
+			throw error;
+		}
+	}
 }
 
 export const msgService = new MsgService();

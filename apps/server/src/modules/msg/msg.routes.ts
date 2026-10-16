@@ -13,4 +13,6 @@ msgRouter.get(
 	msgController.getMsgHistory,
 );
 
+msgRouter.get("", requireAuth, msgController.getMsgPreview);
+
 export default msgRouter;
