@@ -189,13 +189,23 @@ describe("msg/msg.service", () => {
 	});
 
 	describe("getPreview", () => {
-		it("should return unique latest messages per conversation partner", async () => {
+		it("should return unique latest messages per conversation partner with includes", async () => {
 			const messages = [
 				{
 					uuid: "msg-2",
 					senderId: "user-a",
 					receiverId: "user-b",
 					content: "Latest with b",
+					sender: {
+						uuid: "user-a",
+						username: "UserA",
+						avatarPath: null,
+					},
+					receiver: {
+						uuid: "user-b",
+						username: "UserB",
+						avatarPath: null,
+					},
 					createdAt: new Date("2026-01-02"),
 				},
 				{
@@ -203,6 +213,16 @@ describe("msg/msg.service", () => {
 					senderId: "user-a",
 					receiverId: "user-b",
 					content: "Older with b",
+					sender: {
+						uuid: "user-a",
+						username: "UserA",
+						avatarPath: null,
+					},
+					receiver: {
+						uuid: "user-b",
+						username: "UserB",
+						avatarPath: null,
+					},
 					createdAt: new Date("2026-01-01"),
 				},
 				{
@@ -210,6 +230,16 @@ describe("msg/msg.service", () => {
 					senderId: "user-c",
 					receiverId: "user-a",
 					content: "Latest with c",
+					sender: {
+						uuid: "user-c",
+						username: "UserC",
+						avatarPath: null,
+					},
+					receiver: {
+						uuid: "user-a",
+						username: "UserA",
+						avatarPath: null,
+					},
 					createdAt: new Date("2026-01-03"),
 				},
 			];
@@ -221,6 +251,22 @@ describe("msg/msg.service", () => {
 			expect(mockedFindMany).toHaveBeenCalledWith({
 				where: {
 					OR: [{ senderId: "user-a" }, { receiverId: "user-a" }],
+				},
+				include: {
+					sender: {
+						select: {
+							uuid: true,
+							username: true,
+							avatarPath: true,
+						},
+					},
+					receiver: {
+						select: {
+							uuid: true,
+							username: true,
+							avatarPath: true,
+						},
+					},
 				},
 				orderBy: { uuid: "desc" },
 			});

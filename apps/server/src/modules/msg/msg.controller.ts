@@ -1,5 +1,6 @@
 import {
 	AppWebSocket,
+	ConversationPreviewDTO,
 	createReceiveMessagePacket,
 	SendMessagePacket,
 	toMessageDTO,
@@ -11,6 +12,7 @@ import { sendToWs } from "@/websocket.server";
 import { ParsedRequest } from "@/middlewares/validate.middleware";
 import { NextFunction, Request, Response } from "express";
 import { getTokenUuid } from "@/middlewares/auth.middleware";
+import { toPublicUserDTO } from "../shared/shared.mapper";
 
 type UserParamRequest = ParsedRequest<{ params: typeof UserParamsSchema }>;
 
@@ -46,10 +48,20 @@ export async function getMsgPreview(
 
 		if (!sender) throw new RequireAuthError();
 		const result = await msgService.getPreview(sender);
-		const messages = result.map((e) =>
-			toMessageDTO(e.uuid, e.senderId, e.receiverId, e.content),
-		);
-		res.status(200).send({ preview: messages });
+		const conversationsPreview = result.map((e) => {
+			const preview: ConversationPreviewDTO = {
+				message: toMessageDTO(
+					e.uuid,
+					e.senderId,
+					e.receiverId,
+					e.content,
+				),
+				sender: toPublicUserDTO(e.sender),
+				receiver: toPublicUserDTO(e.receiver),
+			};
+			return preview;
+		});
+		res.status(200).send({ preview: conversationsPreview });
 	} catch (err) {
 		next(err);
 	}

@@ -86,6 +86,22 @@ export class MsgService {
 						},
 					],
 				},
+				include: {
+					sender: {
+						select: {
+							uuid: true,
+							username: true,
+							avatarPath: true,
+						},
+					},
+					receiver: {
+						select: {
+							uuid: true,
+							username: true,
+							avatarPath: true,
+						},
+					},
+				},
 				orderBy: { uuid: "desc" },
 			});
 

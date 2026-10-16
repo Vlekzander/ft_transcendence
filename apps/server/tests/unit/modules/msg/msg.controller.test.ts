@@ -11,6 +11,7 @@ import {
 	createReceiveMessagePacket,
 	toMessageDTO,
 } from "@ft_transcendence/shared";
+import { toPublicUserDTO } from "@/modules/shared/shared.mapper";
 
 vi.mock("@/modules/msg/msg.service", () => ({
 	msgService: {
@@ -26,6 +27,10 @@ vi.mock("@/middlewares/auth.middleware", () => ({
 
 vi.mock("@/websocket.server", () => ({
 	sendToWs: vi.fn(),
+}));
+
+vi.mock("@/modules/shared/shared.mapper", () => ({
+	toPublicUserDTO: vi.fn((user) => user),
 }));
 
 vi.mock("@ft_transcendence/shared", async () => {
@@ -51,6 +56,7 @@ const mockedSendMessage = vi.mocked(msgService.sendMessage);
 const mockedSendToWs = vi.mocked(sendToWs);
 const mockedCreateReceiveMessagePacket = vi.mocked(createReceiveMessagePacket);
 const mockedToMessageDTO = vi.mocked(toMessageDTO);
+const mockedToPublicUserDTO = vi.mocked(toPublicUserDTO);
 
 function createResponseMock() {
 	const res = {
@@ -124,13 +130,23 @@ describe("msg/msg.controller", () => {
 	});
 
 	describe("getMsgPreview", () => {
-		it("transforms preview records via toMessageDTO and returns HTTP 200", async () => {
+		it("transforms preview records via toMessageDTO and toPublicUserDTO and returns HTTP 200", async () => {
 			const rawMessages = [
 				{
 					uuid: "m-1",
 					senderId: "u-1",
 					receiverId: "u-2",
 					content: "Hello",
+					sender: {
+						uuid: "u-1",
+						username: "user1",
+						avatarPath: "path1",
+					},
+					receiver: {
+						uuid: "u-2",
+						username: "user2",
+						avatarPath: "path2",
+					},
 					createdAt: new Date(),
 				},
 			];
@@ -149,14 +165,27 @@ describe("msg/msg.controller", () => {
 				"u-2",
 				"Hello",
 			);
+			expect(mockedToPublicUserDTO).toHaveBeenCalledTimes(2);
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.send).toHaveBeenCalledWith({
 				preview: [
 					{
-						uuid: "m-1",
-						senderId: "u-1",
-						receiverId: "u-2",
-						content: "Hello",
+						message: {
+							uuid: "m-1",
+							senderId: "u-1",
+							receiverId: "u-2",
+							content: "Hello",
+						},
+						sender: {
+							uuid: "u-1",
+							username: "user1",
+							avatarPath: "path1",
+						},
+						receiver: {
+							uuid: "u-2",
+							username: "user2",
+							avatarPath: "path2",
+						},
 					},
 				],
 			});
