@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import type {
 	LobbyResponseDTO,
@@ -28,6 +28,7 @@ export default function LobbyPage() {
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [showSettings, setShowSettings] = useState(false);
 	const [copied, setCopied] = useState(false);
+	const isLeaving = useRef(false);
 	const users = useUsers([
 		...(lobby?.connectedPlayers ?? []),
 		...(lobby?.bannedPlayers ?? []),
@@ -37,6 +38,11 @@ export default function LobbyPage() {
 		if (!uuid) return;
 		const res = await getLobby(uuid);
 		if (res.ok) {
+			if (user && !res.data.connectedPlayers.includes(user.uuid)) {
+				if (!isLeaving.current)
+					navigate(`/lobbies/join/${res.data.joinCode}`, { replace: true });
+				return;
+			}
 			setLobby(res.data);
 			setError(null);
 		} else if (res.status === 403 || res.status === 404) {
@@ -44,7 +50,7 @@ export default function LobbyPage() {
 		} else {
 			setError(res.error);
 		}
-	}, [uuid, navigate]);
+	}, [uuid, user, navigate]);
 
 	useEffect(() => {
 		const initial = setTimeout(() => void refresh(), 0);
@@ -99,9 +105,13 @@ export default function LobbyPage() {
 	};
 
 	const handleLeave = async () => {
+		isLeaving.current = true;
 		const res = await leaveLobby(uuid);
 		if (res.ok) navigate("/lobbies");
-		else setActionError(res.error);
+		else {
+			isLeaving.current = false;
+			setActionError(res.error);
+		}
 	};
 
 	const handleSave = async (settings: UpdateLobbyDTO) => {
