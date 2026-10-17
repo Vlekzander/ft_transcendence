@@ -15,7 +15,7 @@ export default function LobbiesPage() {
 	const navigate = useNavigate();
 	const [lobbies, setLobbies] = useState<LobbyResponseDTO[]>([]);
 	const [isLoading, setIsLoading] = useState(true);
-	const guard = useActiveLobbyGuard();
+	const alreadyInLobbyGuard = useActiveLobbyGuard();
 	const users = useUsers(lobbies.map((lobby) => lobby.hostId));
 	const [listError, setListError] = useState<string | null>(null);
 	const [joinError, setJoinError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function LobbiesPage() {
 	}, []);
 
 	const handleJoin = (joinCode: string) =>
-		guard.run(async () => {
+		alreadyInLobbyGuard.run(async () => {
 			setJoinError(null);
 			const res = await joinLobby(joinCode);
 			if (res.ok) navigate(`/lobbies/${res.data.uuid}`);
@@ -49,12 +49,12 @@ export default function LobbiesPage() {
 	}, [refresh]);
 	return (
 		<div className="p-5 flex flex-col gap-6">
-			{guard.isPrompting && (
+			{alreadyInLobbyGuard.isPrompting && (
 				<ActiveLobbyPrompt
-					error={guard.error}
-					isBusy={guard.isBusy}
-					onContinue={() => void guard.confirm()}
-					onBack={guard.goBack}
+					error={alreadyInLobbyGuard.error}
+					isBusy={alreadyInLobbyGuard.isBusy}
+					onContinue={() => void alreadyInLobbyGuard.confirm()}
+					onBack={alreadyInLobbyGuard.goBack}
 				/>
 			)}
 			<div className="flex items-center justify-between gap-3">
