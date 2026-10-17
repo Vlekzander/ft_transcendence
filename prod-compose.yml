@@ -7,8 +7,8 @@ services:
             context: .
             dockerfile: ./docker/prod-frontend.Dockerfile
         ports:
-            - "80:80"
-            - "443:443"
+            # - "80:80"
+            - "5443:443"
         networks:
             - ft_network-bf-prod
         depends_on:
