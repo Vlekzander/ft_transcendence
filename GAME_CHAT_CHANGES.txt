@@ -1,0 +1,13 @@
+GAME_CHAT_CHANGES.txt
+GAME_CHAT_INTEGRATION.md
+apps/server/src/modules/game-chat/game-chat.service.ts
+apps/server/src/modules/game-chat/game-chat.socket.ts
+apps/server/src/socket.ts
+apps/server/tests/integration/game-chat.websocket.integration.test.ts
+apps/server/tests/unit/modules/game-chat/game-chat.service.test.ts
+apps/web/src/features/game/components/GameChat.tsx
+apps/web/src/features/game/pages/GamePage.tsx
+apps/web/src/features/lobby/pages/LobbyPage.tsx
+apps/web/src/features/websocket/context/WebSocketContext.tsx
+apps/web/src/main.tsx
+packages/shared/src/schemas/ws.schemas.ts

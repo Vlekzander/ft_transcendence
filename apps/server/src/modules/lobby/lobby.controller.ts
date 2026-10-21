@@ -60,7 +60,7 @@ export async function getByUuidLobbyController(
 		const { uuid } = req.parsedParams!;
 		const lobby = await lobbyService.getLobbyByUuid(uuid);
 		if (!lobby) throw new LobbyNotFoundError();
-		if (!lobby.connectedPlayers.has(userId))
+		if (lobby.bannedPlayers.has(userId))
 			throw new UnauthorizedLobbyAccessError();
 		const dto = toLobbyResponseDTO(lobby, lobby.hostId === userId);
 		res.status(200).json({ data: dto });

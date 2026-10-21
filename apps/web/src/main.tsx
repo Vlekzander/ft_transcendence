@@ -22,7 +22,7 @@ import FriendsPage from "./features/friends/pages/FriendsPage";
 import MsgPage from "./features/msg/pages/MsgPage";
 import LobbiesPage from "./features/lobby/pages/LobbiesPage";
 import CreateLobbyPage from "./features/lobby/pages/CreateLobbyPage";
-import JoinLobbyPage from "./features/lobby/pages/JoinLobbyPage";
+//import JoinLobbyPage from "./features/lobby/pages/JoinLobbyPage";
 
 const router = createBrowserRouter([
 	{
@@ -32,6 +32,8 @@ const router = createBrowserRouter([
 			{
 				element: <RequireAuth />,
 				children: [
+					{ path: "/game", element: <GamePage /> },
+					{ path: "/game/:uuid", element: <GamePage /> },
 					{
 						path: "/account",
 						element: <AccountPage />,
@@ -54,7 +56,7 @@ const router = createBrowserRouter([
 					},
 					{
 						path: "/lobbies/join/:joinCode",
-						element: <JoinLobbyPage />,
+						element: <GamePage />,
 					},
 					{
 						path: "/lobbies/:uuid/game",

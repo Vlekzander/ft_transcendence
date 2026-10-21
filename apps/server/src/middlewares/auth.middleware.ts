@@ -5,6 +5,7 @@ import {
 	CannotEditUserError,
 	RequireAuthError,
 } from "../errors";
+import { sharedService } from "@/modules/shared/shared.service";
 
 export function getTokenUuid(req: Request): string | undefined {
 	const token = req.cookies?.token;
@@ -18,20 +19,35 @@ export function getTokenUuid(req: Request): string | undefined {
 	}
 }
 
-function isAuthenticated(req: Request): boolean {
+async function isAuthenticated(req: Request): Promise<boolean> {
 	const uuid = getTokenUuid(req);
 
 	if (!uuid) return false;
+
+	const user = await sharedService.getUserById(uuid);
+	if (!user) return false;
 	return true;
 }
 
-export function requireGuest(req: Request, _res: Response, next: NextFunction) {
-	if (isAuthenticated(req)) return next(new AlreadyAuthError());
+export async function requireGuest(
+	req: Request,
+	_res: Response,
+	next: NextFunction,
+) {
+	const isAuth = await isAuthenticated(req);
+
+	if (isAuth) return next(new AlreadyAuthError());
 	return next();
 }
 
-export function requireAuth(req: Request, _res: Response, next: NextFunction) {
-	if (isAuthenticated(req)) return next();
+export async function requireAuth(
+	req: Request,
+	_res: Response,
+	next: NextFunction,
+) {
+	const isAuth = await isAuthenticated(req);
+
+	if (isAuth) return next();
 	return next(new RequireAuthError());
 }
 
