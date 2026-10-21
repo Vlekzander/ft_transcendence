@@ -19,7 +19,9 @@ export function useActiveLobbyGuard() {
 			const res = await getMyLobby();
 			if (!res.ok || !res.data) return action();
 			if (targetJoinCode && res.data.joinCode === targetJoinCode)
-				return navigate(`/lobbies/${res.data.uuid}`, { replace: true });
+				return navigate(`/lobbies/${res.data.uuid}/game`, {
+					replace: true,
+				});
 			setError(null);
 			setPending({ lobby: res.data, action });
 		},
@@ -39,7 +41,7 @@ export function useActiveLobbyGuard() {
 
 	const goBack = useCallback(() => {
 		if (!pending) return;
-		navigate(`/lobbies/${pending.lobby.uuid}`, { replace: true });
+		navigate(`/lobbies/${pending.lobby.uuid}/game`, { replace: true });
 	}, [pending, navigate]);
 
 	return {

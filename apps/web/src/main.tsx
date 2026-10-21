@@ -22,7 +22,6 @@ import FriendsPage from "./features/friends/pages/FriendsPage";
 import MsgPage from "./features/msg/pages/MsgPage";
 import LobbiesPage from "./features/lobby/pages/LobbiesPage";
 import CreateLobbyPage from "./features/lobby/pages/CreateLobbyPage";
-import LobbyPage from "./features/lobby/pages/LobbyPage";
 import JoinLobbyPage from "./features/lobby/pages/JoinLobbyPage";
 
 const router = createBrowserRouter([
@@ -58,8 +57,8 @@ const router = createBrowserRouter([
 						element: <JoinLobbyPage />,
 					},
 					{
-						path: "/lobbies/:uuid",
-						element: <LobbyPage />,
+						path: "/lobbies/:uuid/game",
+						element: <GamePage />,
 					},
 				],
 			},
@@ -95,11 +94,6 @@ const router = createBrowserRouter([
 			{
 				path: "/user/:uuid",
 				element: <UserPage />,
-			},
-
-			{
-				path: "/game",
-				element: <GamePage />,
 			},
 
 			{

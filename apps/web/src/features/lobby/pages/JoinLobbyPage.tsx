@@ -19,7 +19,7 @@ export default function JoinLobbyPage() {
 		void run(async () => {
 			const res = await joinLobby(joinCode);
 			if (res.ok)
-				navigate(`/lobbies/${res.data.uuid}`, { replace: true });
+				navigate(`/lobbies/${res.data.uuid}/game`, { replace: true });
 			else setError(res.error);
 		}, joinCode);
 	}, [joinCode, navigate, run]);

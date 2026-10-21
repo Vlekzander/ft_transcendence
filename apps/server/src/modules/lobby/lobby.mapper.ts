@@ -3,6 +3,7 @@ import {
 	LobbyVisibility,
 	LobbyResponseDTO,
 } from "@ft_transcendence/shared";
+import type { GamePhase } from "@ft_transcendence/shared";
 
 export type LobbyEntity = {
 	uuid: string;
@@ -14,6 +15,18 @@ export type LobbyEntity = {
 	customWords: string[];
 	connectedPlayers: Set<string>;
 	bannedPlayers: Set<string>;
+	readyPlayers: Set<string>;
+	spectatorPlayers: Set<string>;
+	gameStarted: boolean;
+	gameHasStarted: boolean;
+	gamePhase: GamePhase;
+	round: number;
+	drawerId: string | null;
+	wordChoices: string[];
+	selectedWord: string | null;
+	timerEndsAt: number | null;
+	timeRemainingMs: number;
+	playedThisRound: Set<string>;
 	maxPlayers: number;
 	drawTime: number;
 	numberOfRounds: number;
@@ -35,6 +48,10 @@ export function toLobbyResponseDTO(
 		usingDictionary: lobby.usingDictionary,
 		connectedPlayers: Array.from(lobby.connectedPlayers),
 		bannedPlayers: Array.from(lobby.bannedPlayers),
+		readyPlayers: Array.from(lobby.readyPlayers),
+		spectatorPlayers: Array.from(lobby.spectatorPlayers),
+		gameStarted: lobby.gameStarted,
+		gameHasStarted: lobby.gameHasStarted,
 		maxPlayers: lobby.maxPlayers,
 		drawTime: lobby.drawTime,
 		numberOfRounds: lobby.numberOfRounds,

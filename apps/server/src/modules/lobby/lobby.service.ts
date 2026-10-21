@@ -85,6 +85,18 @@ export class LobbyService {
 			visibility: data.visibility,
 			connectedPlayers: new Set<string>().add(hostId),
 			bannedPlayers: new Set<string>(),
+			readyPlayers: new Set<string>(),
+			spectatorPlayers: new Set<string>(),
+			gameStarted: false,
+			gameHasStarted: false,
+			gamePhase: "WAITING",
+			round: 0,
+			drawerId: null,
+			wordChoices: [],
+			selectedWord: null,
+			timerEndsAt: null,
+			timeRemainingMs: 0,
+			playedThisRound: new Set<string>(),
 			maxPlayers: MAX_PLAYERS,
 			customWords: localCustomWords,
 			usingDictionary: data.usingDictionary,
@@ -131,6 +143,70 @@ export class LobbyService {
 		if (lobby.connectedPlayers.size >= lobby.maxPlayers)
 			throw new LobbyFullError();
 		lobby.connectedPlayers.add(userId);
+		if (lobby.gameHasStarted) lobby.spectatorPlayers.add(userId);
+	}
+
+	async toggleReady(lobbyUuid: string, userId: string): Promise<LobbyEntity> {
+		const lobby = await this.getLobbyByUuid(lobbyUuid);
+		if (!lobby) throw new LobbyNotFoundError();
+		if (!lobby.connectedPlayers.has(userId))
+			throw new UnauthorizedLobbyAccessError();
+		if (lobby.gameStarted) return lobby;
+		if (lobby.readyPlayers.has(userId)) lobby.readyPlayers.delete(userId);
+		else lobby.readyPlayers.add(userId);
+		return lobby;
+	}
+
+	async toggleGame(lobbyUuid: string, userId: string): Promise<LobbyEntity> {
+		const lobby = await this.getLobbyByUuid(lobbyUuid);
+		if (!lobby) throw new LobbyNotFoundError();
+		if (lobby.hostId !== userId) throw new NotHostError();
+		const startingNewGame = !lobby.gameHasStarted;
+		lobby.gameStarted = !lobby.gameStarted;
+		lobby.gameHasStarted = true;
+		if (lobby.gameStarted) {
+			if (startingNewGame) {
+				lobby.spectatorPlayers = new Set(
+					Array.from(lobby.connectedPlayers).filter(
+						(id) => !lobby.readyPlayers.has(id),
+					),
+				);
+			}
+			lobby.gamePhase = lobby.selectedWord ? "DRAWING" : "CHOOSING";
+			lobby.timerEndsAt =
+				Date.now() +
+				(lobby.timeRemainingMs ||
+					(lobby.gamePhase === "DRAWING"
+						? lobby.drawTime
+						: lobby.timeToChooseWord) * 1000);
+			lobby.timeRemainingMs = 0;
+			if (lobby.round === 0) lobby.round = 1;
+			if (
+				!lobby.drawerId ||
+				!lobby.connectedPlayers.has(lobby.drawerId)
+			) {
+				const players = Array.from(lobby.connectedPlayers).filter(
+					(id) => !lobby.spectatorPlayers.has(id),
+				);
+				lobby.drawerId =
+					players[Math.floor(Math.random() * players.length)] ?? null;
+			}
+			if (lobby.wordChoices.length === 0) {
+				lobby.wordChoices = [...lobby.allWords]
+					.sort(() => Math.random() - 0.5)
+					.slice(0, lobby.wordChoicesPerTurn);
+			}
+		} else {
+			lobby.gamePhase = "PAUSED";
+			if (lobby.timerEndsAt) {
+				lobby.timeRemainingMs = Math.max(
+					0,
+					lobby.timerEndsAt - Date.now(),
+				);
+			}
+			lobby.timerEndsAt = null;
+		}
+		return lobby;
 	}
 
 	async leaveLobby(lobbyUuid: string, userId: string): Promise<void> {
@@ -146,6 +222,8 @@ export class LobbyService {
 			return;
 		}
 		lobby.connectedPlayers.delete(userId);
+		lobby.readyPlayers.delete(userId);
+		lobby.spectatorPlayers.delete(userId);
 		if (lobby.hostId === userId) {
 			lobby.hostId = lobby.connectedPlayers.values().next().value!;
 		}
@@ -201,6 +279,8 @@ export class LobbyService {
 		if (!lobby.connectedPlayers.has(targetUserId))
 			throw new UserNotInLobbyError();
 		lobby.connectedPlayers.delete(targetUserId);
+		lobby.readyPlayers.delete(targetUserId);
+		lobby.spectatorPlayers.delete(targetUserId);
 		lobby.bannedPlayers.add(targetUserId);
 	}
 

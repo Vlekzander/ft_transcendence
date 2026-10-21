@@ -40,7 +40,7 @@ export default function LobbiesPage() {
 	const handleJoin = (joinCode: string) =>
 		guard.run(async () => {
 			const res = await joinLobby(joinCode);
-			if (res.ok) navigate(`/lobbies/${res.data.uuid}`);
+			if (res.ok) navigate(`/lobbies/${res.data.uuid}/game`);
 			else setError(res.error);
 		}, joinCode);
 

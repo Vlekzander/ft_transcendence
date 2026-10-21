@@ -4,7 +4,12 @@ export type PacketAction =
 	| "ERROR"
 	| "MESSAGE"
 	| "SEND_MESSAGE"
-	| "RECEIVE_MESSAGE";
+	| "RECEIVE_MESSAGE"
+	| "JOIN_GAME"
+	| "CHOOSE_WORD"
+	| "DRAW_STROKE"
+	| "DRAW_ACTION"
+	| "GAME_STATE";
 
 export interface BasePacket {
 	type: PacketAction;
@@ -34,11 +39,72 @@ export interface ReceiveMessagePacket extends BasePacket {
 	content: string;
 }
 
+export type GamePhase = "WAITING" | "CHOOSING" | "DRAWING" | "PAUSED";
+
+export interface JoinGamePacket extends BasePacket {
+	type: "JOIN_GAME";
+	lobbyUuid: string;
+}
+
+export interface ChooseWordPacket extends BasePacket {
+	type: "CHOOSE_WORD";
+	lobbyUuid: string;
+	word: string;
+}
+
+export interface DrawStrokePacket extends BasePacket {
+	type: "DRAW_STROKE";
+	lobbyUuid: string;
+	from: { x: number; y: number };
+	to: { x: number; y: number };
+	color: string;
+	size: number;
+	eraser: boolean;
+}
+
+export type DrawAction =
+	| {
+			kind: "SHAPE";
+			mode: "rectangle" | "circle";
+			from: { x: number; y: number };
+			to: { x: number; y: number };
+			color: string;
+			size: number;
+			eraser: boolean;
+	  }
+	| { kind: "FILL"; x: number; y: number; color: string }
+	| { kind: "CLEAR" };
+
+export interface DrawActionPacket extends BasePacket {
+	type: "DRAW_ACTION";
+	lobbyUuid: string;
+	action: DrawAction;
+}
+
+export interface GameStatePacket extends BasePacket {
+	type: "GAME_STATE";
+	lobbyUuid: string;
+	phase: GamePhase;
+	round: number;
+	totalRounds: number;
+	playerNumber: number;
+	totalPlayers: number;
+	drawerId: string | null;
+	choices: string[];
+	selectedWord: string | null;
+	timerEndsAt: number | null;
+}
+
 export type AppPacket =
 	| ErrorPacket
 	| MessagePacket
 	| SendMessagePacket
-	| ReceiveMessagePacket;
+	| ReceiveMessagePacket
+	| JoinGamePacket
+	| ChooseWordPacket
+	| DrawStrokePacket
+	| DrawActionPacket
+	| GameStatePacket;
 
 export interface AppWebSocket extends WebSocket {
 	uuid?: string;

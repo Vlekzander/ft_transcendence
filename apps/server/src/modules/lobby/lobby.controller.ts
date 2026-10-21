@@ -106,6 +106,42 @@ export async function leaveLobbyController(
 	}
 }
 
+export async function toggleReadyController(
+	req: ParsedRequest<{ params: typeof LobbyParamsSchema }>,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
+		const lobby = await lobbyService.toggleReady(
+			req.parsedParams!.uuid,
+			userId,
+		);
+		res.status(200).json({ data: toLobbyResponseDTO(lobby) });
+	} catch (err) {
+		next(err);
+	}
+}
+
+export async function startGameController(
+	req: ParsedRequest<{ params: typeof LobbyParamsSchema }>,
+	res: Response,
+	next: NextFunction,
+) {
+	try {
+		const userId = getTokenUuid(req);
+		if (!userId) throw new RequireAuthError();
+		const lobby = await lobbyService.toggleGame(
+			req.parsedParams!.uuid,
+			userId,
+		);
+		res.status(200).json({ data: toLobbyResponseDTO(lobby) });
+	} catch (err) {
+		next(err);
+	}
+}
+
 export async function updateLobbyController(
 	req: ParsedRequest<{
 		params: typeof LobbyParamsSchema;

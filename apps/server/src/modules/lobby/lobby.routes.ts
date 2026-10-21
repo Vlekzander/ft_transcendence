@@ -44,6 +44,20 @@ lobbyRouter.post(
 	lobbyController.leaveLobbyController,
 );
 
+lobbyRouter.post(
+	"/:uuid/ready",
+	requireAuth,
+	validate({ params: LobbyParamsSchema }),
+	lobbyController.toggleReadyController,
+);
+
+lobbyRouter.post(
+	"/:uuid/start",
+	requireAuth,
+	validate({ params: LobbyParamsSchema }),
+	lobbyController.startGameController,
+);
+
 lobbyRouter.put(
 	"/:uuid/settings",
 	requireAuth,

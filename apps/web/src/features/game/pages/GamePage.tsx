@@ -1,11 +1,14 @@
 import Game from "../components/Game";
+import Lobby from "../components/Lobby";
 
 export default function GamePage() {
 	return (
-		<div className="grow flex justify-center items-center gap-4">
-			<div className="grow flex flex-col justify-center items-center gap-2">
-				<h1 className="text-3xl font-bold">Game ID</h1>
-				<Game></Game>
+		<div className="grow min-h-0 flex flex-row items-stretch gap-2">
+			<div className="flex min-h-0 flex-1">
+				<Lobby />
+			</div>
+			<div className="flex min-h-0 flex-1 items-center justify-center">
+				<Game />
 			</div>
 		</div>
 	);

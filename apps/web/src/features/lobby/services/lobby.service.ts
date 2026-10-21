@@ -59,6 +59,12 @@ export const joinLobby = (joinCode: string) =>
 export const leaveLobby = (uuid: string) =>
 	lobbyRequest(`/${uuid}/leave`, "POST");
 
+export const toggleLobbyReady = (uuid: string) =>
+	lobbyRequest<LobbyResponseDTO>(`/${uuid}/ready`, "POST");
+
+export const startLobbyGame = (uuid: string) =>
+	lobbyRequest<LobbyResponseDTO>(`/${uuid}/start`, "POST");
+
 export const updateLobbySettings = (uuid: string, data: UpdateLobbyDTO) =>
 	lobbyRequest<LobbyResponseDTO>(`/${uuid}/settings`, "PUT", data);
 

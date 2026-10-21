@@ -66,7 +66,7 @@ export default function CreateLobbyPage() {
 			setIsSubmitting(true);
 			const res = await createLobby(parsed.data);
 			setIsSubmitting(false);
-			if (res.ok) navigate(`/lobbies/${res.data.uuid}`);
+			if (res.ok) navigate(`/lobbies/${res.data.uuid}/game`);
 			else setError(res.error);
 		});
 	};
