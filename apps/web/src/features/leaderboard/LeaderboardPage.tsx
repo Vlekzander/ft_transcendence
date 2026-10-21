@@ -1,10 +1,13 @@
 //Add some confettis if the current player is 1st ? need dependencies if yes ...
+//Medal or award for the third player ?
 
 import { Trophy, Crown, Medal } from "lucide-react";
 
 import { useAuth } from "../auth/context/AuthContext";
 
 import { useEffect, useState } from "react";
+
+import { Link } from "react-router-dom";
 
 import { AVATARS_PATH } from "../../config";
 
@@ -25,11 +28,8 @@ export default function LeaderboardPage() {
 			.then((data) => setLeaderboard(data.leaderboard));
 	}, []);
 
-	// console.log(currentUser);
-	// console.log(leaderboard);
-
 	return (
-		<div className="p-10">
+		<div className="p-10 ">
 			<h1 className="text-4xl font-bold mb-6 flex items-center gap-3">
 				<Trophy size={33} />
 				Leaderboard
@@ -39,8 +39,9 @@ export default function LeaderboardPage() {
 				{leaderboard.map((player, index) => {
 					const isCurrentUser = user?.uuid === player.uuid;
 					return (
-						<div
+						<Link
 							key={player.uuid}
+							to={`/user/${player.uuid}`}
 							className={`flex items-center justify-between border-2 p-3 transition hover:scale-102 hover:shadow-lg
 							${
 								index === 0
@@ -51,7 +52,7 @@ export default function LeaderboardPage() {
 											? "border-orange-400"
 											: ""
 							}
-							${isCurrentUser ? "border-5 bg-green-50 text-xl font-bold scale-101" : ""}
+							${isCurrentUser ? "border-[3.5px] bg-primary/20 font-bold scale-101" : ""}
 									`}
 						>
 							<div className="flex items-center gap-3">
@@ -96,7 +97,7 @@ export default function LeaderboardPage() {
 							</div>
 
 							<span>{player.wins} wins</span>
-						</div>
+						</Link>
 					);
 				})}
 			</div>

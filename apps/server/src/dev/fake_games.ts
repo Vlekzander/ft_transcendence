@@ -30,7 +30,6 @@ async function main() {
 				{ userId: BOB_ID, score: 5 },
 			],
 		},
-
 		// Alice vs Bob
 		{
 			players: [
@@ -38,7 +37,6 @@ async function main() {
 				{ userId: BOB_ID, score: 8 },
 			],
 		},
-
 		// Alice vs Bob
 		{
 			players: [
@@ -46,7 +44,6 @@ async function main() {
 				{ userId: BOB_ID, score: 7 },
 			],
 		},
-
 		// Tundra vs Alice
 		{
 			players: [
@@ -54,7 +51,6 @@ async function main() {
 				{ userId: ALICE_ID, score: 6 },
 			],
 		},
-
 		// Tundra vs Bob
 		{
 			players: [
@@ -62,7 +58,6 @@ async function main() {
 				{ userId: BOB_ID, score: 11 },
 			],
 		},
-
 		// Tundra vs Alice
 		{
 			players: [
@@ -71,7 +66,6 @@ async function main() {
 			],
 		},
 	];
-
 	for (const gameData of games) {
 		const game = await prisma.game.create({
 			data: {
