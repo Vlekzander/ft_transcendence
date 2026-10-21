@@ -13,10 +13,12 @@ services:
             - ft_network
         ports:
             - 3333:3000
-        env_file:
-            - .env.test
         environment:
             DB_HOST: database
+            DB_NAME: ft_transcendence_test
+            DB_USER: spongebob
+            DB_PASSWORD: krustykrab
+            JWT_SECRET: patrick
         command: npx vitest --watch
         depends_on:
             database:
@@ -26,15 +28,16 @@ services:
         image: postgres:latest
         networks:
             - ft_network
-        env_file:
-            - .env.test
         environment:
-            POSTGRES_DB: ${DB_NAME}
-            POSTGRES_USER: ${DB_USER}
-            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ft_transcendence_test
+            POSTGRES_USER: spongebob
+            POSTGRES_PASSWORD: krustykrab
         healthcheck:
             test:
-                ["CMD-SHELL", "sh -c 'pg_isready -U ${DB_USER} -d ${DB_NAME}'"]
+                [
+                    "CMD-SHELL",
+                    "sh -c 'pg_isready -U spongebob -d ft_transcendence_test'",
+                ]
             interval: 10s
             timeout: 3s
             retries: 3

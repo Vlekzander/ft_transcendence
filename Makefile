@@ -3,7 +3,7 @@ P_DB_PASSWORD ?= $(shell sh -c 'read -p "Database password: " var; echo $$var')
 P_JWT_SECRET ?= $(shell sh -c 'read -p "JWT Secret: " var; echo $$var')
 
 DOCKER = docker compose
-DOCKER-TEST = docker compose --env-file .env.test -f test-compose.yml
+DOCKER-TEST = docker compose -f test-compose.yml
 DOCKER-PROD = docker compose -f prod-compose.yml
 
 all: up
