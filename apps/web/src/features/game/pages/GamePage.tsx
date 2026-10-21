@@ -13,8 +13,4 @@ export default function GamePage() {
 		</div>
 	);
 }
-// anti aliasing canvas
-// add flood-fill
-// forme geo ???
-// add couleurs predef et slots favoris/last
 // check comment rendre le dessin live
