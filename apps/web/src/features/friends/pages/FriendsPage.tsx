@@ -10,10 +10,7 @@ import FriendComponent from "../components/Friend";
 
 function UserPreviewComponent({ user }: { user: PublicUserDTO }) {
 	return (
-		<div
-			key={user.uuid}
-			className="flex items-center justify-between p-3 hover:bg-gray-400/5 transition-colors"
-		>
+		<div className="flex items-center justify-between p-3 hover:bg-gray-400/5 transition-colors">
 			<Link
 				to={`/user/${user.uuid}`}
 				className="flex items-center gap-3 hover:underline"
@@ -111,7 +108,10 @@ export default function FriendsPage() {
 						) : searchResults.length > 0 ? (
 							<div className="divide-y divide-gray-200">
 								{searchResults.map((user) => (
-									<UserPreviewComponent user={user} />
+									<UserPreviewComponent
+										key={user.uuid}
+										user={user}
+									/>
 								))}
 							</div>
 						) : (
