@@ -33,6 +33,8 @@ const router = createBrowserRouter([
 			{
 				element: <RequireAuth />,
 				children: [
+					{ path: "/game", element: <GamePage /> },
+					{ path: "/game/:uuid", element: <GamePage /> },
 					{
 						path: "/account",
 						element: <AccountPage />,
@@ -95,11 +97,6 @@ const router = createBrowserRouter([
 			{
 				path: "/user/:uuid",
 				element: <UserPage />,
-			},
-
-			{
-				path: "/game",
-				element: <GamePage />,
 			},
 
 			{

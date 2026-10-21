@@ -42,6 +42,11 @@ export default function MsgPage() {
 				setLoading(true);
 				setError(null);
 
+				if (!user || user.uuid === uuid) {
+					navigate("/");
+					return;
+				}
+
 				const [userResponse, messagesResponse] = await Promise.all([
 					getUser(uuid),
 					getMessages(uuid),

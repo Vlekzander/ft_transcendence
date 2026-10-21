@@ -1,10 +1,12 @@
-import type { AppPacket } from "@ft_transcendence/shared";
+import { useAuth } from "../../auth/context/AuthContext";
+import { AppPacketSchema, type AppPacket } from "@ft_transcendence/shared";
 import {
 	createContext,
 	useCallback,
 	useContext,
 	useEffect,
 	useRef,
+	useState,
 	type ReactNode,
 } from "react";
 
@@ -12,7 +14,8 @@ type PacketType = AppPacket["type"];
 type PacketHandler = (packet: AppPacket) => void;
 
 interface WebSocketContextValue {
-	sendPacket: (packet: AppPacket) => void;
+	sendPacket: (packet: AppPacket) => boolean;
+	isConnected: boolean;
 	reconnect: () => void;
 	registerHandler: (type: PacketType, handler: PacketHandler) => () => void;
 }
@@ -27,6 +30,9 @@ interface WebSocketProviderProps {
 }
 
 export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
+	const { user } = useAuth();
+	const [isConnected, setIsConnected] = useState(false);
+	const mountedRef = useRef(false);
 	const socketRef = useRef<WebSocket | null>(null);
 	const reconnectTimeoutRef = useRef<number | null>(null);
 	const reconnectAttemptsRef = useRef(0);
@@ -35,13 +41,15 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 
 	const handlersRef = useRef<Map<PacketType, Set<PacketHandler>>>(new Map());
 
-	const clearReconnectTimeout = () => {
+	const clearReconnectTimeout = useCallback(() => {
 		if (reconnectTimeoutRef.current === null) return;
 		window.clearTimeout(reconnectTimeoutRef.current);
 		reconnectTimeoutRef.current = null;
-	};
+	}, []);
 
 	const scheduleReconnect = useCallback(() => {
+		if (!mountedRef.current) return;
+		clearReconnectTimeout();
 		const maxAttempts = 10;
 		const baseDelay = 1000;
 		const maxDelay = 30000;
@@ -56,7 +64,7 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 		reconnectTimeoutRef.current = window.setTimeout(() => {
 			connectRef.current();
 		}, delay);
-	}, []);
+	}, [clearReconnectTimeout]);
 
 	const registerHandler = useCallback(
 		(type: PacketType, handler: PacketHandler) => {
@@ -75,13 +83,23 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	);
 
 	const handlePacket = useCallback((raw: string) => {
-		let packet: AppPacket;
+		let rawJson: unknown;
 		try {
-			packet = JSON.parse(raw);
+			rawJson = JSON.parse(raw);
 		} catch {
 			return;
 		}
 
+		const result = AppPacketSchema.safeParse(rawJson);
+		if (!result.success) {
+			const errorMessages = result.error.issues
+				.map((issue) => `${issue.path.join(".")}: ${issue.message}`)
+				.join(", ");
+			console.warn("Invalid packet from server:", errorMessages);
+			return;
+		}
+
+		const packet: AppPacket = result.data;
 		const set = handlersRef.current.get(packet.type);
 		if (!set) return;
 
@@ -89,15 +107,25 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	}, []);
 
 	const connect = useCallback(() => {
-		if (socketRef.current?.readyState === WebSocket.OPEN) return;
+		if (
+			!mountedRef.current ||
+			socketRef.current?.readyState === WebSocket.OPEN ||
+			socketRef.current?.readyState === WebSocket.CONNECTING
+		)
+			return;
+		clearReconnectTimeout();
 
 		const socket = new WebSocket(wsUrl);
 
 		socket.onopen = () => {
+			if (socketRef.current !== socket) return;
+			setIsConnected(true);
 			reconnectAttemptsRef.current = 0;
 		};
 
 		socket.onclose = () => {
+			if (socketRef.current !== socket) return;
+			setIsConnected(false);
 			socketRef.current = null;
 			scheduleReconnect();
 		};
@@ -111,21 +139,25 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 		};
 
 		socketRef.current = socket;
-	}, [wsUrl, scheduleReconnect]);
+	}, [wsUrl, scheduleReconnect, clearReconnectTimeout, handlePacket]);
 
 	useEffect(() => {
 		connectRef.current = connect;
 	}, [connect]);
 
 	useEffect(() => {
+		mountedRef.current = true;
 		connect();
 
 		return () => {
+			mountedRef.current = false;
 			clearReconnectTimeout();
-			socketRef.current?.close(1000, "Component unmounted");
+			const socket = socketRef.current;
 			socketRef.current = null;
+			socket?.close(1000, "Component unmounted");
 		};
-	}, [connect, clearReconnectTimeout]);
+		// Reopen with the current cookie after login/logout or an account switch.
+	}, [connect, clearReconnectTimeout, user?.uuid]);
 
 	useEffect(() => {
 		const handlePageHide = () => {
@@ -154,19 +186,30 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	}, [connect, clearReconnectTimeout]);
 
 	const sendPacket = useCallback((packet: AppPacket) => {
+		const result = AppPacketSchema.safeParse(packet);
+		if (!result.success) return false;
 		const socket = socketRef.current;
-		if (socket && socket.readyState === WebSocket.OPEN)
-			socket.send(JSON.stringify(packet));
+		if (!socket || socket.readyState !== WebSocket.OPEN) return false;
+		try {
+			socket.send(JSON.stringify(result.data));
+			return true;
+		} catch {
+			return false;
+		}
 	}, []);
 
 	const reconnect = useCallback(() => {
 		clearReconnectTimeout();
 		reconnectAttemptsRef.current = 0;
-		socketRef.current?.close();
+		const socket = socketRef.current;
+		socketRef.current = null;
+		setIsConnected(false);
+		socket?.close();
 		connect();
-	}, [connect]);
+	}, [connect, clearReconnectTimeout]);
 
 	const value: WebSocketContextValue = {
+		isConnected,
 		sendPacket,
 		reconnect,
 		registerHandler,

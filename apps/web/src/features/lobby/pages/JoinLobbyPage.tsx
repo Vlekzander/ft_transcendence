@@ -8,10 +8,10 @@ import { joinLobby } from "../services/lobby.service";
 export default function JoinLobbyPage() {
 	const { joinCode } = useParams<{ joinCode: string }>();
 	const navigate = useNavigate();
-	const guard = useActiveLobbyGuard();
+	const alreadyInLobbyGuard = useActiveLobbyGuard();
 	const [error, setError] = useState<string | null>(null);
 	const hasStarted = useRef(false);
-	const { run } = guard;
+	const { run } = alreadyInLobbyGuard;
 
 	useEffect(() => {
 		if (!joinCode || hasStarted.current) return;
@@ -26,12 +26,12 @@ export default function JoinLobbyPage() {
 
 	return (
 		<>
-			{guard.isPrompting && (
+			{alreadyInLobbyGuard.isPrompting && (
 				<ActiveLobbyPrompt
-					error={guard.error}
-					isBusy={guard.isBusy}
-					onContinue={() => void guard.confirm()}
-					onBack={guard.goBack}
+					error={alreadyInLobbyGuard.error}
+					isBusy={alreadyInLobbyGuard.isBusy}
+					onContinue={() => void alreadyInLobbyGuard.confirm()}
+					onBack={alreadyInLobbyGuard.goBack}
 				/>
 			)}
 			{error ? (

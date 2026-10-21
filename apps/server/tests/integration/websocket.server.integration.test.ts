@@ -213,7 +213,7 @@ describe("websocket server (integration)", () => {
 			const errorPacket = JSON.parse(message);
 			expect(errorPacket).toMatchObject({
 				type: "ERROR",
-				text: "Unknown packet type: UNKNOWN_TYPE",
+				text: "Invalid packet: type: Unknown type",
 			});
 
 			socket.close();
