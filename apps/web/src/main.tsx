@@ -19,6 +19,8 @@ import AccountPage from "./features/user/pages/AccountPage";
 import { FriendProvider } from "./features/friends/context/FriendContext";
 import FriendsPage from "./features/friends/pages/FriendsPage";
 import MsgPage from "./features/msg/pages/MsgPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 const router = createBrowserRouter([
 	{
@@ -58,6 +60,14 @@ const router = createBrowserRouter([
 			{
 				path: "*",
 				element: <NotFoundPage />,
+			},
+			{
+				path: "privacy",
+				element: <PrivacyPolicy />,
+			},
+			{
+				path: "tos",
+				element: <TermsOfService />,
 			},
 			{
 				path: "/not-found",
