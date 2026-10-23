@@ -252,13 +252,15 @@ export default function LobbyPage() {
 					</ul>
 				)}
 			</section>
-			{showSettings && (
-				<LobbySettingsModal
-					lobby={lobby}
-					onSave={handleSave}
-					onClose={() => setShowSettings(false)}
-				/>
-			)}
-		</div>
+			{
+				showSettings && (
+					<LobbySettingsModal
+						lobby={lobby}
+						onSave={handleSave}
+						onClose={() => setShowSettings(false)}
+					/>
+				)
+			}
+		</div >
 	);
 }
