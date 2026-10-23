@@ -16,17 +16,18 @@ import type {
 	GameStatePacket,
 	JoinGamePacket,
 } from "@ft_transcendence/shared";
-import { getLobby } from "../../lobby/services/lobby.service";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useWebSocket } from "../../websocket/context/WebSocketContext";
 import { useWsEvent } from "../../websocket/hooks/useWsEvent";
 
-const LOBBY_REFRESH_INTERVAL_MS = 3000;
+type GameProps = {
+	gameStarted: boolean;
+};
 
-export default function Game() {
+export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const { uuid } = useParams<{ uuid: string }>();
 	const { user } = useAuth();
-	const { sendPacket } = useWebSocket();
+	const { sendPacket, isConnected } = useWebSocket();
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 	const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -44,7 +45,7 @@ export default function Game() {
 	const [shapeMode, setShapeMode] = useState<
 		"freehand" | "rectangle" | "circle"
 	>("freehand");
-	const [gameStarted, setGameStarted] = useState(false);
+	const [gameStarted, setGameStarted] = useState(lobbyGameStarted);
 	const [phase, setPhase] = useState<GamePhase>("WAITING");
 	const [drawerId, setDrawerId] = useState<string | null>(null);
 	const [choices, setChoices] = useState<string[]>([]);
@@ -144,24 +145,14 @@ export default function Game() {
 	useWsEvent("DRAW_ACTION", handleRemoteAction);
 
 	useEffect(() => {
-		if (!uuid) return;
-		const refresh = () => {
-			void getLobby(uuid).then((res) => {
-				if (res.ok) setGameStarted(res.data.gameStarted);
-			});
-		};
-		refresh();
-		const interval = setInterval(refresh, LOBBY_REFRESH_INTERVAL_MS);
-		return () => clearInterval(interval);
-	}, [uuid]);
+		setGameStarted(lobbyGameStarted);
+	}, [lobbyGameStarted]);
 
 	useEffect(() => {
-		if (!uuid) return;
+		if (!uuid || !isConnected) return;
 		const packet: JoinGamePacket = { type: "JOIN_GAME", lobbyUuid: uuid };
 		sendPacket(packet);
-		const interval = setInterval(() => sendPacket(packet), 1000);
-		return () => clearInterval(interval);
-	}, [sendPacket, uuid]);
+	}, [sendPacket, uuid, isConnected]);
 
 	useEffect(() => {
 		if (!timerEndsAt) return;

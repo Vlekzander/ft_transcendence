@@ -14,6 +14,12 @@ import {
 	UnauthorizedLobbyAccessError,
 } from "@/errors";
 import { lobbyService } from "./lobby.service";
+import { notifyLobbiesChanged, notifyLobbyUpdated } from "./lobby.events";
+import {
+	broadcastState,
+	scheduleRoundEnd,
+	stopRoundTimer,
+} from "./game.socket";
 import { getTokenUuid } from "@/middlewares/auth.middleware";
 
 type CreateLobbyRequest = ParsedRequest<{ body: typeof CreateLobbySchema }>;
@@ -29,6 +35,7 @@ export async function createLobbyController(
 		const data = req.parsedBody!;
 		const lobby = await lobbyService.createLobby(userId, data);
 		const dto = toLobbyResponseDTO(lobby);
+		notifyLobbiesChanged();
 		res.status(201).json({ data: dto });
 	} catch (err) {
 		next(err);
@@ -83,6 +90,7 @@ export async function joinLobbyController(
 			throw new LobbyNotFoundError();
 		}
 		await lobbyService.joinLobby(lobby.uuid, userId);
+		notifyLobbyUpdated(lobby);
 		const dto = toLobbyResponseDTO(lobby);
 		res.status(200).json({ data: dto });
 	} catch (err) {
@@ -99,7 +107,14 @@ export async function leaveLobbyController(
 		const userId = getTokenUuid(req);
 		if (!userId) throw new RequireAuthError();
 		const { uuid: lobbyUuid } = req.parsedParams!;
+		const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
 		await lobbyService.leaveLobby(lobbyUuid, userId);
+		if (lobby && lobby.connectedPlayers.size > 0)
+			notifyLobbyUpdated(lobby);
+		else {
+			stopRoundTimer(lobbyUuid);
+			notifyLobbiesChanged();
+		}
 		res.status(200).json({ message: "Left lobby successfully" });
 	} catch (err) {
 		next(err);
@@ -118,6 +133,7 @@ export async function toggleReadyController(
 			req.parsedParams!.uuid,
 			userId,
 		);
+		notifyLobbyUpdated(lobby);
 		res.status(200).json({ data: toLobbyResponseDTO(lobby) });
 	} catch (err) {
 		next(err);
@@ -136,6 +152,10 @@ export async function startGameController(
 			req.parsedParams!.uuid,
 			userId,
 		);
+		if (lobby.gameStarted) scheduleRoundEnd(lobby);
+		else stopRoundTimer(lobby.uuid);
+		broadcastState(lobby);
+		notifyLobbyUpdated(lobby);
 		res.status(200).json({ data: toLobbyResponseDTO(lobby) });
 	} catch (err) {
 		next(err);
@@ -161,6 +181,7 @@ export async function updateLobbyController(
 			userId,
 		);
 		const dto = toLobbyResponseDTO(lobby, lobby.hostId === userId);
+		notifyLobbyUpdated(lobby);
 		res.status(200).json({ data: dto });
 	} catch (err) {
 		next(err);
@@ -181,6 +202,8 @@ export async function banLobbyController(
 		const { uuid: lobbyUuid } = req.parsedParams!;
 		const { userId: targetUserId } = req.parsedBody!;
 		await lobbyService.banLobby(lobbyUuid, userId, targetUserId);
+		const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
+		if (lobby) notifyLobbyUpdated(lobby, [targetUserId]);
 		res.status(200).json({ message: "Lobby banned successfully" });
 	} catch (err) {
 		next(err);
@@ -201,6 +224,8 @@ export async function unbanLobbyController(
 		const { uuid: lobbyUuid } = req.parsedParams!;
 		const { userId: targetUserId } = req.parsedBody!;
 		await lobbyService.unbanLobby(lobbyUuid, userId, targetUserId);
+		const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
+		if (lobby) notifyLobbyUpdated(lobby);
 		res.status(200).json({ message: "Lobby unbanned successfully" });
 	} catch (err) {
 		next(err);

@@ -1,5 +1,6 @@
 import { WebSocket } from "ws";
 import z from "zod";
+import { LobbyResponseSchema } from "./lobby.schemas";
 
 export const ErrorPacketSchema = z.object({
 	type: z.literal("ERROR"),
@@ -90,7 +91,15 @@ export const GameStatePacketSchema = z.object({
 	timerEndsAt: z.number().nullable(),
 });
 
-// Game chat uses separate packets and never persists message history.
+export const LobbyUpdatedPacketSchema = z.object({
+	type: z.literal("LOBBY_UPDATED"),
+	lobby: LobbyResponseSchema,
+});
+
+export const LobbiesChangedPacketSchema = z.object({
+	type: z.literal("LOBBIES_CHANGED"),
+});
+
 export const SendGameChatPacketSchema = z.object({
 	type: z.literal("SEND_GAME_CHAT"),
 	roomId: z.string().min(1).max(100),
@@ -136,6 +145,8 @@ export const AppPacketSchema = z.discriminatedUnion(
 		DrawStrokePacketSchema,
 		DrawActionPacketSchema,
 		GameStatePacketSchema,
+		LobbyUpdatedPacketSchema,
+		LobbiesChangedPacketSchema,
 		SendGameChatPacketSchema,
 		GameChatMessagePacketSchema,
 		GameChatGuessPacketSchema,
@@ -155,6 +166,8 @@ export type DrawAction = z.infer<typeof DrawActionSchema>;
 export type DrawActionPacket = z.infer<typeof DrawActionPacketSchema>;
 export type GamePhase = GameStatePacket["phase"];
 export type GameStatePacket = z.infer<typeof GameStatePacketSchema>;
+export type LobbyUpdatedPacket = z.infer<typeof LobbyUpdatedPacketSchema>;
+export type LobbiesChangedPacket = z.infer<typeof LobbiesChangedPacketSchema>;
 export type AppPacket = z.infer<typeof AppPacketSchema>;
 
 export type PacketAction = AppPacket["type"];

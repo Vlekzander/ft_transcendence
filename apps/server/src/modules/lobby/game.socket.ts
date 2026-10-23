@@ -9,6 +9,7 @@ import type {
 import { registerPacketHandler, sendToWs } from "../../websocket.server";
 import { lobbyService } from "./lobby.service";
 import type { LobbyEntity } from "./lobby.mapper";
+import { notifyLobbyUpdated } from "./lobby.events";
 
 const roundTimers = new Map<string, NodeJS.Timeout>();
 
@@ -46,7 +47,7 @@ function statePacket(lobby: LobbyEntity, viewerId?: string): GameStatePacket {
 	};
 }
 
-function scheduleRoundEnd(lobby: LobbyEntity) {
+export function scheduleRoundEnd(lobby: LobbyEntity) {
 	const oldTimer = roundTimers.get(lobby.uuid);
 	if (oldTimer) clearTimeout(oldTimer);
 	if (!lobby.timerEndsAt) return;
@@ -87,6 +88,7 @@ function scheduleRoundEnd(lobby: LobbyEntity) {
 				lobby.spectatorPlayers.clear();
 				roundTimers.delete(lobby.uuid);
 				broadcastState(lobby);
+				notifyLobbyUpdated(lobby);
 				return;
 			}
 
@@ -111,6 +113,12 @@ function scheduleRoundEnd(lobby: LobbyEntity) {
 		Math.max(0, lobby.timerEndsAt - Date.now()),
 	);
 	roundTimers.set(lobby.uuid, timer);
+}
+
+export function stopRoundTimer(lobbyUuid: string) {
+	const timer = roundTimers.get(lobbyUuid);
+	if (timer) clearTimeout(timer);
+	roundTimers.delete(lobbyUuid);
 }
 
 async function handleJoinGame(ws: AppWebSocket, packet: JoinGamePacket) {
@@ -156,7 +164,7 @@ async function handleChooseWord(ws: AppWebSocket, packet: ChooseWordPacket) {
 	broadcastState(lobby);
 }
 
-function broadcastState(lobby: LobbyEntity) {
+export function broadcastState(lobby: LobbyEntity) {
 	for (const userId of lobby.connectedPlayers)
 		sendToWs(userId, statePacket(lobby, userId));
 }

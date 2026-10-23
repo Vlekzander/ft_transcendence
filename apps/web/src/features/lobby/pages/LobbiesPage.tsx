@@ -1,15 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
 import { MAX_PLAYERS, type LobbyResponseDTO } from "@ft_transcendence/shared";
 import { Plus, RefreshCw, ChevronRight } from "lucide-react";
 import { joinLobby, listLobbies } from "../services/lobby.service";
 import { useUsers } from "../hooks/useUsers";
 import ActiveLobbyPrompt from "../components/ActiveLobbyPrompt";
+import { useLobbiesChanged } from "../hooks/useLobbiesChanged";
 import { useActiveLobbyGuard } from "../hooks/useActiveLobbyGuard";
 import JoinLobbyViaField from "../components/JoinLobbyViaField";
 import CreateLobbyModal from "../components/CreateLobbyModal";
-
-const REFRESH_INTERVAL_MS = 5000;
 
 export default function LobbiesPage() {
 	const navigate = useNavigate();
@@ -39,14 +38,7 @@ export default function LobbiesPage() {
 			else setJoinError(res.error);
 		}, joinCode);
 
-	useEffect(() => {
-		const initial = setTimeout(() => void refresh(), 0);
-		const interval = setInterval(() => void refresh(), REFRESH_INTERVAL_MS);
-		return () => {
-			clearTimeout(initial);
-			clearInterval(interval);
-		};
-	}, [refresh]);
+	useLobbiesChanged(refresh);
 	return (
 		<div className="p-5 flex flex-col gap-6">
 			{alreadyInLobbyGuard.isPrompting && (

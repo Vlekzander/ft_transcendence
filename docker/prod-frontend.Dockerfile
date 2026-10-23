@@ -13,7 +13,7 @@ COPY apps/web ./apps/web
 COPY packages/shared ./packages/shared
 
 ENV VITE_API_URL=/api
-ENV VITE_WS_URL=wss://localhost/websocket
+ENV VITE_WS_URL=wss://localhost:5443/websocket
 
 RUN npm run build --workspace=@ft_transcendence/shared
 RUN npm run build --workspace=@ft_transcendence/web
