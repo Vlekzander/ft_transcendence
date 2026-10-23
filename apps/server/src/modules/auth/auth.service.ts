@@ -7,6 +7,7 @@ import {
 	DuplicateElementError,
 	DuplicateEmailError,
 	DuplicateUsernameError,
+	InactiveAccountError,
 	InvalidCredentialsError,
 } from "../../errors";
 import {
@@ -51,14 +52,16 @@ export class AuthService {
 			select: {
 				...userDtoSelect,
 				password: true,
+				isActive: true,
 			},
 		});
 
 		if (!result) throw new InvalidCredentialsError();
 		const valid = await compareHash(data.password, result.password);
 		if (!valid) throw new InvalidCredentialsError();
+		if (!result.isActive) throw new InactiveAccountError();
 
-		const { password: _password, ...rest } = result;
+		const { password: _password, isActive: _isActive, ...rest } = result;
 		return rest;
 	}
 }

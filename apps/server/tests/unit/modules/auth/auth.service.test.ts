@@ -199,6 +199,7 @@ describe("auth/auth.service", () => {
 				select: {
 					...userDtoSelect,
 					password: true,
+					isActive: true,
 				},
 			});
 		});
@@ -207,6 +208,7 @@ describe("auth/auth.service", () => {
 			mockedFindUnique.mockResolvedValue({
 				...user,
 				password: "hashed-password",
+				isActive: true,
 			} as any);
 			mockedCompareHash.mockResolvedValue(false);
 
@@ -221,10 +223,26 @@ describe("auth/auth.service", () => {
 			);
 		});
 
-		it("Returns user entity without password when credentials are valid", async () => {
+		it("Throws InactiveAccountError when user account is inactive", async () => {
 			mockedFindUnique.mockResolvedValue({
 				...user,
 				password: "hashed-password",
+				isActive: false,
+			} as any);
+			mockedCompareHash.mockResolvedValue(true);
+
+			await expect(
+				service.login({ username: "user", password: "password" }),
+			).rejects.toMatchObject({
+				name: "InactiveAccountError",
+			});
+		});
+
+		it("Returns user entity without password and isActive when credentials are valid and user is active", async () => {
+			mockedFindUnique.mockResolvedValue({
+				...user,
+				password: "hashed-password",
+				isActive: true,
 			} as any);
 			mockedCompareHash.mockResolvedValue(true);
 
@@ -235,6 +253,7 @@ describe("auth/auth.service", () => {
 
 			expect(result).toEqual(user);
 			expect(result).not.toHaveProperty("password");
+			expect(result).not.toHaveProperty("isActive");
 		});
 	});
 });
