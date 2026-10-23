@@ -24,6 +24,7 @@ vi.mock("@/modules/auth/auth.service", () => ({
 vi.mock("@/modules/shared/shared.service", () => ({
 	sharedService: {
 		getUserById: vi.fn(),
+		validateUser: vi.fn(),
 	},
 }));
 
@@ -40,6 +41,7 @@ vi.mock("@/modules/auth/auth.mapper", () => ({
 const mockedRegister = vi.mocked(authService.register);
 const mockedLogin = vi.mocked(authService.login);
 const mockedGetUserById = vi.mocked(sharedService.getUserById);
+const mockedValidateUser = vi.mocked(sharedService.validateUser);
 const mockedGenerateAccessToken = vi.mocked(generateAccessToken);
 const mockedValidateAccessToken = vi.mocked(validateAccessToken);
 const mockedToUserResponseDTO = vi.mocked(toUserResponseDTO);
@@ -234,6 +236,7 @@ describe("auth/auth.controller", () => {
 				sub: "unknown-uuid",
 			} as any);
 			mockedGetUserById.mockResolvedValue(null);
+			mockedValidateUser.mockResolvedValue(false);
 
 			const req = {
 				cookies: {
@@ -255,11 +258,12 @@ describe("auth/auth.controller", () => {
 			});
 		});
 
-		it("Returns the authenticated user when the token is valid", async () => {
+		it("Returns unauthenticated when the user is inactive", async () => {
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "user-uuid",
 			} as any);
 			mockedGetUserById.mockResolvedValue(user as any);
+			mockedValidateUser.mockResolvedValue(false);
 
 			const req = {
 				cookies: {
@@ -273,6 +277,32 @@ describe("auth/auth.controller", () => {
 			await whoami(req, res as any, next);
 
 			expect(mockedGetUserById).toHaveBeenCalledWith("user-uuid");
+			expect(mockedValidateUser).toHaveBeenCalledWith("user-uuid");
+			expect(res.json).toHaveBeenCalledWith({
+				authenticated: false,
+			});
+		});
+
+		it("Returns the authenticated user when the token is valid and user is active", async () => {
+			mockedValidateAccessToken.mockReturnValue({
+				sub: "user-uuid",
+			} as any);
+			mockedGetUserById.mockResolvedValue(user as any);
+			mockedValidateUser.mockResolvedValue(true);
+
+			const req = {
+				cookies: {
+					token: "access-token",
+				},
+			} as any;
+
+			const res = createResponseMock();
+			const next = vi.fn();
+
+			await whoami(req, res as any, next);
+
+			expect(mockedGetUserById).toHaveBeenCalledWith("user-uuid");
+			expect(mockedValidateUser).toHaveBeenCalledWith("user-uuid");
 			expect(mockedToUserResponseDTO).toHaveBeenCalledWith(user);
 			expect(res.status).toHaveBeenCalledWith(200);
 			expect(res.json).toHaveBeenCalledWith({

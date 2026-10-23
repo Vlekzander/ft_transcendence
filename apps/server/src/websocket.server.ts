@@ -8,6 +8,7 @@ import { Server } from "http";
 import { RawData, WebSocket, WebSocketServer } from "ws";
 import { validateAccessToken } from "./utils/jwt.util";
 import { registerAllSockets } from "./socket";
+import { sharedService } from "./modules/shared/shared.service";
 
 const HEARTBEAT_INTERVAL = 45000;
 
@@ -49,8 +50,13 @@ export function sendToWs(uuid: string, packet: AppPacket) {
 	for (const socket of sockets) socket.send(JSON.stringify(packet));
 }
 
-function addSocketToPresence(ws: AppWebSocket) {
+async function addSocketToPresence(ws: AppWebSocket) {
 	if (!ws.uuid) return;
+
+	const user = await sharedService.getUserById(ws.uuid);
+	const isActive = await sharedService.validateUser(ws.uuid);
+
+	if (!user || !isActive) return;
 
 	const sockets = presence.get(ws.uuid) ?? new Set<AppWebSocket>();
 
@@ -145,11 +151,10 @@ export const setupWebSocketServer = (httpserver: Server) => {
 
 				ws.uuid = payload.sub?.toString();
 			}
+			addSocketToPresence(ws);
 		} catch (error) {
 			if (error instanceof Error) sendError(ws, error.message);
 		}
-
-		addSocketToPresence(ws);
 
 		const heartbeatInterval = startHeartbeat(ws);
 

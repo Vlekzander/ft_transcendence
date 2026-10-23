@@ -24,9 +24,8 @@ async function isAuthenticated(req: Request): Promise<boolean> {
 
 	if (!uuid) return false;
 
-	const user = await sharedService.getUserById(uuid);
-	if (!user) return false;
-	return true;
+	const isActive = await sharedService.validateUser(uuid);
+	return isActive;
 }
 
 export async function requireGuest(
@@ -46,6 +45,7 @@ export async function requireAuth(
 	next: NextFunction,
 ) {
 	const isAuth = await isAuthenticated(req);
+	console.log(isAuth);
 
 	if (isAuth) return next();
 	return next(new RequireAuthError());

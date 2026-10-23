@@ -61,7 +61,7 @@ test:
 	@$(DOCKER-TEST) run --rm backend npm run test
 
 test-coverage:
-	@$(DOCKER) --rm backend npm run test:coverage
+	@$(DOCKER) run --rm backend npm run test:coverage
 
 test-unit:
 	@$(DOCKER) run --rm backend npm run test:unit
