@@ -107,11 +107,6 @@ export default function PrivacyPolicy() {
 						</li>
 						<li>Respond to support or data-related requests.</li>
 					</ul>
-					<p className="text-gray-600 mt-2">
-						We do not sell your personal data. We do not share it
-						with third parties for commercial or advertising
-						purposes.
-					</p>
 				</section>
 
 				<section className="flex flex-col gap-2 border border-gray-300 p-4 sm:p-6 bg-background">
