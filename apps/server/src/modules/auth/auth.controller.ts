@@ -69,7 +69,11 @@ export async function whoami(req: Request, res: Response, next: NextFunction) {
 		const payload = validateAccessToken(token);
 
 		const user = await sharedService.getUserById(payload.sub as string);
-		if (!user) return res.status(200).json({ authenticated: false });
+		const isActive = await sharedService.validateUser(
+			payload.sub as string,
+		);
+		if (!user || !isActive)
+			return res.status(200).json({ authenticated: false });
 
 		const dto = toUserResponseDTO(user);
 		res.status(200).json({ authenticated: true, user: dto });

@@ -24,6 +24,13 @@ vi.mock("@/modules/msg/msg.service", () => ({
 	},
 }));
 
+vi.mock("@/modules/shared/shared.service", () => ({
+	sharedService: {
+		getUserById: vi.fn().mockResolvedValue({ uuid: "user-uuid" }),
+		validateUser: vi.fn().mockResolvedValue(true),
+	},
+}));
+
 const mockedSendMessage = vi.mocked(msgService.sendMessage);
 const JWT_SECRET = "websocket-test-secret";
 
