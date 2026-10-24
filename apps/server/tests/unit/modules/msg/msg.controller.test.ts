@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getMsgHistory, handleMessage } from "@/modules/msg/msg.controller";
+import {
+	getMsgHistory,
+	getMsgPreview,
+	handleMessage,
+} from "@/modules/msg/msg.controller";
 import { msgService } from "@/modules/msg/msg.service";
 import { getTokenUuid } from "@/middlewares/auth.middleware";
 import { sendToWs } from "@/websocket.server";
@@ -7,11 +11,13 @@ import {
 	createReceiveMessagePacket,
 	toMessageDTO,
 } from "@ft_transcendence/shared";
+import { toPublicUserDTO } from "@/modules/shared/shared.mapper";
 
 vi.mock("@/modules/msg/msg.service", () => ({
 	msgService: {
 		sendMessage: vi.fn(),
 		getConversation: vi.fn(),
+		getPreview: vi.fn(),
 	},
 }));
 
@@ -21,6 +27,10 @@ vi.mock("@/middlewares/auth.middleware", () => ({
 
 vi.mock("@/websocket.server", () => ({
 	sendToWs: vi.fn(),
+}));
+
+vi.mock("@/modules/shared/shared.mapper", () => ({
+	toPublicUserDTO: vi.fn((user) => user),
 }));
 
 vi.mock("@ft_transcendence/shared", async () => {
@@ -41,10 +51,12 @@ vi.mock("@ft_transcendence/shared", async () => {
 
 const mockedGetTokenUuid = vi.mocked(getTokenUuid);
 const mockedGetConversation = vi.mocked(msgService.getConversation);
+const mockedGetPreview = vi.mocked(msgService.getPreview);
 const mockedSendMessage = vi.mocked(msgService.sendMessage);
 const mockedSendToWs = vi.mocked(sendToWs);
 const mockedCreateReceiveMessagePacket = vi.mocked(createReceiveMessagePacket);
 const mockedToMessageDTO = vi.mocked(toMessageDTO);
+const mockedToPublicUserDTO = vi.mocked(toPublicUserDTO);
 
 function createResponseMock() {
 	const res = {
@@ -109,6 +121,85 @@ describe("msg/msg.controller", () => {
 			const next = vi.fn();
 
 			await getMsgHistory(req, res as any, next);
+
+			expect(next).toHaveBeenCalledOnce();
+			expect(next.mock.calls[0][0]).toMatchObject({
+				name: "RequireAuthError",
+			});
+		});
+	});
+
+	describe("getMsgPreview", () => {
+		it("transforms preview records via toMessageDTO and toPublicUserDTO and returns HTTP 200", async () => {
+			const rawMessages = [
+				{
+					uuid: "m-1",
+					senderId: "u-1",
+					receiverId: "u-2",
+					content: "Hello",
+					sender: {
+						uuid: "u-1",
+						username: "user1",
+						avatarPath: "path1",
+					},
+					receiver: {
+						uuid: "u-2",
+						username: "user2",
+						avatarPath: "path2",
+					},
+					createdAt: new Date(),
+				},
+			];
+			mockedGetTokenUuid.mockReturnValue("u-1");
+			mockedGetPreview.mockResolvedValue(rawMessages as any);
+
+			const req = {} as any;
+			const res = createResponseMock();
+			const next = vi.fn();
+
+			await getMsgPreview(req, res as any, next);
+
+			expect(mockedToMessageDTO).toHaveBeenCalledWith(
+				"m-1",
+				"u-1",
+				"u-2",
+				"Hello",
+			);
+			expect(mockedToPublicUserDTO).toHaveBeenCalledTimes(2);
+			expect(res.status).toHaveBeenCalledWith(200);
+			expect(res.send).toHaveBeenCalledWith({
+				preview: [
+					{
+						message: {
+							uuid: "m-1",
+							senderId: "u-1",
+							receiverId: "u-2",
+							content: "Hello",
+						},
+						sender: {
+							uuid: "u-1",
+							username: "user1",
+							avatarPath: "path1",
+						},
+						receiver: {
+							uuid: "u-2",
+							username: "user2",
+							avatarPath: "path2",
+						},
+					},
+				],
+			});
+			expect(next).not.toHaveBeenCalled();
+		});
+
+		it("forwards RequireAuthError when sender token is missing", async () => {
+			mockedGetTokenUuid.mockReturnValue(undefined);
+
+			const req = {} as any;
+			const res = createResponseMock();
+			const next = vi.fn();
+
+			await getMsgPreview(req, res as any, next);
 
 			expect(next).toHaveBeenCalledOnce();
 			expect(next.mock.calls[0][0]).toMatchObject({
