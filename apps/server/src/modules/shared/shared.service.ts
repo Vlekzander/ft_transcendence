@@ -78,7 +78,7 @@ export class SharedService {
 				select: { isActive: true },
 			});
 
-			if (!result) throw new UnknownUserIdError();
+			if (!result) return false;
 			return result.isActive;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {

@@ -45,7 +45,6 @@ export async function requireAuth(
 	next: NextFunction,
 ) {
 	const isAuth = await isAuthenticated(req);
-	console.log(isAuth);
 
 	if (isAuth) return next();
 	return next(new RequireAuthError());

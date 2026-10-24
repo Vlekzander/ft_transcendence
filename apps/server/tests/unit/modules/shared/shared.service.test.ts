@@ -245,16 +245,6 @@ describe("modules/shared/shared.service", () => {
 			expect(result).toBe(false);
 		});
 
-		it("Throws UnknownUserIdError when no user exists", async () => {
-			mockedFindUnique.mockResolvedValue(null);
-
-			const action = service.validateUser("unknown-uuid");
-
-			await expect(action).rejects.toMatchObject({
-				name: "UnknownUserIdError",
-			});
-		});
-
 		it("Throws InvalidIdError when Prisma raises error P2007", async () => {
 			const error = new Prisma.PrismaClientKnownRequestError("Message", {
 				code: "P2007",
