@@ -18,9 +18,9 @@ import { AuthProvider } from "./features/auth/context/AuthContext";
 import AccountPage from "./features/user/pages/AccountPage";
 import { FriendProvider } from "./features/friends/context/FriendContext";
 import FriendsPage from "./features/friends/pages/FriendsPage";
-import MsgPage from "./features/msg/pages/MsgPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
 
 const router = createBrowserRouter([
 	{
@@ -39,8 +39,12 @@ const router = createBrowserRouter([
 						element: <FriendsPage />,
 					},
 					{
-						path: "/msg/:uuid",
+						path: "/msg",
 						element: <MsgPage />,
+					},
+					{
+						path: "/msg/:uuid",
+						element: <MsgRedirect />,
 					},
 				],
 			},
