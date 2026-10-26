@@ -19,6 +19,7 @@ import {
 	UserBannedFromLobbyError,
 	InvalidElementError,
 	NoWordsErrorInCustomWords,
+	NotEnoughReadyPlayersError,
 } from "@/errors";
 
 export const lobbiesByJoinCode = new Map<string, LobbyEntity>();
@@ -41,7 +42,6 @@ function parseCustomWords(input: string): string[] {
 	return res;
 }
 
-//Fishers-Yates shuffle algorithm
 function mixAllWords(allWords: Set<string>): string[] {
 	const copy = Array.from(allWords);
 
@@ -162,6 +162,8 @@ export class LobbyService {
 		if (!lobby) throw new LobbyNotFoundError();
 		if (lobby.hostId !== userId) throw new NotHostError();
 		const startingNewGame = !lobby.gameHasStarted;
+		if (startingNewGame && lobby.readyPlayers.size < 2)
+			throw new NotEnoughReadyPlayersError();
 		lobby.gameStarted = !lobby.gameStarted;
 		lobby.gameHasStarted = true;
 		if (lobby.gameStarted) {

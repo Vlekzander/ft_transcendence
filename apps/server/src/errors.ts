@@ -147,7 +147,6 @@ export class SelfMessageError extends AppDomainError {
 	}
 }
 
-//Lobby errors
 export class LobbyNotFoundError extends AppDomainError {
 	constructor() {
 		super("Lobby not found");
@@ -194,6 +193,13 @@ export class LobbyFullError extends AppDomainError {
 	constructor() {
 		super("Lobby is full");
 		this.name = "LobbyFullError";
+	}
+}
+
+export class NotEnoughReadyPlayersError extends AppDomainError {
+	constructor() {
+		super("At least 2 players must be ready");
+		this.name = "NotEnoughReadyPlayersError";
 	}
 }
 

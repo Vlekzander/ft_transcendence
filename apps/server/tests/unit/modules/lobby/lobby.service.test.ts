@@ -5,6 +5,7 @@ import {
 	CannotBanHostError,
 	LobbyFullError,
 	LobbyNotFoundError,
+	NotEnoughReadyPlayersError,
 	NotHostError,
 	TooManyCustomWordsError,
 	UnauthorizedLobbyAccessError,
@@ -274,6 +275,32 @@ describe("modules/lobby/lobby.service", () => {
 			await expect(
 				service.unbanLobby(lobby.uuid, user(1), user(2)),
 			).rejects.toThrow(NotHostError);
+		});
+	});
+
+	describe("toggleGame", () => {
+		it("Throws when starting with fewer than 2 ready players", async () => {
+			const lobby = await service.createLobby(HOST, defaults);
+			await service.joinLobby(lobby.uuid, user(1));
+			await service.toggleReady(lobby.uuid, HOST);
+
+			await expect(service.toggleGame(lobby.uuid, HOST)).rejects.toThrow(
+				NotEnoughReadyPlayersError,
+			);
+			expect(lobby.gameStarted).toBe(false);
+			expect(lobby.gameHasStarted).toBe(false);
+		});
+
+		it("Starts the game with 2 ready players", async () => {
+			const lobby = await service.createLobby(HOST, defaults);
+			await service.joinLobby(lobby.uuid, user(1));
+			await service.toggleReady(lobby.uuid, HOST);
+			await service.toggleReady(lobby.uuid, user(1));
+
+			await service.toggleGame(lobby.uuid, HOST);
+
+			expect(lobby.gameStarted).toBe(true);
+			expect(lobby.gameHasStarted).toBe(true);
 		});
 	});
 });

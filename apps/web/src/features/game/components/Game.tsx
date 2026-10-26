@@ -24,6 +24,82 @@ type GameProps = {
 	gameStarted: boolean;
 };
 
+const CANVAS_BG = "#ffffff";
+
+function fillBackground(ctx: CanvasRenderingContext2D) {
+	ctx.globalCompositeOperation = "source-over";
+	ctx.fillStyle = CANVAS_BG;
+	ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+}
+
+function drawDot(
+	ctx: CanvasRenderingContext2D,
+	point: { x: number; y: number },
+	size: number,
+	color: string,
+) {
+	ctx.fillStyle = color;
+	ctx.beginPath();
+	ctx.arc(point.x, point.y, size / 2, 0, Math.PI * 2);
+	ctx.fill();
+}
+
+function floodFill(
+	canvas: HTMLCanvasElement,
+	x: number,
+	y: number,
+	fillColorValue: string,
+) {
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return;
+
+	const pixelX = Math.max(0, Math.min(Math.floor(x), canvas.width - 1));
+	const pixelY = Math.max(0, Math.min(Math.floor(y), canvas.height - 1));
+	const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	const pixels = imageData.data;
+	const startIndex = (pixelY * canvas.width + pixelX) * 4;
+	const targetColor = pixels.slice(startIndex, startIndex + 4);
+	const fillColor = fillColorValue
+		.slice(1)
+		.match(/.{2}/g)
+		?.map((channel) => Number.parseInt(channel, 16));
+
+	if (!fillColor || fillColor.length !== 3) return;
+
+	const replacementColor = new Uint8ClampedArray([...fillColor, 255]);
+	if (
+		targetColor[0] === replacementColor[0] &&
+		targetColor[1] === replacementColor[1] &&
+		targetColor[2] === replacementColor[2] &&
+		targetColor[3] === replacementColor[3]
+	) {
+		return;
+	}
+
+	const stack: [number, number][] = [[pixelX, pixelY]];
+	while (stack.length > 0) {
+		const [currentX, currentY] = stack.pop()!;
+		const index = (currentY * canvas.width + currentX) * 4;
+
+		if (
+			pixels[index] !== targetColor[0] ||
+			pixels[index + 1] !== targetColor[1] ||
+			pixels[index + 2] !== targetColor[2] ||
+			pixels[index + 3] !== targetColor[3]
+		) {
+			continue;
+		}
+
+		pixels.set(replacementColor, index);
+		if (currentX > 0) stack.push([currentX - 1, currentY]);
+		if (currentX < canvas.width - 1) stack.push([currentX + 1, currentY]);
+		if (currentY > 0) stack.push([currentX, currentY - 1]);
+		if (currentY < canvas.height - 1) stack.push([currentX, currentY + 1]);
+	}
+
+	ctx.putImageData(imageData, 0, 0);
+}
+
 export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const { uuid } = useParams<{ uuid: string }>();
 	const { user } = useAuth();
@@ -32,6 +108,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 	const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
 	const shapeSnapshotRef = useRef<ImageData | null>(null);
+	const brushCursorRef = useRef<HTMLDivElement | null>(null);
 	const [isDrawing, setIsDrawing] = useState(false);
 	const [color, setColor] = useState("#000000");
 	const [recentColors, setRecentColors] = useState<string[]>([
@@ -46,6 +123,12 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		"freehand" | "rectangle" | "circle"
 	>("freehand");
 	const [gameStarted, setGameStarted] = useState(lobbyGameStarted);
+	const [prevLobbyGameStarted, setPrevLobbyGameStarted] =
+		useState(lobbyGameStarted);
+	if (prevLobbyGameStarted !== lobbyGameStarted) {
+		setPrevLobbyGameStarted(lobbyGameStarted);
+		setGameStarted(lobbyGameStarted);
+	}
 	const [phase, setPhase] = useState<GamePhase>("WAITING");
 	const [drawerId, setDrawerId] = useState<string | null>(null);
 	const [choices, setChoices] = useState<string[]>([]);
@@ -80,14 +163,8 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 				(packet.phase === "CHOOSING" || packet.phase === "DRAWING") &&
 				previousDrawingRef.current !== drawingKey
 			) {
-				canvasRef.current
-					?.getContext("2d")
-					?.clearRect(
-						0,
-						0,
-						canvasRef.current?.width ?? 0,
-						canvasRef.current?.height ?? 0,
-					);
+				const ctx = canvasRef.current?.getContext("2d");
+				if (ctx) fillBackground(ctx);
 				previousDrawingRef.current = drawingKey;
 			}
 		},
@@ -100,13 +177,19 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			if (packet.lobbyUuid !== uuid) return;
 			const ctx = canvasRef.current?.getContext("2d");
 			if (!ctx) return;
-			ctx.strokeStyle = packet.color;
+			const strokeColor = packet.eraser ? CANVAS_BG : packet.color;
+			ctx.strokeStyle = strokeColor;
 			ctx.lineWidth = packet.size;
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.globalCompositeOperation = packet.eraser
-				? "destination-out"
-				: "source-over";
+			ctx.globalCompositeOperation = "source-over";
+			if (
+				packet.from.x === packet.to.x &&
+				packet.from.y === packet.to.y
+			) {
+				drawDot(ctx, packet.from, packet.size, strokeColor);
+				return;
+			}
 			ctx.beginPath();
 			ctx.moveTo(packet.from.x, packet.from.y);
 			ctx.lineTo(packet.to.x, packet.to.y);
@@ -124,29 +207,23 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			if (!canvas || !ctx) return;
 			const action = packet.action;
 			if (action.kind === "CLEAR") {
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				fillBackground(ctx);
 				return;
 			}
 			if (action.kind === "FILL") {
-				floodFill(action.x, action.y, action.color);
+				floodFill(canvas, action.x, action.y, action.color);
 				return;
 			}
-			ctx.strokeStyle = action.color;
+			ctx.strokeStyle = action.eraser ? CANVAS_BG : action.color;
 			ctx.lineWidth = action.size;
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.globalCompositeOperation = action.eraser
-				? "destination-out"
-				: "source-over";
+			ctx.globalCompositeOperation = "source-over";
 			drawShape(ctx, action.mode, action.from, action.to);
 		},
 		[uuid],
 	);
 	useWsEvent("DRAW_ACTION", handleRemoteAction);
-
-	useEffect(() => {
-		setGameStarted(lobbyGameStarted);
-	}, [lobbyGameStarted]);
 
 	useEffect(() => {
 		if (!uuid || !isConnected) return;
@@ -233,66 +310,11 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		ctx.stroke();
 	}
 
-	function floodFill(x: number, fillY: number, fillColorValue = color) {
-		const y = fillY;
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-
-		const pixelX = Math.max(0, Math.min(Math.floor(x), canvas.width - 1));
-		const pixelY = Math.max(0, Math.min(Math.floor(y), canvas.height - 1));
-		const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-		const pixels = imageData.data;
-		const startIndex = (pixelY * canvas.width + pixelX) * 4;
-		const targetColor = pixels.slice(startIndex, startIndex + 4);
-		const fillColor = fillColorValue
-			.slice(1)
-			.match(/.{2}/g)
-			?.map((channel) => Number.parseInt(channel, 16));
-
-		if (!fillColor || fillColor.length !== 3) return;
-
-		const replacementColor = new Uint8ClampedArray([...fillColor, 255]);
-		if (
-			targetColor[0] === replacementColor[0] &&
-			targetColor[1] === replacementColor[1] &&
-			targetColor[2] === replacementColor[2] &&
-			targetColor[3] === replacementColor[3]
-		) {
-			return;
-		}
-
-		const stack: [number, number][] = [[pixelX, pixelY]];
-		while (stack.length > 0) {
-			const [currentX, currentY] = stack.pop()!;
-			const index = (currentY * canvas.width + currentX) * 4;
-
-			if (
-				pixels[index] !== targetColor[0] ||
-				pixels[index + 1] !== targetColor[1] ||
-				pixels[index + 2] !== targetColor[2] ||
-				pixels[index + 3] !== targetColor[3]
-			) {
-				continue;
-			}
-
-			pixels.set(replacementColor, index);
-			if (currentX > 0) stack.push([currentX - 1, currentY]);
-			if (currentX < canvas.width - 1)
-				stack.push([currentX + 1, currentY]);
-			if (currentY > 0) stack.push([currentX, currentY - 1]);
-			if (currentY < canvas.height - 1)
-				stack.push([currentX, currentY + 1]);
-		}
-
-		ctx.putImageData(imageData, 0, 0);
-	}
-
 	const startDrawing = (e: PointerEvent<HTMLCanvasElement>) => {
 		if (!gameStarted || phase !== "DRAWING" || !isDrawer || e.button !== 0)
 			return;
+
+		window.getSelection()?.removeAllRanges();
 
 		const ctx = e.currentTarget.getContext("2d");
 		if (!ctx) return;
@@ -316,7 +338,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 		if (isFilling) {
 			const { x, y } = getMousePosition(e);
-			floodFill(x, y);
+			floodFill(e.currentTarget, x, y, color);
 			sendPacket({
 				type: "DRAW_ACTION",
 				lobbyUuid: uuid ?? "",
@@ -330,14 +352,13 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 		const { x, y } = getMousePosition(e);
 
-		ctx.strokeStyle = color;
+		const strokeColor = isErasing ? CANVAS_BG : color;
+		ctx.strokeStyle = strokeColor;
 		ctx.lineWidth = size;
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
 		ctx.imageSmoothingEnabled = true;
-		ctx.globalCompositeOperation = isErasing
-			? "destination-out"
-			: "source-over";
+		ctx.globalCompositeOperation = "source-over";
 
 		if (shapeMode !== "freehand") {
 			e.currentTarget.setPointerCapture(e.pointerId);
@@ -354,9 +375,43 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 		setIsDrawing(true);
 
+		drawDot(ctx, { x, y }, size, strokeColor);
 		ctx.beginPath();
 		ctx.moveTo(x, y);
+		sendPacket({
+			type: "DRAW_STROKE",
+			lobbyUuid: uuid ?? "",
+			from: { x, y },
+			to: { x, y },
+			color,
+			size,
+			eraser: isErasing,
+		});
 		lastPointRef.current = { x, y };
+	};
+
+	const showBrushCursor =
+		canDraw && shapeMode === "freehand" && !isFilling && !isPickingColor;
+
+	// Moved through the ref, not state, to avoid re-rendering on every move
+	const moveBrushCursor = (e: PointerEvent<HTMLCanvasElement>) => {
+		const brushCursor = brushCursorRef.current;
+		if (!brushCursor) return;
+
+		const canvas = e.currentTarget;
+		const rect = canvas.getBoundingClientRect();
+		const diameter = size * (canvas.clientWidth / canvas.width);
+
+		brushCursor.style.width = `${diameter}px`;
+		brushCursor.style.height = `${diameter}px`;
+		brushCursor.style.left = `${e.clientX - rect.left}px`;
+		brushCursor.style.top = `${e.clientY - rect.top}px`;
+		brushCursor.style.visibility = "visible";
+	};
+
+	const hideBrushCursor = () => {
+		if (brushCursorRef.current)
+			brushCursorRef.current.style.visibility = "hidden";
 	};
 
 	const draw = (e: PointerEvent<HTMLCanvasElement>) => {
@@ -448,7 +503,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		fillBackground(ctx);
 		sendPacket({
 			type: "DRAW_ACTION",
 			lobbyUuid: uuid ?? "",
@@ -493,23 +548,40 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 					Draw: {selectedWord}
 				</p>
 			)}
-			<div className="w-full">
+			<div className="relative w-full overflow-hidden">
 				<canvas
 					ref={canvasRef}
 					width={1280}
 					height={720}
-					className={`block h-auto w-full touch-none border-4 border-gray-800 ${phase === "DRAWING" ? "bg-white" : "bg-gray-400"}`}
+					className={`block h-auto w-full touch-none select-none border-4 border-gray-800 ${showBrushCursor ? "cursor-none" : ""}`}
 					onPointerDown={startDrawing}
-					onPointerMove={draw}
+					onPointerMove={(e) => {
+						moveBrushCursor(e);
+						draw(e);
+					}}
 					onPointerUp={stopDrawing}
 					onPointerCancel={stopDrawing}
+					onPointerLeave={hideBrushCursor}
 				/>
+				{showBrushCursor && (
+					<div
+						ref={brushCursorRef}
+						className="pointer-events-none invisible absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-black"
+						style={{
+							backgroundColor: isErasing ? "transparent" : color,
+						}}
+					/>
+				)}
 				{!gameStarted && (
-					<p className="mt-2 text-center font-semibold text-gray-600">
-						{phase === "WAITING"
-							? "Waiting for next game"
-							: "Game paused"}
-					</p>
+					<div className="absolute inset-0 flex items-center justify-center">
+						<p
+							className={`border-2 border-black bg-white px-4 py-2 text-center font-semibold ${phase === "WAITING" ? "text-black" : "text-red-600"}`}
+						>
+							{phase === "WAITING"
+								? "Waiting for next game"
+								: "Game paused"}
+						</p>
+					</div>
 				)}
 			</div>
 

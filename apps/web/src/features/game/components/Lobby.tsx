@@ -29,12 +29,10 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 	const [actionError, setActionError] = useState<string | null>(null);
 	const [showSettings, setShowSettings] = useState(false);
 	const [copied, setCopied] = useState(false);
-	const users = useUsers([
-		...lobby.connectedPlayers,
-		...lobby.bannedPlayers,
-	]);
+	const users = useUsers([...lobby.connectedPlayers, ...lobby.bannedPlayers]);
 
 	const isHost = user?.uuid === lobby.hostId;
+	const canStart = lobby.readyPlayers.length >= 2;
 	const nameOf = (id: string) => users[id]?.username ?? "...";
 
 	const runAction = async (
@@ -237,7 +235,14 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 					<button
 						type="button"
 						onClick={() => void handleStart()}
-						className="flex-1 px-5 py-2.5 border border-primary text-primary font-semibold text-sm sm:text-base hover:bg-primary/10"
+						disabled={!lobby.gameHasStarted && !canStart}
+						className={`flex-1 px-5 py-2.5 border font-semibold text-sm sm:text-base ${
+							lobby.gameHasStarted
+								? "border-primary text-primary hover:bg-primary/10"
+								: canStart
+									? "border-green-500 text-green-500/90 hover:bg-green-500/10"
+									: "border-gray-400 text-gray-400 cursor-not-allowed"
+						}`}
 					>
 						{lobby.gameStarted
 							? "Pause"
