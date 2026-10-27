@@ -2,6 +2,9 @@ P_DB_USERNAME ?= $(shell sh -c 'read -p "Database user: " var; echo $$var')
 P_DB_PASSWORD ?= $(shell sh -c 'read -p "Database password: " var; echo $$var')
 P_JWT_SECRET ?= $(shell sh -c 'read -p "JWT Secret: " var; echo $$var')
 
+export USER_ID ?= $(shell id -u)
+export GROUP_ID ?= $(shell id -g)
+
 DOCKER = docker compose
 DOCKER-TEST = docker compose -f test-compose.yml
 DOCKER-PROD = docker compose -f prod-compose.yml
