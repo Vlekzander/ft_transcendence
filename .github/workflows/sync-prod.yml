@@ -60,7 +60,7 @@ jobs:
                           lines = f.readlines()
                       new_lines = [line for line in lines if not line.startswith("DEV")]
                       
-                      with open(".env", "w") as f:
+                      with open(".env.example", "w") as f:
                           f.writelines(new_lines)
                   '
 
