@@ -9,7 +9,6 @@ services:
             args:
                 - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
         ports:
-            - "80:80"
             - "443:443"
         networks:
             - ft_network-bf-prod
