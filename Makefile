@@ -1,4 +1,4 @@
-include .env
+-include .env
 
 P_DB_USERNAME ?= $(shell sh -c 'read -p "Database user: " var; echo $$var')
 P_DB_PASSWORD ?= $(shell sh -c 'read -p "Database password: " var; echo $$var')
