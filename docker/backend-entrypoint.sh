@@ -14,5 +14,4 @@ DB_NAME="${DB_NAME:-ft_transcendence}"
 export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?schema=public"
 
 npx prisma db push
-npx prisma generate
 exec "$@"
