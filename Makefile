@@ -1,9 +1,22 @@
+-include .env
+
 P_DB_USERNAME ?= $(shell sh -c 'read -p "Database user: " var; echo $$var')
 P_DB_PASSWORD ?= $(shell sh -c 'read -p "Database password: " var; echo $$var')
 P_JWT_SECRET ?= $(shell sh -c 'read -p "JWT Secret: " var; echo $$var')
 
 export USER_ID ?= $(shell id -u)
 export GROUP_ID ?= $(shell id -g)
+
+ifeq ($(DOMAIN_NAME),)
+	DOMAIN_NAME = localhost
+endif
+
+IS_IP := $(shell if echo "$(DOMAIN_NAME)" | grep -qE '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$$'; then echo 1; else echo 0; fi)
+ifeq ($(IS_IP),1)
+    SAN = IP:$(DOMAIN_NAME)
+else
+    SAN = DNS:$(DOMAIN_NAME)
+endif
 
 DOCKER-PROD = docker compose -f prod-compose.yml
 
@@ -97,7 +110,11 @@ format:
 
 secrets:
 	@mkdir -p ./docker/secrets
-	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./docker/secrets/ssl.key -out ./docker/secrets/ssl.crt -subj "/C=BE/ST=Brussels/L=Brussels/O=ft_transcendence/CN=localhost" -addext "subjectAltName=DNS:localhost" 2> /dev/null
+	@openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+		-keyout ./docker/secrets/ssl.key \
+  		-out ./docker/secrets/ssl.crt \
+  		-subj "/C=BE/ST=Brussels/L=Brussels/O=ft_transcendence/CN=$(DOMAIN_NAME)" \
+		-addext "subjectAltName=$(SAN)" 2> /dev/null
 	@export DB_USERNAME='$(P_DB_USERNAME)'; echo "$$DB_USERNAME" > ./docker/secrets/db_username.txt
 	@export DB_PASSWORD='$(P_DB_PASSWORD)'; echo "$$DB_PASSWORD" > ./docker/secrets/db_password.txt
 	@export JWT_SECRET='$(P_JWT_SECRET)'; echo "$$JWT_SECRET" > ./docker/secrets/jwt_secret.txt

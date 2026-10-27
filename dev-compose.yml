@@ -16,10 +16,10 @@ services:
         networks:
             - ft_bf_network-dev
         ports:
-            - "${WEB_PORT:-5173}:5173"
+            - "${DEV_WEB_PORT:-5173}:5173"
         environment:
             VITE_API_URL: "/api"
-            VITE_WS_URL: "ws://localhost:${API_PORT:-3000}"
+            VITE_WS_URL: "ws://localhost:${DEV_API_PORT:-3000}"
         env_file:
             - .env
 
@@ -39,7 +39,7 @@ services:
             - ft_b_network-dev
             - ft_bf_network-dev
         ports:
-            - "${API_PORT:-3000}:${API_PORT:-3000}"
+            - "${DEV_API_PORT:-3000}:${DEV_API_PORT:-3000}"
         secrets:
             - db_username
             - db_password

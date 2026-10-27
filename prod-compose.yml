@@ -6,9 +6,11 @@ services:
         build:
             context: .
             dockerfile: ./docker/prod-frontend.Dockerfile
+            args:
+                - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+                - WEB_PORT=${WEB_PORT:-443}
         ports:
-            - "80:80"
-            - "443:443"
+            - "${WEB_PORT:-443}:443"
         networks:
             - ft_network-bf-prod
         depends_on:
