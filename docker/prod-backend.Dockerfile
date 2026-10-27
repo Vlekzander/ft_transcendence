@@ -6,6 +6,7 @@ COPY --chown=node:node tsconfig.base.json ./
 COPY --chown=node:node package.json package-lock.json ./
 COPY --chown=node:node apps/server/package.json ./apps/server/package.json
 COPY --chown=node:node packages/shared/package.json ./packages/shared/package.json
+COPY --chown=node:node apps/server/prisma ./apps/server/prisma
 
 RUN npm install
 
