@@ -1,3 +1,10 @@
+import {
+	getMatch,
+	beginTurn,
+	settleTurn,
+	allGuessed,
+	saveMatch,
+} from "../game/scoring.service";
 import type {
 	AppWebSocket,
 	ChooseWordPacket,
@@ -34,7 +41,9 @@ function statePacket(lobby: LobbyEntity, viewerId?: string): GameStatePacket {
 		round: lobby.round,
 		totalRounds: lobby.numberOfRounds,
 		playerNumber: lobby.drawerId
-			? Math.max(1, lobby.playedThisRound.size + 1)
+			? Math.min(players.length, Math.max(1,
+				players.filter((id) => lobby.playedThisRound.has(id)).length +
+				(lobby.playedThisRound.has(lobby.drawerId) ? 0 : 1)))
 			: 0,
 		totalPlayers: players.length,
 		drawerId: lobby.drawerId,
@@ -44,71 +53,151 @@ function statePacket(lobby: LobbyEntity, viewerId?: string): GameStatePacket {
 				: [],
 		selectedWord: viewerId === lobby.drawerId ? lobby.selectedWord : null,
 		timerEndsAt: lobby.timerEndsAt,
+		matchId: getMatch(lobby)?.id ?? null,
+		scores: Object.fromEntries(getMatch(lobby)?.scores ?? []),
+		guessedPlayers: [...(getMatch(lobby)?.turn?.guesses.keys() ?? [])],
+		lastTurn: getMatch(lobby)?.lastTurn ?? null,
+		persistence: getMatch(lobby)?.persistence ?? "NONE",
 	};
 }
 
-export function scheduleRoundEnd(lobby: LobbyEntity) {
-	const oldTimer = roundTimers.get(lobby.uuid);
-	if (oldTimer) clearTimeout(oldTimer);
-	if (!lobby.timerEndsAt) return;
+async function persistResults(lobby: LobbyEntity) {
+	try {
+		const saving = saveMatch(lobby);
+		broadcastState(lobby);
+		await saving;
+	} catch (error) {
+		console.error("Unable to persist game results", error);
+	}
+	broadcastState(lobby);
+}
 
+function finishMatch(lobby: LobbyEntity) {
+	stopRoundTimer(lobby.uuid);
+	const match = getMatch(lobby);
+	if (!match || match.endedAt) return;
+	match.endedAt = Date.now();
+	lobby.gameStarted = false;
+	lobby.gameHasStarted = false;
+	lobby.gamePhase = "FINISHED";
+	lobby.timerEndsAt = null;
+	lobby.timeRemainingMs = 0;
+	lobby.selectedWord = null;
+	lobby.wordChoices = [];
+	lobby.readyPlayers.clear();
+	lobby.spectatorPlayers.clear();
+	broadcastState(lobby);
+	notifyLobbyUpdated(lobby);
+	void persistResults(lobby);
+}
+
+function activePlayers(lobby: LobbyEntity) {
+	const match = getMatch(lobby);
+	return [...lobby.connectedPlayers].filter(
+		(id) =>
+			match?.scores.has(id) &&
+			!lobby.spectatorPlayers.has(id) &&
+			!lobby.bannedPlayers.has(id),
+	);
+}
+
+function nextTurn(lobby: LobbyEntity) {
+	const players = activePlayers(lobby);
+	const available = players.filter((id) => !lobby.playedThisRound.has(id));
+	if (
+		players.length < 2 ||
+		(available.length === 0 && lobby.round >= lobby.numberOfRounds)
+	) {
+		finishMatch(lobby);
+		return;
+	}
+	if (available.length === 0) {
+		lobby.round++;
+		lobby.playedThisRound.clear();
+	}
+	const candidates = players.filter((id) => !lobby.playedThisRound.has(id));
+	lobby.drawerId = candidates[Math.floor(Math.random() * candidates.length)];
+	lobby.selectedWord = null;
+	lobby.wordChoices = [...lobby.allWords]
+		.sort(() => Math.random() - 0.5)
+		.slice(0, lobby.wordChoicesPerTurn);
+	const match = getMatch(lobby);
+	if (match) {
+		match.turn = undefined;
+		match.lastTurn = null;
+	}
+	lobby.gameStarted = true;
+	lobby.gamePhase = "CHOOSING";
+	lobby.timerEndsAt = Date.now() + lobby.timeToChooseWord * 1000;
+	lobby.timeRemainingMs = 0;
+	broadcast(lobby, {
+		type: "DRAW_ACTION",
+		lobbyUuid: lobby.uuid,
+		action: { kind: "CLEAR" },
+	});
+	scheduleRoundEnd(lobby);
+	broadcastState(lobby);
+	notifyLobbyUpdated(lobby);
+}
+
+export function finishTurn(lobby: LobbyEntity) {
+	if (
+		lobby.gamePhase !== "DRAWING" &&
+		lobby.gamePhase !== "PAUSED" &&
+		lobby.gamePhase !== "CHOOSING"
+	)
+		return;
+	stopRoundTimer(lobby.uuid);
+	settleTurn(lobby);
+	if (lobby.drawerId) lobby.playedThisRound.add(lobby.drawerId);
+	lobby.gamePhase = "ROUND_END";
+	lobby.gameStarted = true;
+	lobby.timerEndsAt = Date.now() + 4000;
+	lobby.timeRemainingMs = 0;
+	scheduleRoundEnd(lobby);
+	broadcastState(lobby);
+	notifyLobbyUpdated(lobby);
+}
+
+export function completeRoundIfSolved(lobby: LobbyEntity) {
+	if (lobby.gamePhase === "DRAWING" && allGuessed(lobby)) finishTurn(lobby);
+	else broadcastState(lobby);
+}
+
+export function reconcileGame(lobby: LobbyEntity) {
+	if (!lobby.gameHasStarted) return;
+	if (activePlayers(lobby).length < 2) {
+		settleTurn(lobby);
+		finishMatch(lobby);
+	} else if (lobby.gamePhase === "ROUND_END") return;
+	else if (!lobby.drawerId || !lobby.connectedPlayers.has(lobby.drawerId))
+		finishTurn(lobby);
+	else completeRoundIfSolved(lobby);
+}
+
+function startDrawing(lobby: LobbyEntity, word: string) {
+	lobby.selectedWord = word;
+	lobby.gamePhase = "DRAWING";
+	lobby.timerEndsAt = Date.now() + lobby.drawTime * 1000;
+	lobby.timeRemainingMs = 0;
+	beginTurn(lobby);
+	scheduleRoundEnd(lobby);
+	broadcastState(lobby);
+}
+
+export function scheduleRoundEnd(lobby: LobbyEntity) {
+	stopRoundTimer(lobby.uuid);
+	if (!lobby.timerEndsAt || !lobby.gameStarted) return;
 	const timer = setTimeout(
 		() => {
+			roundTimers.delete(lobby.uuid);
 			if (!lobby.gameStarted) return;
 			if (lobby.gamePhase === "CHOOSING") {
 				const word = lobby.wordChoices[0];
-				if (!word) return;
-				lobby.selectedWord = word;
-				lobby.gamePhase = "DRAWING";
-				lobby.timerEndsAt = Date.now() + lobby.drawTime * 1000;
-				scheduleRoundEnd(lobby);
-				broadcastState(lobby);
-				return;
-			}
-
-			lobby.playedThisRound.add(lobby.drawerId ?? "");
-			const players = Array.from(lobby.connectedPlayers).filter(
-				(id) => !lobby.spectatorPlayers.has(id),
-			);
-			if (
-				lobby.round >= lobby.numberOfRounds &&
-				lobby.playedThisRound.size >= players.length
-			) {
-				lobby.gameStarted = false;
-				lobby.gameHasStarted = false;
-				lobby.gamePhase = "WAITING";
-				lobby.round = 0;
-				lobby.drawerId = null;
-				lobby.wordChoices = [];
-				lobby.selectedWord = null;
-				lobby.timerEndsAt = null;
-				lobby.timeRemainingMs = 0;
-				lobby.playedThisRound.clear();
-				lobby.readyPlayers.clear();
-				lobby.spectatorPlayers.clear();
-				roundTimers.delete(lobby.uuid);
-				broadcastState(lobby);
-				notifyLobbyUpdated(lobby);
-				return;
-			}
-
-			if (lobby.playedThisRound.size >= players.length) {
-				lobby.round += 1;
-				lobby.playedThisRound.clear();
-			}
-			lobby.selectedWord = null;
-			lobby.timerEndsAt = Date.now() + lobby.timeToChooseWord * 1000;
-			const available = players.filter(
-				(id) => !lobby.playedThisRound.has(id),
-			);
-			lobby.drawerId =
-				available[Math.floor(Math.random() * available.length)] ?? null;
-			lobby.wordChoices = [...lobby.allWords]
-				.sort(() => Math.random() - 0.5)
-				.slice(0, lobby.wordChoicesPerTurn);
-			lobby.gamePhase = "CHOOSING";
-			scheduleRoundEnd(lobby);
-			broadcastState(lobby);
+				if (word) startDrawing(lobby, word);
+				else finishTurn(lobby);
+			} else if (lobby.gamePhase === "DRAWING") finishTurn(lobby);
+			else if (lobby.gamePhase === "ROUND_END") nextTurn(lobby);
 		},
 		Math.max(0, lobby.timerEndsAt - Date.now()),
 	);
@@ -151,17 +240,16 @@ async function handleChooseWord(ws: AppWebSocket, packet: ChooseWordPacket) {
 	const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
 	if (
 		!lobby ||
+		!lobby.connectedPlayers.has(ws.uuid) ||
+		!lobby.gameStarted ||
+		!lobby.timerEndsAt ||
+		Date.now() >= lobby.timerEndsAt ||
 		lobby.drawerId !== ws.uuid ||
 		lobby.gamePhase !== "CHOOSING" ||
 		!lobby.wordChoices.includes(packet.word)
 	)
 		return;
-	lobby.selectedWord = packet.word;
-	lobby.gamePhase = "DRAWING";
-	lobby.timerEndsAt = Date.now() + lobby.drawTime * 1000;
-	lobby.timeRemainingMs = 0;
-	scheduleRoundEnd(lobby);
-	broadcastState(lobby);
+	startDrawing(lobby, packet.word);
 }
 
 export function broadcastState(lobby: LobbyEntity) {
@@ -172,7 +260,15 @@ export function broadcastState(lobby: LobbyEntity) {
 async function handleDrawStroke(ws: AppWebSocket, packet: DrawStrokePacket) {
 	if (!ws.uuid) return;
 	const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
-	if (!lobby || lobby.drawerId !== ws.uuid || lobby.gamePhase !== "DRAWING")
+	if (
+		!lobby ||
+		!lobby.connectedPlayers.has(ws.uuid) ||
+		!lobby.gameStarted ||
+		!lobby.timerEndsAt ||
+		Date.now() >= lobby.timerEndsAt ||
+		lobby.drawerId !== ws.uuid ||
+		lobby.gamePhase !== "DRAWING"
+	)
 		return;
 	broadcast(lobby, packet, ws.uuid);
 }
@@ -180,13 +276,31 @@ async function handleDrawStroke(ws: AppWebSocket, packet: DrawStrokePacket) {
 async function handleDrawAction(ws: AppWebSocket, packet: DrawActionPacket) {
 	if (!ws.uuid) return;
 	const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
-	if (!lobby || lobby.drawerId !== ws.uuid || lobby.gamePhase !== "DRAWING")
+	if (
+		!lobby ||
+		!lobby.connectedPlayers.has(ws.uuid) ||
+		!lobby.gameStarted ||
+		!lobby.timerEndsAt ||
+		Date.now() >= lobby.timerEndsAt ||
+		lobby.drawerId !== ws.uuid ||
+		lobby.gamePhase !== "DRAWING"
+	)
 		return;
 	broadcast(lobby, packet, ws.uuid);
 }
 
 export function registerGameSockets(): void {
 	registerPacketHandler("JOIN_GAME", handleJoinGame);
+	registerPacketHandler("RETRY_GAME_SAVE", async (ws, packet) => {
+		const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
+		if (
+			!lobby ||
+			ws.uuid !== lobby.hostId ||
+			lobby.gamePhase !== "FINISHED"
+		)
+			return;
+		await persistResults(lobby);
+	});
 	registerPacketHandler("CHOOSE_WORD", handleChooseWord);
 	registerPacketHandler("DRAW_STROKE", handleDrawStroke);
 	registerPacketHandler("DRAW_ACTION", handleDrawAction);

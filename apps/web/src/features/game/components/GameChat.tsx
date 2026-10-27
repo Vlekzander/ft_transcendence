@@ -165,7 +165,7 @@ export function GameChat({
 					</button>
 				</form>
 				<p className="mt-2 text-xs text-gray-500">
-					{content.length}/500 · Messages are not saved.
+					{content.length}/500
 				</p>
 			</div>
 		</section>

@@ -1,8 +1,28 @@
+import {
+	startMatch,
+	beginTurn,
+	getMatch,
+} from "@/modules/game/scoring.service";
+import type { LobbyEntity } from "@/modules/lobby/lobby.mapper";
 import { beforeEach, describe, expect, it } from "vitest";
 import { CreateLobbySchema } from "@ft_transcendence/shared";
 import { lobbyService, lobbiesByJoinCode } from "@/modules/lobby/lobby.service";
 import { GameChatService } from "@/modules/game-chat/game-chat.service";
 
+function setWord(room: LobbyEntity, word: string | null) {
+	if (!word) {
+		getMatch(room)!.turn = undefined;
+		return;
+	}
+	room.connectedPlayers.add("drawer");
+	room.drawerId = "drawer";
+	room.selectedWord = word;
+	room.gameStarted = true;
+	room.gamePhase = "DRAWING";
+	room.timerEndsAt = Date.now() + room.drawTime * 1000;
+	if (!getMatch(room)) startMatch(room);
+	beginTurn(room);
+}
 const defaults = CreateLobbySchema.parse({});
 describe("game chat with real lobby membership", () => {
 	let chat: GameChatService;
@@ -41,7 +61,7 @@ describe("game chat with real lobby membership", () => {
 	});
 	it("blocks leaks and recognizes a normalized guess once per round without exposing the word", async () => {
 		const room = await lobbyService.createLobby("host", defaults);
-		chat.setRoundWord(room.uuid, "Chat");
+		setWord(room, "Chat");
 		expect(() =>
 			chat.submit(room.uuid, "host", "un CHAT ici", "r1"),
 		).toThrow("round word");
@@ -51,11 +71,11 @@ describe("game chat with real lobby membership", () => {
 		expect(() => chat.submit(room.uuid, "host", "chat", "r3")).toThrow(
 			"already guessed",
 		);
-		chat.setRoundWord(room.uuid, "chat");
+		setWord(room, "chat");
 		expect(chat.submit(room.uuid, "host", "chat", "r4").type).toBe(
 			"GAME_CHAT_GUESS",
 		);
-		chat.setRoundWord(room.uuid, null);
+		setWord(room, null);
 		expect(chat.submit(room.uuid, "host", "chat", "r5").type).toBe(
 			"GAME_CHAT_MESSAGE",
 		);
@@ -63,11 +83,11 @@ describe("game chat with real lobby membership", () => {
 	it("isolates round state and rejects deleted rooms", async () => {
 		const a = await lobbyService.createLobby("a", defaults);
 		const b = await lobbyService.createLobby("b", defaults);
-		chat.setRoundWord(a.uuid, "chat");
+		setWord(a, "chat");
 		expect(chat.submit(b.uuid, "b", "chat", "r1").type).toBe(
 			"GAME_CHAT_MESSAGE",
 		);
-		await lobbyService.leaveLobby(a.uuid, "a");
+		await lobbyService.deleteLobby(a.joinCode);
 		expect(() => chat.submit(a.uuid, "a", "hi", "r2")).toThrow("not found");
 	});
 });

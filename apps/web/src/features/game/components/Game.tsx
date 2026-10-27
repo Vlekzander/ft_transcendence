@@ -75,7 +75,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			setChoices(packet.choices);
 			setSelectedWord(packet.selectedWord);
 			setTimerEndsAt(packet.timerEndsAt);
-			const drawingKey = `${packet.round}:${packet.drawerId}`;
+			const drawingKey = `${packet.matchId}:${packet.round}:${packet.drawerId}`;
 			if (
 				(packet.phase === "CHOOSING" || packet.phase === "DRAWING") &&
 				previousDrawingRef.current !== drawingKey
@@ -143,10 +143,6 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		[uuid],
 	);
 	useWsEvent("DRAW_ACTION", handleRemoteAction);
-
-	useEffect(() => {
-		setGameStarted(lobbyGameStarted);
-	}, [lobbyGameStarted]);
 
 	useEffect(() => {
 		if (!uuid || !isConnected) return;
@@ -460,7 +456,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		<div>
 			<div className="mb-3 flex items-center justify-between font-semibold">
 				<span>
-					Round {round}/{totalRounds} Player {playerNumber}/
+					Round {round}/{totalRounds} · Drawing turn {playerNumber}/
 					{totalPlayers}
 				</span>
 				{(phase === "CHOOSING" || phase === "DRAWING") && (
@@ -508,7 +504,11 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 					<p className="mt-2 text-center font-semibold text-gray-600">
 						{phase === "WAITING"
 							? "Waiting for next game"
-							: "Game paused"}
+							: phase === "ROUND_END"
+								? "Turn finished"
+								: phase === "FINISHED"
+									? "Game finished"
+									: "Game paused"}
 					</p>
 				)}
 			</div>

@@ -1,3 +1,4 @@
+import leaderboardRouter from "./modules/leaderboard/leaderboard.routes";
 import { hello } from "@ft_transcendence/shared";
 import cors from "cors";
 import express from "express";
@@ -40,6 +41,7 @@ app.use(
 );
 
 app.use("/lobbies", lobbyRouter);
+app.use("/leaderboard", leaderboardRouter);
 
 app.use(errorHandler);
 export default app;

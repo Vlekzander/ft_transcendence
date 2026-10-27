@@ -1,5 +1,7 @@
+import { getMatch, startMatch } from "../game/scoring.service";
 import {
 	CreateLobbyDTO,
+	AppDomainError,
 	UpdateLobbyDTO,
 	MAX_CUSTOM_WORDS,
 	MAX_PLAYERS,
@@ -161,7 +163,35 @@ export class LobbyService {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
 		if (lobby.hostId !== userId) throw new NotHostError();
+		if (lobby.gamePhase === "ROUND_END")
+			throw new AppDomainError("Wait for the next turn");
+		if (
+			lobby.gamePhase === "FINISHED" &&
+			getMatch(lobby)?.persistence !== "SAVED"
+		)
+			throw new AppDomainError(
+				"Save the game results before starting again",
+			);
 		const startingNewGame = !lobby.gameHasStarted;
+		if (startingNewGame) {
+			if (
+				[...lobby.readyPlayers].filter((id) =>
+					lobby.connectedPlayers.has(id),
+				).length < 2
+			)
+				throw new AppDomainError(
+					"At least two ready players are required",
+				);
+			if (lobby.mode === "DUO")
+				throw new AppDomainError(
+					"DUO scoring requires the team rules; use SOLO for now",
+				);
+			lobby.round = 0;
+			lobby.playedThisRound.clear();
+			lobby.drawerId = null;
+			lobby.selectedWord = null;
+			lobby.wordChoices = [];
+		}
 		lobby.gameStarted = !lobby.gameStarted;
 		lobby.gameHasStarted = true;
 		if (lobby.gameStarted) {
@@ -172,13 +202,13 @@ export class LobbyService {
 					),
 				);
 			}
+			if (startingNewGame) startMatch(lobby);
 			lobby.gamePhase = lobby.selectedWord ? "DRAWING" : "CHOOSING";
 			lobby.timerEndsAt =
 				Date.now() +
-				(lobby.timeRemainingMs ||
-					(lobby.gamePhase === "DRAWING"
-						? lobby.drawTime
-						: lobby.timeToChooseWord) * 1000);
+				(startingNewGame
+					? lobby.timeToChooseWord * 1000
+					: lobby.timeRemainingMs);
 			lobby.timeRemainingMs = 0;
 			if (lobby.round === 0) lobby.round = 1;
 			if (
@@ -218,6 +248,7 @@ export class LobbyService {
 			lobby.connectedPlayers.size === 1 &&
 			lobby.connectedPlayers.has(userId)
 		) {
+			lobby.connectedPlayers.delete(userId);
 			await this.deleteLobby(lobby.joinCode);
 			return;
 		}
@@ -241,6 +272,8 @@ export class LobbyService {
 		const lobby = await this.getLobbyByUuid(lobbyUuid);
 		if (!lobby) throw new LobbyNotFoundError();
 		if (lobby.hostId !== userId) throw new NotHostError();
+		if (lobby.gameHasStarted)
+			throw new AppDomainError("Settings cannot change during a game");
 		const { customWords, usingDictionary, ...otherSettings } = data;
 		const newDictionary = usingDictionary ?? lobby.usingDictionary;
 		const newWords =

@@ -27,6 +27,13 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 	const navigate = useNavigate();
 	const uuid = lobby.uuid;
 	const [actionError, setActionError] = useState<string | null>(null);
+	// Discard an action error when the authoritative lobby state changes,
+	// including updates initiated by another player.
+	const [errorLobby, setErrorLobby] = useState(lobby);
+	if (errorLobby !== lobby) {
+		setErrorLobby(lobby);
+		setActionError(null);
+	}
 	const [showSettings, setShowSettings] = useState(false);
 	const [copied, setCopied] = useState(false);
 	const users = useUsers([
@@ -80,13 +87,13 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 
 	const handleReady = async () => {
 		const res = await toggleLobbyReady(uuid);
-		if (res.ok) onLobbyChange(res.data);
+		if (res.ok) { setActionError(null); onLobbyChange(res.data); }
 		else setActionError(res.error);
 	};
 
 	const handleStart = async () => {
 		const res = await startLobbyGame(uuid);
-		if (res.ok) onLobbyChange(res.data);
+		if (res.ok) { setActionError(null); onLobbyChange(res.data); }
 		else setActionError(res.error);
 	};
 
@@ -102,7 +109,7 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 					{lobby.joinCode}
 					{copied ? <Check size={20} /> : <Copy size={20} />}
 				</button>
-				<div className="flex gap-2">
+				<div className="flex flex-wrap gap-2">
 					<button
 						type="button"
 						onClick={() => void handleCopyInvite()}
@@ -135,9 +142,9 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 					{lobby.connectedPlayers.map((id) => (
 						<li
 							key={id}
-							className="flex items-center justify-between gap-3 p-3"
+							className="flex min-w-0 flex-col items-stretch gap-3 p-3"
 						>
-							<span className="font-semibold">
+							<span className="font-semibold min-w-0 [overflow-wrap:anywhere]">
 								{nameOf(id)}
 								{id === lobby.hostId && (
 									<span className="ml-2 text-xs uppercase text-primary">
@@ -163,7 +170,7 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 									</span>
 								)}
 							</span>
-							<div className="flex gap-2">
+							<div className="flex flex-wrap gap-2">
 								<Link
 									to={`/user/${id}`}
 									className="px-3 py-1 border border-gray-400 text-sm hover:bg-gray-400/10"
@@ -200,9 +207,9 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 						{lobby.bannedPlayers.map((id) => (
 							<li
 								key={id}
-								className="flex items-center justify-between gap-3 p-3"
+								className="flex min-w-0 flex-col items-stretch gap-3 p-3"
 							>
-								<span className="font-semibold">
+								<span className="font-semibold min-w-0 [overflow-wrap:anywhere]">
 									{nameOf(id)}
 								</span>
 								{isHost && (
@@ -232,7 +239,7 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 				/>
 			)}
 
-			<div className="flex w-full gap-2">
+			<div className="flex flex-col w-full gap-2">
 				{isHost && (
 					<button
 						type="button"

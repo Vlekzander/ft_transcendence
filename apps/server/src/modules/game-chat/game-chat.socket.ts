@@ -1,3 +1,5 @@
+import { lobbiesByJoinCode } from "../lobby/lobby.service";
+import { completeRoundIfSolved } from "../lobby/game.socket";
 import type {
 	AppWebSocket,
 	SendGameChatPacket,
@@ -32,6 +34,12 @@ export function handleGameChat(
 		);
 		for (const playerId of gameChatService.getPlayers(packet.roomId))
 			sendToWs(playerId, event);
+		if (event.type === "GAME_CHAT_GUESS") {
+			const lobby = [...lobbiesByJoinCode.values()].find(
+				(room) => room.uuid === packet.roomId,
+			);
+			if (lobby) completeRoundIfSolved(lobby);
+		}
 	} catch (error) {
 		if (ws.readyState === WebSocket.OPEN)
 			ws.send(
