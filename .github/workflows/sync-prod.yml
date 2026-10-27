@@ -53,6 +53,17 @@ jobs:
                       f.writelines(new_lines)
                   '
 
+                  python3 -c '
+                  import os
+                  if os.path.exists(".env"):
+                      with open(".env", "r") as f:
+                          lines = f.readlines()
+                      new_lines = [line for line in lines if not line.startswith("DEV")]
+                      
+                      with open(".env", "w") as f:
+                          f.writelines(new_lines)
+                  '
+
                   git add .
                   git commit -m "ci: sync master to prod after PR merge with clean Makefile" || echo "No changes to commit"
                   git push origin prod --force

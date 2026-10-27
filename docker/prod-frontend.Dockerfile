@@ -1,5 +1,7 @@
 FROM node:24-alpine AS builder
 
+ARG DOMAIN_NAME=localhost
+
 WORKDIR /home/node
 
 COPY tsconfig.base.json ./
@@ -13,7 +15,7 @@ COPY apps/web ./apps/web
 COPY packages/shared ./packages/shared
 
 ENV VITE_API_URL=/api
-ENV VITE_WS_URL=wss://localhost/websocket
+ENV VITE_WS_URL=wss://$DOMAIN_NAME/websocket
 
 RUN npm run build --workspace=@ft_transcendence/shared
 RUN npm run build --workspace=@ft_transcendence/web

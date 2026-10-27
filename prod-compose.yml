@@ -6,6 +6,8 @@ services:
         build:
             context: .
             dockerfile: ./docker/prod-frontend.Dockerfile
+            args:
+                - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
         ports:
             - "80:80"
             - "443:443"
