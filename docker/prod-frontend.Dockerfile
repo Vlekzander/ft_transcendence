@@ -1,6 +1,7 @@
 FROM node:24-alpine AS builder
 
 ARG DOMAIN_NAME=localhost
+ARG WEB_PORT=443
 
 WORKDIR /home/node
 
@@ -15,7 +16,7 @@ COPY apps/web ./apps/web
 COPY packages/shared ./packages/shared
 
 ENV VITE_API_URL=/api
-ENV VITE_WS_URL=wss://$DOMAIN_NAME/websocket
+ENV VITE_WS_URL=wss://$DOMAIN_NAME:$WEB_PORT/websocket
 
 RUN npm run build --workspace=@ft_transcendence/shared
 RUN npm run build --workspace=@ft_transcendence/web
