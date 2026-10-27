@@ -53,6 +53,6 @@ jobs:
                       f.writelines(new_lines)
                   '
 
-                  git add Makefile
+                  git add .
                   git commit -m "ci: sync master to prod after PR merge with clean Makefile" || echo "No changes to commit"
                   git push origin prod --force
