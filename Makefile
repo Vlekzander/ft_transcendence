@@ -30,6 +30,8 @@ logs-dev:
 status-dev:
 	@$(DOCKER-DEV) ps
 
+.PHONY:	build-dev dev up-dev down-dev logs-dev status-dev
+
 # --- DEV END ---
 
 prod: up-prod
@@ -48,9 +50,6 @@ logs-prod:
 
 status-prod:
 	@$(DOCKER-PROD) ps
-
-.PHONY:	build-dev dev up-dev down-dev logs-dev status-dev
-
 
 # --- TEST START ---
 
