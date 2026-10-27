@@ -13,6 +13,7 @@ import {
 	requireUserOwnership,
 } from "../../middlewares/auth.middleware";
 import { uploadAvatar } from "../../middlewares/upload.middleware";
+import * as achievementsController from "../achievements/achievements.controller";
 
 //TODO: REMOVE
 import { prisma } from "../../lib/prisma.lib";
@@ -57,7 +58,7 @@ usersRouter.get(
 usersRouter.get(
 	"/:uuid/achievements",
 	validate({ params: UserParamsSchema }),
-	usersController.getUserAchievements,
+	achievementsController.getUserAchievements,
 );
 
 usersRouter.get(

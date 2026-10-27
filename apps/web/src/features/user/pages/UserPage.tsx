@@ -322,24 +322,27 @@ export default function UserPage() {
 
 				if (resUser.ok === false)
 					throw new AppDomainError(resUser.error);
+					const resultUser = resUser.data;
+					const resultHistory = resHistory.ok ? resHistory.data : [];
+					const resultStats = resStats.ok ? resStats.data : [];
+					const resultAchievements: Achievement[] = resAchievements.ok
+						? resAchievements.data
+						: [];
 
-				const resultUser = resUser.data;
-				const resultHistory = resHistory.ok ? resHistory.data : [];
-				const resultStats = resStats.ok ? resStats.data : [];
-				const resultAchievements = resAchievements.ok
-					? resAchievements.data
-					: [];
-				let loadedFriends: FriendshipDTO[] = [];
-				if (resFriends && resFriends.ok) {
-					loadedFriends = resFriends.data || [];
-				}
-				if (isMounted) {
-					setUserData(resultUser);
-					setHistory(resultHistory || []);
-					setStats(resultStats || []);
-					setAchievements(resultAchievements || []);
-					if (!isOwnProfile) setProfileFriends(loadedFriends);
-				}
+					let loadedFriends: FriendshipDTO[] = [];
+					if (resFriends?.ok) {
+						loadedFriends = resFriends.data || [];
+					}
+
+					if (isMounted) {
+						setUserData(resultUser);
+						setHistory(resultHistory || []);
+						setStats(resultStats || []);
+						setAchievements(resultAchievements);
+						if (!isOwnProfile) {
+							setProfileFriends(loadedFriends);
+						}
+					}
 				if (!resHistory.ok || !resStats.ok || !resAchievements.ok)
 					throw new PartialProfileError();
 			} catch (error) {

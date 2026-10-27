@@ -2,7 +2,6 @@ import { NextFunction, Response } from "express";
 import { sharedService } from "../shared/shared.service";
 import {
 	toUserResponseDTO,
-	Achievement,
 	EditUserSchema,
 	Stat,
 	UserParamsSchema,
@@ -124,39 +123,42 @@ export async function getUserStats(
 	res.status(200).json({ stats: stats });
 }
 
-export async function getUserAchievements(
+export async function getUserFriends(
 	_req: UserRequest,
 	res: Response,
 	_next: NextFunction,
 ) {
-	//WARN: TEMP FAKE ACHIEVEMENTS
-	const achievements: Achievement[] = [
+	const friends: FriendDTO[] = [
 		{
-			uuid: crypto.randomUUID(),
-			icon: "flame",
-			title: "aaa",
-			description: "bbb",
-			objective: 13,
-			current: 1,
+			user: {
+				uuid: crypto.randomUUID(),
+				username: "Another",
+				email: "spongybobby@gmail.com",
+				avatarPath: null,
+			},
+			status: "in_game",
 		},
 		{
-			uuid: crypto.randomUUID(),
-			icon: "zap",
-			title: "ccc",
-			description: "ddd",
-			objective: 100,
-			current: 57,
+			user: {
+				uuid: crypto.randomUUID(),
+				username: "Blabla",
+				email: "spongybobby@gmail.com",
+				avatarPath: null,
+			},
+			status: "online",
 		},
 		{
-			uuid: crypto.randomUUID(),
-			icon: "user",
-			title: "Blablablabla",
-			description: "blibliblibli",
-			objective: 38,
-			current: 192,
+			user: {
+				uuid: crypto.randomUUID(),
+				username: "Nobody",
+				email: "spongybobby@gmail.com",
+				avatarPath: null,
+			},
+			status: "offline",
 		},
 	];
-	res.status(200).json({ achievements: achievements });
+
+	res.status(200).json({ friends: friends });
 }
 
 export async function updateUser(
