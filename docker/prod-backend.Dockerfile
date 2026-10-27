@@ -35,6 +35,7 @@ COPY --chown=node:node apps/server/prisma ./apps/server/prisma
 COPY --chown=node:node docker/backend-entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 RUN mkdir -p /home/node/apps/server/uploads/avatars
+RUN chown node:node /home/node/apps/server/uploads/avatars
 
 USER node
 
