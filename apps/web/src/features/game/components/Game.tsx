@@ -11,6 +11,7 @@ import { useParams } from "react-router";
 import type {
 	ChooseWordPacket,
 	DrawActionPacket,
+	DrawHistoryPacket,
 	DrawStrokePacket,
 	GamePhase,
 	GameStatePacket,
@@ -225,6 +226,22 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	);
 	useWsEvent("DRAW_ACTION", handleRemoteAction);
 
+	const handleDrawHistory = useCallback(
+		(packet: DrawHistoryPacket) => {
+			if (packet.lobbyUuid !== uuid) return;
+			const ctx = canvasRef.current?.getContext("2d");
+			if (!ctx) return;
+			fillBackground(ctx);
+			for (const drawPacket of packet.packets) {
+				if (drawPacket.type === "DRAW_STROKE")
+					handleRemoteStroke(drawPacket);
+				else handleRemoteAction(drawPacket);
+			}
+		},
+		[uuid, handleRemoteStroke, handleRemoteAction],
+	);
+	useWsEvent("DRAW_HISTORY", handleDrawHistory);
+
 	useEffect(() => {
 		if (!uuid || !isConnected) return;
 		const packet: JoinGamePacket = { type: "JOIN_GAME", lobbyUuid: uuid };
@@ -344,7 +361,6 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 				lobbyUuid: uuid ?? "",
 				action: { kind: "FILL", x, y, color },
 			});
-			setIsFilling(false);
 			return;
 		}
 
@@ -484,7 +500,6 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 					},
 				});
 			}
-			setShapeMode("freehand");
 		}
 		if (e.currentTarget.hasPointerCapture(e.pointerId)) {
 			e.currentTarget.releasePointerCapture(e.pointerId);
@@ -634,6 +649,8 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 					disabled={!gameStarted}
 					onClick={() => {
 						setShapeMode("freehand");
+						setIsFilling(false);
+						setIsPickingColor(false);
 						setIsErasing((previousValue) => !previousValue);
 					}}
 					aria-pressed={isErasing}
@@ -650,8 +667,9 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 					type="button"
 					disabled={!gameStarted}
 					onClick={() => {
-						setIsFilling(true);
+						setIsFilling((previousValue) => !previousValue);
 						setIsErasing(false);
+						setIsPickingColor(false);
 						setShapeMode("freehand");
 					}}
 					aria-pressed={isFilling}
@@ -674,6 +692,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 						);
 						setIsErasing(false);
 						setIsFilling(false);
+						setIsPickingColor(false);
 					}}
 					aria-pressed={shapeMode === "rectangle"}
 					className={
@@ -693,6 +712,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 						);
 						setIsErasing(false);
 						setIsFilling(false);
+						setIsPickingColor(false);
 					}}
 					aria-pressed={shapeMode === "circle"}
 					className={
@@ -717,7 +737,9 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 				<button
 					type="button"
 					disabled={!gameStarted}
-					onClick={() => setIsPickingColor(true)}
+					onClick={() =>
+						setIsPickingColor((previousValue) => !previousValue)
+					}
 					aria-pressed={isPickingColor}
 					className={
 						isPickingColor

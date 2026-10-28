@@ -3,6 +3,7 @@ import type {
 	ChooseWordPacket,
 	DrawStrokePacket,
 	DrawActionPacket,
+	DrawHistoryPacket,
 	GameStatePacket,
 	JoinGamePacket,
 } from "@ft_transcendence/shared";
@@ -60,6 +61,7 @@ export function scheduleRoundEnd(lobby: LobbyEntity) {
 				if (!word) return;
 				lobby.selectedWord = word;
 				lobby.gamePhase = "DRAWING";
+				lobby.drawHistory = [];
 				lobby.timerEndsAt = Date.now() + lobby.drawTime * 1000;
 				scheduleRoundEnd(lobby);
 				broadcastState(lobby);
@@ -107,6 +109,7 @@ export function scheduleRoundEnd(lobby: LobbyEntity) {
 				.sort(() => Math.random() - 0.5)
 				.slice(0, lobby.wordChoicesPerTurn);
 			lobby.gamePhase = "CHOOSING";
+			lobby.drawHistory = [];
 			scheduleRoundEnd(lobby);
 			broadcastState(lobby);
 		},
@@ -138,6 +141,12 @@ async function handleJoinGame(ws: AppWebSocket, packet: JoinGamePacket) {
 		scheduleRoundEnd(lobby);
 	}
 	ws.send(JSON.stringify(statePacket(lobby, ws.uuid)));
+	const historyPacket: DrawHistoryPacket = {
+		type: "DRAW_HISTORY",
+		lobbyUuid: lobby.uuid,
+		packets: lobby.gamePhase !== "WAITING" ? lobby.drawHistory : [],
+	};
+	ws.send(JSON.stringify(historyPacket));
 	if (
 		lobby.gameStarted &&
 		(lobby.gamePhase === "CHOOSING" || lobby.gamePhase === "DRAWING")
@@ -158,6 +167,7 @@ async function handleChooseWord(ws: AppWebSocket, packet: ChooseWordPacket) {
 		return;
 	lobby.selectedWord = packet.word;
 	lobby.gamePhase = "DRAWING";
+	lobby.drawHistory = [];
 	lobby.timerEndsAt = Date.now() + lobby.drawTime * 1000;
 	lobby.timeRemainingMs = 0;
 	scheduleRoundEnd(lobby);
@@ -174,6 +184,7 @@ async function handleDrawStroke(ws: AppWebSocket, packet: DrawStrokePacket) {
 	const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
 	if (!lobby || lobby.drawerId !== ws.uuid || lobby.gamePhase !== "DRAWING")
 		return;
+	lobby.drawHistory.push(packet);
 	broadcast(lobby, packet, ws.uuid);
 }
 
@@ -182,6 +193,8 @@ async function handleDrawAction(ws: AppWebSocket, packet: DrawActionPacket) {
 	const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
 	if (!lobby || lobby.drawerId !== ws.uuid || lobby.gamePhase !== "DRAWING")
 		return;
+	if (packet.action.kind === "CLEAR") lobby.drawHistory = [];
+	else lobby.drawHistory.push(packet);
 	broadcast(lobby, packet, ws.uuid);
 }
 

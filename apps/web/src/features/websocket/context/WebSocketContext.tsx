@@ -154,6 +154,7 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 			clearReconnectTimeout();
 			const socket = socketRef.current;
 			socketRef.current = null;
+			setIsConnected(false);
 			socket?.close(1000, "Component unmounted");
 		};
 		// Reopen with the current cookie after login/logout or an account switch.

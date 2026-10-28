@@ -97,6 +97,7 @@ export class LobbyService {
 			timerEndsAt: null,
 			timeRemainingMs: 0,
 			playedThisRound: new Set<string>(),
+			drawHistory: [],
 			maxPlayers: MAX_PLAYERS,
 			customWords: localCustomWords,
 			usingDictionary: data.usingDictionary,
@@ -175,6 +176,7 @@ export class LobbyService {
 				);
 			}
 			lobby.gamePhase = lobby.selectedWord ? "DRAWING" : "CHOOSING";
+			if (lobby.gamePhase === "CHOOSING") lobby.drawHistory = [];
 			lobby.timerEndsAt =
 				Date.now() +
 				(lobby.timeRemainingMs ||

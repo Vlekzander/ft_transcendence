@@ -3,7 +3,11 @@ import {
 	LobbyVisibility,
 	LobbyResponseDTO,
 } from "@ft_transcendence/shared";
-import type { GamePhase } from "@ft_transcendence/shared";
+import type {
+	DrawActionPacket,
+	DrawStrokePacket,
+	GamePhase,
+} from "@ft_transcendence/shared";
 
 export type LobbyEntity = {
 	uuid: string;
@@ -27,6 +31,7 @@ export type LobbyEntity = {
 	timerEndsAt: number | null;
 	timeRemainingMs: number;
 	playedThisRound: Set<string>;
+	drawHistory: (DrawStrokePacket | DrawActionPacket)[];
 	maxPlayers: number;
 	drawTime: number;
 	numberOfRounds: number;

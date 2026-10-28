@@ -72,6 +72,12 @@ export const DrawActionPacketSchema = z.object({
 	action: DrawActionSchema,
 });
 
+export const DrawHistoryPacketSchema = z.object({
+	type: z.literal("DRAW_HISTORY"),
+	lobbyUuid: z.string(),
+	packets: z.array(z.union([DrawStrokePacketSchema, DrawActionPacketSchema])),
+});
+
 export const GameStatePacketSchema = z.object({
 	type: z.literal("GAME_STATE"),
 	lobbyUuid: z.string(),
@@ -144,6 +150,7 @@ export const AppPacketSchema = z.discriminatedUnion(
 		ChooseWordPacketSchema,
 		DrawStrokePacketSchema,
 		DrawActionPacketSchema,
+		DrawHistoryPacketSchema,
 		GameStatePacketSchema,
 		LobbyUpdatedPacketSchema,
 		LobbiesChangedPacketSchema,
@@ -164,6 +171,7 @@ export type ChooseWordPacket = z.infer<typeof ChooseWordPacketSchema>;
 export type DrawStrokePacket = z.infer<typeof DrawStrokePacketSchema>;
 export type DrawAction = z.infer<typeof DrawActionSchema>;
 export type DrawActionPacket = z.infer<typeof DrawActionPacketSchema>;
+export type DrawHistoryPacket = z.infer<typeof DrawHistoryPacketSchema>;
 export type GamePhase = GameStatePacket["phase"];
 export type GameStatePacket = z.infer<typeof GameStatePacketSchema>;
 export type LobbyUpdatedPacket = z.infer<typeof LobbyUpdatedPacketSchema>;
