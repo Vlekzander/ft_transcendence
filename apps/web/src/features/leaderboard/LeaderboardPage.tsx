@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 
 import { Link } from "react-router-dom";
 
-import { AVATARS_PATH } from "../../config";
+import { getAvatarUrl } from "../../config";
 
 type LeaderboardEntry = {
 	username: string;
@@ -75,11 +75,7 @@ export default function LeaderboardPage() {
 									`#${index + 1}`
 								)}
 								<img
-									src={
-										player.avatarPath
-											? AVATARS_PATH + player.avatarPath
-											: "/assets/default_avatar.jpg"
-									}
+									src={getAvatarUrl(player.avatarPath)}
 									alt={`${player.username}'s avatar`}
 									width={20}
 									height={20}
