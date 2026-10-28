@@ -33,6 +33,7 @@ model User {
 	isActive			Boolean			@default(true)
 
 	participations		UserOnGame[]
+	stats				UserStats?
 
 	friendshipsSent		Friendship[]	@relation("FriendshipSender")
 	friendshipsReceived	Friendship[]	@relation("FriendshipReceiver")
@@ -40,6 +41,17 @@ model User {
 	messagesSent		Message[]		@relation("MessageSender")
 	messagesReceived	Message[]		@relation("MessageReceiver")
 }
+
+
+model UserStats {
+	userId				String	@id @db.Uuid
+	wins				Int		@default(0)
+	correctGuesses		Int		@default(0)
+	firstGuessStreak	Int		@default(0)
+	gameStreak			Int		@default(0)
+	user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
+}
+
 
 model Game {
 	uuid			String			@id @default(uuid(7)) @db.Uuid

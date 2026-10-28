@@ -4,6 +4,7 @@ const ALICE_ID = "44b5283f-37da-46e5-9e53-8e2bdee89ac5";
 const BOB_ID = "6d9363f5-4b76-44bf-9fc1-94fcb37d09ee";
 const TUNDRA_ID = "21497eef-b62d-47ce-b422-48b8a37b3185";
 const BAMBI_ID = "9c4742ba-80c0-44f0-bd6c-6d7bb997029c";
+// const TWENTY_ID = "cc78444a-0f83-4ae8-90d1-295a1371d6f1";
 
 async function main() {
 	await prisma.game.deleteMany({});
