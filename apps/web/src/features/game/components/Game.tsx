@@ -47,13 +47,11 @@ function drawDot(
 
 function floodFill(
 	canvas: HTMLCanvasElement,
+	ctx: CanvasRenderingContext2D,
 	x: number,
 	y: number,
 	fillColorValue: string,
 ) {
-	const ctx = canvas.getContext("2d");
-	if (!ctx) return;
-
 	const pixelX = Math.max(0, Math.min(Math.floor(x), canvas.width - 1));
 	const pixelY = Math.max(0, Math.min(Math.floor(y), canvas.height - 1));
 	const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -106,6 +104,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const { user } = useAuth();
 	const { sendPacket, isConnected } = useWebSocket();
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
+	const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 	const lastPointRef = useRef<{ x: number; y: number } | null>(null);
 	const shapeStartRef = useRef<{ x: number; y: number } | null>(null);
 	const shapeSnapshotRef = useRef<ImageData | null>(null);
@@ -144,6 +143,14 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const isDrawer = user?.uuid === drawerId;
 	const canDraw = gameStarted && phase === "DRAWING" && isDrawer;
 
+	const getCtx = useCallback(() => {
+		if (!ctxRef.current && canvasRef.current)
+			ctxRef.current = canvasRef.current.getContext("2d", {
+				willReadFrequently: true,
+			});
+		return ctxRef.current;
+	}, []);
+
 	const handleGameState = useCallback(
 		(packet: GameStatePacket) => {
 			if (packet.lobbyUuid !== uuid) return;
@@ -164,7 +171,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 				(packet.phase === "CHOOSING" || packet.phase === "DRAWING") &&
 				previousDrawingRef.current !== drawingKey
 			) {
-				const ctx = canvasRef.current?.getContext("2d");
+				const ctx = getCtx();
 				if (ctx) fillBackground(ctx);
 				previousDrawingRef.current = drawingKey;
 			}
@@ -176,7 +183,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const handleRemoteStroke = useCallback(
 		(packet: DrawStrokePacket) => {
 			if (packet.lobbyUuid !== uuid) return;
-			const ctx = canvasRef.current?.getContext("2d");
+			const ctx = getCtx();
 			if (!ctx) return;
 			const strokeColor = packet.eraser ? CANVAS_BG : packet.color;
 			ctx.strokeStyle = strokeColor;
@@ -204,7 +211,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		(packet: DrawActionPacket) => {
 			if (packet.lobbyUuid !== uuid) return;
 			const canvas = canvasRef.current;
-			const ctx = canvas?.getContext("2d");
+			const ctx = getCtx();
 			if (!canvas || !ctx) return;
 			const action = packet.action;
 			if (action.kind === "CLEAR") {
@@ -212,7 +219,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 				return;
 			}
 			if (action.kind === "FILL") {
-				floodFill(canvas, action.x, action.y, action.color);
+				floodFill(canvas, ctx, action.x, action.y, action.color);
 				return;
 			}
 			ctx.strokeStyle = action.eraser ? CANVAS_BG : action.color;
@@ -229,7 +236,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const handleDrawHistory = useCallback(
 		(packet: DrawHistoryPacket) => {
 			if (packet.lobbyUuid !== uuid) return;
-			const ctx = canvasRef.current?.getContext("2d");
+			const ctx = getCtx();
 			if (!ctx) return;
 			fillBackground(ctx);
 			for (const drawPacket of packet.packets) {
@@ -333,7 +340,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 		window.getSelection()?.removeAllRanges();
 
-		const ctx = e.currentTarget.getContext("2d");
+		const ctx = getCtx();
 		if (!ctx) return;
 
 		if (isPickingColor) {
@@ -355,7 +362,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 		if (isFilling) {
 			const { x, y } = getMousePosition(e);
-			floodFill(e.currentTarget, x, y, color);
+			floodFill(e.currentTarget, ctx, x, y, color);
 			sendPacket({
 				type: "DRAW_ACTION",
 				lobbyUuid: uuid ?? "",
@@ -434,7 +441,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		if (!gameStarted || phase !== "DRAWING" || !isDrawer || !isDrawing)
 			return;
 
-		const ctx = e.currentTarget.getContext("2d");
+		const ctx = getCtx();
 		if (!ctx) return;
 
 		const { x, y } = getMousePosition(e);
@@ -479,7 +486,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 	const stopDrawing = (e: PointerEvent<HTMLCanvasElement>) => {
 		if (isDrawing && shapeMode !== "freehand") {
-			const ctx = e.currentTarget.getContext("2d");
+			const ctx = getCtx();
 			const shapeStart = shapeStartRef.current;
 			const shapeSnapshot = shapeSnapshotRef.current;
 			if (ctx && shapeStart && shapeSnapshot) {
@@ -515,7 +522,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
 
-		const ctx = canvas.getContext("2d");
+		const ctx = getCtx();
 		if (!ctx) return;
 
 		fillBackground(ctx);
