@@ -159,7 +159,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			setChoices(packet.choices);
 			setSelectedWord(packet.selectedWord);
 			setTimerEndsAt(packet.timerEndsAt);
-			const drawingKey = `${packet.round}:${packet.drawerId}`;
+			const drawingKey = `${packet.matchId}:${packet.round}:${packet.drawerId}`;
 			if (
 				(packet.phase === "CHOOSING" || packet.phase === "DRAWING") &&
 				previousDrawingRef.current !== drawingKey
@@ -530,7 +530,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		<div>
 			<div className="mb-3 flex items-center justify-between font-semibold">
 				<span>
-					Round {round}/{totalRounds} Player {playerNumber}/
+					Round {round}/{totalRounds} · Drawing turn {playerNumber}/
 					{totalPlayers}
 				</span>
 				{(phase === "CHOOSING" || phase === "DRAWING") && (
@@ -590,11 +590,15 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 				{!gameStarted && (
 					<div className="absolute inset-0 flex items-center justify-center">
 						<p
-							className={`border-2 border-black bg-white px-4 py-2 text-center font-semibold ${phase === "WAITING" ? "text-black" : "text-red-600"}`}
+							className={`border-2 border-black bg-white px-4 py-2 text-center font-semibold ${phase === "PAUSED" ? "text-red-600" : "text-black"}`}
 						>
 							{phase === "WAITING"
 								? "Waiting for next game"
-								: "Game paused"}
+								: phase === "ROUND_END"
+									? "Turn finished"
+									: phase === "FINISHED"
+										? "Game finished"
+										: "Game paused"}
 						</p>
 					</div>
 				)}

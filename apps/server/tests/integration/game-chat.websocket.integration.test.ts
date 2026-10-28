@@ -10,7 +10,8 @@ vi.mock("@/utils/jwt.util", () => ({
 vi.mock("@/modules/msg/msg.socket", () => ({ registerMsgSockets: vi.fn() }));
 import { setupWebSocketServer } from "@/websocket.server";
 import { lobbyService, lobbiesByJoinCode } from "@/modules/lobby/lobby.service";
-import { gameChatService } from "@/modules/game-chat/game-chat.service";
+import { startMatch, beginTurn } from "@/modules/game/scoring.service";
+import { stopRoundTimer } from "@/modules/lobby/game.socket";
 
 const defaults = CreateLobbySchema.parse({});
 describe("game chat WebSocket delivery", () => {
@@ -28,6 +29,8 @@ describe("game chat WebSocket delivery", () => {
 		url = `ws://127.0.0.1:${(server.address() as AddressInfo).port}`;
 	});
 	afterEach(async () => {
+		for (const room of lobbiesByJoinCode.values())
+			stopRoundTimer(room.uuid);
 		for (const ws of clients.splice(0)) ws.terminate();
 		for (const ws of wss.clients) ws.terminate();
 		await new Promise<void>((resolve) => wss.close(() => resolve()));
@@ -133,7 +136,13 @@ describe("game chat WebSocket delivery", () => {
 		await lobbyService.joinLobby(room.uuid, "guest");
 		const host = await connect("host"),
 			guest = await connect("guest");
-		gameChatService.setRoundWord(room.uuid, "chat");
+		room.gameStarted = true;
+		room.gamePhase = "DRAWING";
+		room.drawerId = "host";
+		room.selectedWord = "chat";
+		room.timerEndsAt = Date.now() + room.drawTime * 1000;
+		startMatch(room);
+		beginTurn(room);
 		guest.ws.send(
 			JSON.stringify({
 				type: "SEND_GAME_CHAT",
@@ -158,6 +167,8 @@ describe("game chat WebSocket delivery", () => {
 			expect(host.packets[0]?.type).toBe("GAME_CHAT_GUESS"),
 		);
 		expect(host.packets[0]).not.toHaveProperty("content");
-		expect(guest.packets.at(-1)).toEqual(host.packets[0]);
+		expect(guest.packets.find((p) => p.type === "GAME_CHAT_GUESS")).toEqual(
+			host.packets[0],
+		);
 	});
 });

@@ -17,6 +17,7 @@ import { lobbyService } from "./lobby.service";
 import { notifyLobbiesChanged, notifyLobbyUpdated } from "./lobby.events";
 import {
 	broadcastState,
+	reconcileGame,
 	scheduleRoundEnd,
 	stopRoundTimer,
 } from "./game.socket";
@@ -109,9 +110,10 @@ export async function leaveLobbyController(
 		const { uuid: lobbyUuid } = req.parsedParams!;
 		const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
 		await lobbyService.leaveLobby(lobbyUuid, userId);
-		if (lobby && lobby.connectedPlayers.size > 0)
+		if (lobby) reconcileGame(lobby);
+		if (lobby && lobby.connectedPlayers.size > 0) {
 			notifyLobbyUpdated(lobby);
-		else {
+		} else {
 			stopRoundTimer(lobbyUuid);
 			notifyLobbiesChanged();
 		}
@@ -203,7 +205,10 @@ export async function banLobbyController(
 		const { userId: targetUserId } = req.parsedBody!;
 		await lobbyService.banLobby(lobbyUuid, userId, targetUserId);
 		const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
-		if (lobby) notifyLobbyUpdated(lobby, [targetUserId]);
+		if (lobby) {
+			reconcileGame(lobby);
+			notifyLobbyUpdated(lobby, [targetUserId]);
+		}
 		res.status(200).json({ message: "Lobby banned successfully" });
 	} catch (err) {
 		next(err);

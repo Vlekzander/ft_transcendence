@@ -1,3 +1,4 @@
+import { GameScoreboard } from "../components/GameScoreboard";
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import { useAuth } from "../../auth/context/AuthContext";
@@ -55,17 +56,24 @@ function GameRoom({ uuid }: { uuid?: string }) {
 			</div>
 		);
 	return (
-		<div className="grow min-h-0 flex flex-row items-stretch gap-2">
+		<div className="grow min-h-0 grid grid-cols-1 xl:grid-cols-[18rem_minmax(0,1fr)_22rem] items-start gap-3 p-2">
 			<div className="flex min-h-0 flex-1">
 				<Lobby lobby={lobby} onLobbyChange={setLobby} />
 			</div>
 			<div className="flex min-h-0 flex-1 items-center justify-center">
 				<Game gameStarted={lobby.gameStarted} />
 			</div>
-			<div className="flex min-h-0 flex-1">
+			<div className="min-w-0 flex flex-col gap-3">
+				<GameScoreboard
+					roomId={lobby.uuid}
+					users={users}
+					isHost={userId === lobby.hostId}
+				/>
 				<GameChat
 					roomId={lobby.uuid}
-					playerIds={lobby.connectedPlayers}
+					playerIds={lobby.connectedPlayers.filter(
+						(id) => !lobby.spectatorPlayers.includes(id),
+					)}
 					users={users}
 				/>
 			</div>

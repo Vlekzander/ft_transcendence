@@ -31,6 +31,11 @@ export const JoinGamePacketSchema = z.object({
 	lobbyUuid: z.string(),
 });
 
+export const RetryGameSavePacketSchema = z.object({
+	type: z.literal("RETRY_GAME_SAVE"),
+	lobbyUuid: z.string(),
+});
+
 export const ChooseWordPacketSchema = z.object({
 	type: z.literal("CHOOSE_WORD"),
 	lobbyUuid: z.string(),
@@ -86,6 +91,8 @@ export const GameStatePacketSchema = z.object({
 		z.literal("CHOOSING"),
 		z.literal("DRAWING"),
 		z.literal("PAUSED"),
+		z.literal("ROUND_END"),
+		z.literal("FINISHED"),
 	]),
 	round: z.number(),
 	totalRounds: z.number(),
@@ -95,6 +102,13 @@ export const GameStatePacketSchema = z.object({
 	choices: z.array(z.string()),
 	selectedWord: z.string().nullable(),
 	timerEndsAt: z.number().nullable(),
+	matchId: z.string().nullable(),
+	scores: z.record(z.string(), z.number()),
+	guessedPlayers: z.array(z.string()),
+	lastTurn: z
+		.object({ word: z.string(), points: z.record(z.string(), z.number()) })
+		.nullable(),
+	persistence: z.enum(["NONE", "SAVING", "SAVED", "FAILED"]),
 });
 
 export const LobbyUpdatedPacketSchema = z.object({
@@ -147,6 +161,7 @@ export const AppPacketSchema = z.discriminatedUnion(
 		SendMessagePacketSchema,
 		ReceiveMessagePacketSchema,
 		JoinGamePacketSchema,
+		RetryGameSavePacketSchema,
 		ChooseWordPacketSchema,
 		DrawStrokePacketSchema,
 		DrawActionPacketSchema,

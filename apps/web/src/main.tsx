@@ -1,3 +1,4 @@
+import LeaderboardPage from "./features/leaderboard/LeaderboardPage";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import "./styles/global.css";
@@ -29,6 +30,7 @@ const router = createBrowserRouter([
 		path: "/",
 		element: <Layout />,
 		children: [
+			{ path: "/leaderboard", element: <LeaderboardPage /> },
 			{
 				element: <RequireAuth />,
 				children: [
