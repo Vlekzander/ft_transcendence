@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { v7 as uuidv7 } from "uuid";
 import type { LobbyEntity } from "../lobby/lobby.mapper";
 
 export type Turn = {
@@ -31,7 +31,7 @@ export function startMatch(lobby: LobbyEntity) {
 		(id) => !lobby.spectatorPlayers.has(id),
 	);
 	const match: Match = {
-		id: randomUUID(),
+		id: uuidv7(),
 		mode: lobby.mode,
 		startedAt: Date.now(),
 		scores: new Map(players.map((id) => [id, 0])),
