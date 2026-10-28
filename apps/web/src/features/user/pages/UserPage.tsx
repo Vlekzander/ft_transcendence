@@ -333,6 +333,11 @@ export default function UserPage() {
 				if (resFriends && resFriends.ok) {
 					loadedFriends = resFriends.data || [];
 				}
+				if (resultHistory.length > 0) {
+					resultHistory.forEach((game) => {
+						game.participants.sort((a, b) => b.score - a.score);
+					});
+				}
 				if (isMounted) {
 					setUserData(resultUser);
 					setHistory(resultHistory || []);
