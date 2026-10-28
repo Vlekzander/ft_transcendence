@@ -4,7 +4,7 @@ services:
         container_name: ft_transcendence-backend-test
         build:
             context: .
-            dockerfile: ./docker/backend.Dockerfile
+            dockerfile: ./docker/dev-backend.Dockerfile
         user: 1000:1000
         volumes:
             - ./apps/server/:/home/node/apps/server
