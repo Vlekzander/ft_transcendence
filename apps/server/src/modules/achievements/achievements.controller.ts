@@ -12,7 +12,7 @@ export async function getUserAchievements(
 		const achievements =
 			await achievementsService.getUserAchievements(uuid);
 
-		return res.status(200).json(achievements);
+		return res.status(200).json({ achievements });
 	} catch (error) {
 		next(error);
 	}

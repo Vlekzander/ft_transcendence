@@ -6,7 +6,6 @@ import {
 	getPendingFriendRequests,
 	getSentFriendRequests,
 	getUser,
-	getUserAchievements,
 	getUserHistory,
 	getUserStats,
 	searchUser,
@@ -14,6 +13,8 @@ import {
 	updateAvatar,
 	updateUser,
 } from "@/modules/users/users.controller";
+
+import { getUserAchievements } from "@/modules/achievements/achievements.controller";
 import { sharedService } from "@/modules/shared/shared.service";
 import { usersService } from "@/modules/users/users.service";
 import {

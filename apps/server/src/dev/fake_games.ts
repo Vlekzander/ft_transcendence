@@ -1,9 +1,9 @@
 import { prisma } from "../lib/prisma.lib";
 
-const ALICE_ID = "44b5283f-37da-46e5-9e53-8e2bdee89ac5";
-const BOB_ID = "6d9363f5-4b76-44bf-9fc1-94fcb37d09ee";
-const TUNDRA_ID = "21497eef-b62d-47ce-b422-48b8a37b3185";
-const BAMBI_ID = "9c4742ba-80c0-44f0-bd6c-6d7bb997029c";
+const ALICE_ID = "00f8d6e4-c074-47de-9c58-540e4146a56e";
+const BOB_ID = "151d4685-b88c-4c75-abbc-32ea273dc23d";
+const TUNDRA_ID = "126162a7-770f-4b25-9707-6c09a6bcc124";
+const BAMBI_ID = "9d0e4bbd-ce4a-4c0a-ae5a-d2f2092e48d0";
 // const TWENTY_ID = "cc78444a-0f83-4ae8-90d1-295a1371d6f1";
 
 async function main() {
