@@ -26,6 +26,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
 import LeaderboardPage from "./features/leaderboard/pages/LeaderboardPage";
+import HomePage from "./pages/HomePage";
 
 const router = createBrowserRouter([
 	{
@@ -107,7 +108,7 @@ const router = createBrowserRouter([
 			},
 			{
 				path: "/",
-				element: <div className="bg-red-500">Une page</div>,
+				element: <HomePage />,
 			},
 			{
 				path: "/logout",
