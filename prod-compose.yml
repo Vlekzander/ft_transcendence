@@ -29,13 +29,12 @@ services:
         networks:
             - ft_network-b-prod
             - ft_network-bf-prod
-        secrets:
-            - db_username
-            - db_password
-            - jwt_secret
         environment:
             DB_HOST: database
-            DB_NAME: ft_transcendence
+            DB_NAME: ${DB_NAME}
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            JWT_SECRET: ${JWT_SECRET}
         depends_on:
             database:
                 condition: service_healthy
@@ -47,18 +46,12 @@ services:
             - database_data:/var/lib/postgresql/18/docker
         networks:
             - ft_network-b-prod
-        secrets:
-            - db_username
-            - db_password
         environment:
-            POSTGRES_USER_FILE: /run/secrets/db_username
-            POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
         healthcheck:
-            test:
-                [
-                    "CMD-SHELL",
-                    "sh -c 'pg_isready -U $(cat /run/secrets/db_username) -d ft_transcendence'",
-                ]
+            test: ["CMD-SHELL", 'sh -c "pg_isready -U $DB_USER -d $DB_NAME"']
             interval: 10s
             timeout: 3s
             retries: 3
@@ -74,12 +67,6 @@ networks:
         driver: bridge
 
 secrets:
-    db_username:
-        file: docker/secrets/db_username.txt
-    db_password:
-        file: docker/secrets/db_password.txt
-    jwt_secret:
-        file: docker/secrets/jwt_secret.txt
     ssl_crt:
         file: docker/secrets/ssl.crt
     ssl_key:

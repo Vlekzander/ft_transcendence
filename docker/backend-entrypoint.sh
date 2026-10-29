@@ -6,12 +6,13 @@ BACKEND_DIR="${PROJECT_DIR}/apps/server"
 
 cd ${BACKEND_DIR}
 
-DB_USER="${DB_USER:-$([ -f /run/secrets/db_username ] && cat /run/secrets/db_username || echo "user")}"
-DB_PASSWORD="${DB_PASSWORD:-$([ -f /run/secrets/db_password ] && cat /run/secrets/db_password || echo "pass")}"
-DB_HOST="${DB_HOST:-localhost}"
-DB_NAME="${DB_NAME:-ft_transcendence}"
-
-export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?schema=public"
+export DATABASE_URL=$(node -e '
+	const user = encodeURIComponent(process.env.DB_USER || "");
+	const password = encodeURIComponent(process.env.DB_PASSWORD || "");
+	const host = process.env.DB_HOST || "";
+	const name = process.env.DB_NAME || "";
+	console.log(`postgresql://${user}:${password}@${host}:5432/${name}`);
+')
 
 npx prisma db push
 exec "$@"
