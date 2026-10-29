@@ -32,7 +32,9 @@ RUN npm install --omit=dev
 
 COPY --chown=node:node --from=builder /home/node/packages/shared/dist ./packages/shared/dist
 COPY --chown=node:node --from=builder /home/node/apps/server/dist ./apps/server/dist
+COPY --chown=node:node --from=builder /home/node/apps/server/src/generated ./apps/server/dist/generated
 COPY --chown=node:node apps/server/prisma ./apps/server/prisma
+COPY --chown=node:node apps/server/data ./apps/server/data
 COPY --chown=node:node docker/backend-entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 RUN mkdir -p /home/node/apps/server/uploads/avatars

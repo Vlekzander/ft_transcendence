@@ -310,39 +310,51 @@ export default function UserPage() {
 
 		const fetchData = async () => {
 			if (!uuid) return;
+
 			try {
 				setLoading(true);
 				setError(null);
+
 				const resUser = await getUser(uuid);
 				const resHistory = await getHistory(uuid);
 				const resStats = await getStats(uuid);
 				const resAchievements = await getAchievements(uuid);
+
 				let resFriends = undefined;
 				if (!isOwnProfile) resFriends = await getFriends(uuid);
 
 				if (resUser.ok === false)
 					throw new AppDomainError(resUser.error);
-					const resultUser = resUser.data;
-					const resultHistory = resHistory.ok ? resHistory.data : [];
-					const resultStats = resStats.ok ? resStats.data : [];
-					const resultAchievements: Achievement[] = resAchievements.ok
-						? resAchievements.data
-						: [];
 
-					let loadedFriends: FriendshipDTO[] = [];
-					if (resFriends?.ok) {
-						loadedFriends = resFriends.data || [];
-					}
+				const resultUser = resUser.data;
+				const resultHistory = resHistory.ok ? resHistory.data : [];
+				const resultStats = resStats.ok ? resStats.data : [];
+				const resultAchievements: Achievement[] = resAchievements.ok
+					? resAchievements.data
+					: [];
 
-					if (isMounted) {
-						setUserData(resultUser);
-						setHistory(resultHistory || []);
-						setStats(resultStats || []);
-						setAchievements(resultAchievements);
-						if (!isOwnProfile) {
-							setProfileFriends(loadedFriends);
-						}
+				let loadedFriends: FriendshipDTO[] = [];
+				if (resFriends?.ok) {
+					loadedFriends = resFriends.data || [];
+				}
+
+				if (resultHistory.length > 0) {
+					resultHistory.forEach((game) => {
+						game.participants.sort((a, b) => b.score - a.score);
+					});
+				}
+
+				if (isMounted) {
+					setUserData(resultUser);
+					setHistory(resultHistory);
+					setStats(resultStats);
+					setAchievements(resultAchievements);
+
+					if (!isOwnProfile) {
+						setProfileFriends(loadedFriends);
 					}
+				}
+
 				if (!resHistory.ok || !resStats.ok || !resAchievements.ok)
 					throw new PartialProfileError();
 			} catch (error) {

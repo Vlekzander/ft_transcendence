@@ -27,11 +27,9 @@ vi.mock("@/modules/msg/msg.service", () => ({
 
 vi.mock("@/modules/shared/shared.service", () => ({
 	sharedService: {
-		getUserById: vi
-			.fn()
-			.mockResolvedValue({
-				uuid: "123e4567-e89b-12d3-a456-426614174000",
-			}),
+		getUserById: vi.fn().mockResolvedValue({
+			uuid: "123e4567-e89b-12d3-a456-426614174000",
+		}),
 		validateUser: vi.fn().mockResolvedValue(true),
 	},
 }));

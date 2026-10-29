@@ -64,6 +64,7 @@ services:
             - db_username
             - db_password
         environment:
+            POSTGRES_DB: ft_transcendence
             POSTGRES_USER_FILE: /run/secrets/db_username
             POSTGRES_PASSWORD_FILE: /run/secrets/db_password
         healthcheck:

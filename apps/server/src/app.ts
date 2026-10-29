@@ -1,3 +1,4 @@
+import leaderboardRouter from "./modules/leaderboard/leaderboard.routes";
 import { hello } from "@ft_transcendence/shared";
 import cors from "cors";
 import express from "express";
@@ -7,6 +8,7 @@ import { AVATAR_DIR } from "./config/upload.config";
 import authRouter from "./modules/auth/auth.routes";
 import usersRouter from "./modules/users/users.routes";
 import msgRouter from "./modules/msg/msg.routes";
+import lobbyRouter from "./modules/lobby/lobby.routes";
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
 
@@ -37,6 +39,9 @@ app.use(
 		maxAge: "7d",
 	}),
 );
+
+app.use("/lobbies", lobbyRouter);
+app.use("/leaderboard", leaderboardRouter);
 
 app.use(errorHandler);
 export default app;
