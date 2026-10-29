@@ -13,13 +13,16 @@ import type {
 	DrawHistoryPacket,
 	GameStatePacket,
 	JoinGamePacket,
+	LobbyPingPacket,
 } from "@ft_transcendence/shared";
 import { registerPacketHandler, sendToWs } from "../../websocket.server";
 import { lobbyService } from "./lobby.service";
 import type { LobbyEntity } from "./lobby.mapper";
-import { notifyLobbyUpdated } from "./lobby.events";
+import { notifyLobbiesChanged, notifyLobbyUpdated } from "./lobby.events";
 
 const roundTimers = new Map<string, NodeJS.Timeout>();
+const PRESENCE_TIMEOUT_MS = 5000;
+const presenceTimers = new Map<string, NodeJS.Timeout>();
 
 function broadcast(
 	lobby: LobbyEntity,
@@ -319,8 +322,48 @@ async function handleDrawAction(ws: AppWebSocket, packet: DrawActionPacket) {
 	broadcast(lobby, packet, ws.uuid);
 }
 
+export async function removePlayerFromLobby(
+	lobbyUuid: string,
+	userId: string,
+): Promise<void> {
+	const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
+	await lobbyService.leaveLobby(lobbyUuid, userId);
+	if (lobby) reconcileGame(lobby);
+	if (lobby && lobby.connectedPlayers.size > 0) {
+		notifyLobbyUpdated(lobby);
+	} else {
+		stopRoundTimer(lobbyUuid);
+		notifyLobbiesChanged();
+	}
+}
+
+async function removeIfStillMember(lobbyUuid: string, userId: string) {
+	const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
+	if (!lobby || !lobby.connectedPlayers.has(userId)) return;
+	await removePlayerFromLobby(lobbyUuid, userId);
+}
+
+export function resetPresenceTimer(lobbyUuid: string, userId: string) {
+	clearTimeout(presenceTimers.get(userId));
+	const timer = setTimeout(() => {
+		presenceTimers.delete(userId);
+		removeIfStillMember(lobbyUuid, userId).catch((error) =>
+			console.error("Unable to remove inactive player", error),
+		);
+	}, PRESENCE_TIMEOUT_MS);
+	presenceTimers.set(userId, timer);
+}
+
+async function handleLobbyPing(ws: AppWebSocket, packet: LobbyPingPacket) {
+	if (!ws.uuid) return;
+	const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
+	if (!lobby || !lobby.connectedPlayers.has(ws.uuid)) return;
+	resetPresenceTimer(lobby.uuid, ws.uuid);
+}
+
 export function registerGameSockets(): void {
 	registerPacketHandler("JOIN_GAME", handleJoinGame);
+	registerPacketHandler("LOBBY_PING", handleLobbyPing);
 	registerPacketHandler("RETRY_GAME_SAVE", async (ws, packet) => {
 		const lobby = await lobbyService.getLobbyByUuid(packet.lobbyUuid);
 		if (

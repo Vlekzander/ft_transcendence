@@ -16,6 +16,7 @@ import type {
 	GamePhase,
 	GameStatePacket,
 	JoinGamePacket,
+	LobbyPingPacket,
 } from "@ft_transcendence/shared";
 import { useAuth } from "../../auth/context/AuthContext";
 import { useWebSocket } from "../../websocket/context/WebSocketContext";
@@ -253,6 +254,13 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		if (!uuid || !isConnected) return;
 		const packet: JoinGamePacket = { type: "JOIN_GAME", lobbyUuid: uuid };
 		sendPacket(packet);
+	}, [sendPacket, uuid, isConnected]);
+
+	useEffect(() => {
+		if (!uuid || !isConnected) return;
+		const packet: LobbyPingPacket = { type: "LOBBY_PING", lobbyUuid: uuid };
+		const interval = setInterval(() => sendPacket(packet), 1000);
+		return () => clearInterval(interval);
 	}, [sendPacket, uuid, isConnected]);
 
 	useEffect(() => {

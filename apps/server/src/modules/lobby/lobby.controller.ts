@@ -18,6 +18,8 @@ import { notifyLobbiesChanged, notifyLobbyUpdated } from "./lobby.events";
 import {
 	broadcastState,
 	reconcileGame,
+	removePlayerFromLobby,
+	resetPresenceTimer,
 	scheduleRoundEnd,
 	stopRoundTimer,
 } from "./game.socket";
@@ -35,6 +37,7 @@ export async function createLobbyController(
 		if (!userId) throw new RequireAuthError();
 		const data = req.parsedBody!;
 		const lobby = await lobbyService.createLobby(userId, data);
+		resetPresenceTimer(lobby.uuid, userId);
 		const dto = toLobbyResponseDTO(lobby);
 		notifyLobbiesChanged();
 		res.status(201).json({ data: dto });
@@ -91,6 +94,7 @@ export async function joinLobbyController(
 			throw new LobbyNotFoundError();
 		}
 		await lobbyService.joinLobby(lobby.uuid, userId);
+		resetPresenceTimer(lobby.uuid, userId);
 		notifyLobbyUpdated(lobby);
 		const dto = toLobbyResponseDTO(lobby);
 		res.status(200).json({ data: dto });
@@ -108,15 +112,7 @@ export async function leaveLobbyController(
 		const userId = getTokenUuid(req);
 		if (!userId) throw new RequireAuthError();
 		const { uuid: lobbyUuid } = req.parsedParams!;
-		const lobby = await lobbyService.getLobbyByUuid(lobbyUuid);
-		await lobbyService.leaveLobby(lobbyUuid, userId);
-		if (lobby) reconcileGame(lobby);
-		if (lobby && lobby.connectedPlayers.size > 0) {
-			notifyLobbyUpdated(lobby);
-		} else {
-			stopRoundTimer(lobbyUuid);
-			notifyLobbiesChanged();
-		}
+		await removePlayerFromLobby(lobbyUuid, userId);
 		res.status(200).json({ message: "Left lobby successfully" });
 	} catch (err) {
 		next(err);

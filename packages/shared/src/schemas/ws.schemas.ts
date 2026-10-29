@@ -31,6 +31,11 @@ export const JoinGamePacketSchema = z.object({
 	lobbyUuid: z.string(),
 });
 
+export const LobbyPingPacketSchema = z.object({
+	type: z.literal("LOBBY_PING"),
+	lobbyUuid: z.string(),
+});
+
 export const RetryGameSavePacketSchema = z.object({
 	type: z.literal("RETRY_GAME_SAVE"),
 	lobbyUuid: z.string(),
@@ -161,6 +166,7 @@ export const AppPacketSchema = z.discriminatedUnion(
 		SendMessagePacketSchema,
 		ReceiveMessagePacketSchema,
 		JoinGamePacketSchema,
+		LobbyPingPacketSchema,
 		RetryGameSavePacketSchema,
 		ChooseWordPacketSchema,
 		DrawStrokePacketSchema,
@@ -182,6 +188,7 @@ export type MessagePacket = z.infer<typeof MessagePacketSchema>;
 export type SendMessagePacket = z.infer<typeof SendMessagePacketSchema>;
 export type ReceiveMessagePacket = z.infer<typeof ReceiveMessagePacketSchema>;
 export type JoinGamePacket = z.infer<typeof JoinGamePacketSchema>;
+export type LobbyPingPacket = z.infer<typeof LobbyPingPacketSchema>;
 export type ChooseWordPacket = z.infer<typeof ChooseWordPacketSchema>;
 export type DrawStrokePacket = z.infer<typeof DrawStrokePacketSchema>;
 export type DrawAction = z.infer<typeof DrawActionSchema>;
