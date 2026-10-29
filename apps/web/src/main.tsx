@@ -21,6 +21,7 @@ import FriendsPage from "./features/friends/pages/FriendsPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
+import LeaderboardPage from "./features/leaderboard/LeaderboardPage";
 
 const router = createBrowserRouter([
 	{
@@ -93,6 +94,10 @@ const router = createBrowserRouter([
 			{
 				path: "/testws",
 				element: <TestWsPage />,
+			},
+			{
+				path: "/leaderboard",
+				element: <LeaderboardPage />,
 			},
 		],
 	},
