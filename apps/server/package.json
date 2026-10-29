@@ -8,12 +8,13 @@
 		"build": "tsc -p tsconfig.build.json && tsc-alias -p tsconfig.build.json --resolve-full-paths",
 		"start": "node dist/server.js",
 		"lint": "eslint .",
-		"test": "vitest run --maxWorkers=1 --watch",
-		"test:coverage": "vitest run --coverage --maxWorkers=1 --watch",
-		"test:unit": "vitest run tests/unit --watch",
+		"test": "vitest run --maxWorkers=1",
+		"test:coverage": "vitest run --coverage --maxWorkers=1",
+		"test:unit": "vitest run tests/unit",
 		"test:unit-nowatch": "vitest run tests/unit",
-		"test:integration": "vitest run tests/integration --maxWorkers=1 --watch",
-		"postinstall": "prisma generate || true"
+		"test:integration": "vitest run tests/integration --maxWorkers=1",
+		"postinstall": "prisma generate || true",
+		"test:watch": "vitest --maxWorkers=1"
 	},
 	"dependencies": {
 		"@ft_transcendence/shared": "*",

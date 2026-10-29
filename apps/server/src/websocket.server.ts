@@ -50,13 +50,12 @@ export function sendToWs(uuid: string, packet: AppPacket) {
 	for (const socket of sockets) socket.send(JSON.stringify(packet));
 }
 
-async function addSocketToPresence(ws: AppWebSocket) {
-	if (!ws.uuid) return;
+async function addSocketToPresence(ws: AppWebSocket, uuid: string) {
+	const user = await sharedService.getUserById(uuid);
+	const isActive = await sharedService.validateUser(uuid);
 
-	const user = await sharedService.getUserById(ws.uuid);
-	const isActive = await sharedService.validateUser(ws.uuid);
-
-	if (!user || !isActive) return;
+	if (!user || !isActive || ws.readyState !== WebSocket.OPEN) return;
+	ws.uuid = uuid;
 
 	const sockets = presence.get(ws.uuid) ?? new Set<AppWebSocket>();
 
@@ -125,6 +124,12 @@ async function handlePacket(ws: AppWebSocket, data: RawData) {
 	}
 
 	try {
+		if (ws.uuid && !(await sharedService.validateUser(ws.uuid))) {
+			removeSocketFromPresence(ws);
+			ws.uuid = undefined;
+			sendError(ws, "Authentication required");
+			return;
+		}
 		await handler(ws, packet);
 	} catch (error) {
 		if (error instanceof Error) sendError(ws, error.message);
@@ -139,22 +144,24 @@ export const setupWebSocketServer = (httpserver: Server) => {
 	wss.on("connection", (ws: AppWebSocket, req) => {
 		ws.isAlive = true;
 
-		try {
-			const token = req.headers.cookie
-				?.split(";")
-				.map((cookie) => cookie.trim())
-				.find((cookie) => cookie.startsWith("token="))
-				?.replace("token=", "");
-
-			if (token) {
-				const payload = validateAccessToken(token);
-
-				ws.uuid = payload.sub?.toString();
+		// Install listeners immediately, but wait for account validation before
+		// dispatching messages. A JWT alone does not prove the account is active.
+		const authentication = (async () => {
+			try {
+				const token = req.headers.cookie
+					?.split(";")
+					.map((c) => c.trim())
+					.find((c) => c.startsWith("token="))
+					?.slice("token=".length);
+				if (token) {
+					const payload = validateAccessToken(token);
+					if (payload.sub)
+						await addSocketToPresence(ws, payload.sub.toString());
+				}
+			} catch (error) {
+				if (error instanceof Error) sendError(ws, error.message);
 			}
-			addSocketToPresence(ws);
-		} catch (error) {
-			if (error instanceof Error) sendError(ws, error.message);
-		}
+		})();
 
 		const heartbeatInterval = startHeartbeat(ws);
 
@@ -164,7 +171,10 @@ export const setupWebSocketServer = (httpserver: Server) => {
 		});
 
 		ws.on("message", (message: RawData) => {
-			handlePacket(ws, message);
+			void authentication.then(() => {
+				if (ws.readyState === WebSocket.OPEN)
+					return handlePacket(ws, message);
+			});
 		});
 
 		ws.on("pong", () => {

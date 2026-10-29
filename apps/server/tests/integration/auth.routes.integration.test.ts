@@ -1,3 +1,4 @@
+import { assertTestDatabase } from "./database";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import { prisma } from "@/lib/prisma.lib";
@@ -9,6 +10,7 @@ describe("auth routes", () => {
 	});
 
 	beforeEach(async () => {
+		assertTestDatabase();
 		await prisma.user.deleteMany();
 	});
 

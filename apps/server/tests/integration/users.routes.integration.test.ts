@@ -1,3 +1,4 @@
+import { assertTestDatabase } from "./database";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import app from "@/app";
@@ -12,6 +13,7 @@ describe("users routes", () => {
 	});
 
 	beforeEach(async () => {
+		assertTestDatabase();
 		await prisma.friendship.deleteMany();
 		await prisma.userOnGame.deleteMany();
 		await prisma.game.deleteMany();
