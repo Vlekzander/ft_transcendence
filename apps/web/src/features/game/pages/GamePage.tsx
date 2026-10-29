@@ -71,9 +71,8 @@ function GameRoom({ uuid }: { uuid?: string }) {
 				/>
 				<GameChat
 					roomId={lobby.uuid}
-					playerIds={lobby.connectedPlayers.filter(
-						(id) => !lobby.spectatorPlayers.includes(id),
-					)}
+					playerIds={lobby.connectedPlayers}
+					spectatorIds={lobby.spectatorPlayers}
 					users={users}
 				/>
 			</div>

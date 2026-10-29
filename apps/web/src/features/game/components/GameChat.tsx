@@ -11,10 +11,12 @@ import { useWsEvent } from "../../websocket/hooks/useWsEvent";
 export function GameChat({
 	roomId,
 	playerIds,
+	spectatorIds,
 	users,
 }: {
 	roomId: string;
 	playerIds: string[];
+	spectatorIds: string[];
 	users: Record<string, PublicUserDTO>;
 }) {
 	const { user } = useAuth();
@@ -122,6 +124,8 @@ export function GameChat({
 							<>
 								<span className="font-bold text-primary">
 									{nameOf(event.sender)}
+									{spectatorIds.includes(event.sender) &&
+										" (spect.)"}
 								</span>
 								<p className="whitespace-pre-wrap text-gray-800">
 									{event.content}
@@ -152,7 +156,7 @@ export function GameChat({
 						placeholder="Write a message…"
 						maxLength={500}
 						value={content}
-						disabled={!!pending}
+						readOnly={!!pending}
 						onChange={(event) => setContent(event.target.value)}
 						className="min-w-0 flex-1 border border-gray-300 p-2 text-sm focus:outline-primary"
 					/>

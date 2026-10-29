@@ -85,7 +85,7 @@ describe("server scoring", () => {
 			d: 0,
 		});
 	});
-	it("rejects duplicate, late, drawer, spectator guesses and leaked phrases", async () => {
+	it("lets spectators chat but rejects duplicate, late, drawer, spectator guesses and leaked phrases", async () => {
 		const room = await drawing(),
 			chat = new GameChatService();
 		expect(() => chat.submit(room.uuid, "drawer", "chat", "1")).toThrow(
@@ -93,7 +93,13 @@ describe("server scoring", () => {
 		);
 		room.connectedPlayers.add("spectator");
 		room.spectatorPlayers.add("spectator");
-		expect(() => chat.submit(room.uuid, "spectator", "hi", "2")).toThrow();
+		expect(chat.getPlayers(room.uuid)).toContain("spectator");
+		expect(chat.submit(room.uuid, "spectator", "hi", "2").type).toBe(
+			"GAME_CHAT_MESSAGE",
+		);
+		expect(() => chat.submit(room.uuid, "spectator", "chat", "2b")).toThrow(
+			"guessing players",
+		);
 		expect(() => chat.submit(room.uuid, "a", "un chat", "3")).toThrow(
 			"round word",
 		);

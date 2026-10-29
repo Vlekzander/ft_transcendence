@@ -16,8 +16,7 @@ export class GameChatService {
 	getPlayers(roomId: string): string[] {
 		const room = this.getRoom(roomId);
 		return [...room.connectedPlayers].filter(
-			(id) =>
-				!room.bannedPlayers.has(id) && !room.spectatorPlayers.has(id),
+			(id) => !room.bannedPlayers.has(id),
 		);
 	}
 
@@ -30,8 +29,7 @@ export class GameChatService {
 		const room = this.getRoom(roomId);
 		if (
 			!room.connectedPlayers.has(sender) ||
-			room.bannedPlayers.has(sender) ||
-			room.spectatorPlayers.has(sender)
+			room.bannedPlayers.has(sender)
 		)
 			throw new Error("Player is not in this game");
 		if (typeof rawContent !== "string")
