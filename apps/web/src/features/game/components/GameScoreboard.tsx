@@ -89,7 +89,15 @@ export function GameScoreboard({
 							key={id}
 							className="flex gap-3 justify-between py-1"
 						>
-							<span className="truncate">
+							<span
+								className={`truncate ${
+									state.drawerIds.includes(id) &&
+									state.phase !== "FINISHED" &&
+									state.phase !== "WAITING"
+										? "font-bold text-blue-600"
+										: ""
+								}`}
+							>
 								{users[id]?.username ??
 									scoreUsers[id]?.username ??
 									"Player"}
