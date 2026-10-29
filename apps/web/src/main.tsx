@@ -20,10 +20,12 @@ import { AuthProvider } from "./features/auth/context/AuthContext";
 import AccountPage from "./features/user/pages/AccountPage";
 import { FriendProvider } from "./features/friends/context/FriendContext";
 import FriendsPage from "./features/friends/pages/FriendsPage";
-import MsgPage from "./features/msg/pages/MsgPage";
 import LobbiesPage from "./features/lobby/pages/LobbiesPage";
 import CreateLobbyPage from "./features/lobby/pages/CreateLobbyPage";
 import JoinLobbyPage from "./features/lobby/pages/JoinLobbyPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
 
 const router = createBrowserRouter([
 	{
@@ -45,7 +47,7 @@ const router = createBrowserRouter([
 						element: <FriendsPage />,
 					},
 					{
-						path: "/msg/:uuid",
+						path: "/msg",
 						element: <MsgPage />,
 					},
 					{
@@ -68,6 +70,10 @@ const router = createBrowserRouter([
 						path: "/lobbies/:uuid/game",
 						element: <GamePage />,
 					},
+					{
+						path: "/msg/:uuid",
+						element: <MsgRedirect />,
+					},
 				],
 			},
 			{
@@ -86,6 +92,14 @@ const router = createBrowserRouter([
 			{
 				path: "*",
 				element: <NotFoundPage />,
+			},
+			{
+				path: "privacy",
+				element: <PrivacyPolicy />,
+			},
+			{
+				path: "tos",
+				element: <TermsOfService />,
 			},
 			{
 				path: "/not-found",

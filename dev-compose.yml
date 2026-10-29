@@ -5,18 +5,21 @@ services:
         container_name: ft_transcendence-frontend
         build:
             context: .
-            dockerfile: ./docker/frontend.Dockerfile
-        #user: 1000:1000
+            dockerfile: ./docker/dev-frontend.Dockerfile
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
+        user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
         volumes:
             - ./apps/web:/home/node/apps/web
             - ./packages/shared:/home/node/packages/shared
         networks:
-            - ft_bf_network
+            - ft_bf_network-dev
         ports:
-            - "${WEB_PORT:-5173}:5173"
+            - "${DEV_WEB_PORT:-5173}:5173"
         environment:
             VITE_API_URL: "/api"
-            VITE_WS_URL: "ws://localhost:${API_PORT:-3000}"
+            VITE_WS_URL: "ws://localhost:${DEV_API_PORT:-3000}"
         env_file:
             - .env
 
@@ -24,17 +27,19 @@ services:
         container_name: ft_transcendence-backend
         build:
             context: .
-            dockerfile: ./docker/backend.Dockerfile
-        #user: 1000:1000
+            dockerfile: ./docker/dev-backend.Dockerfile
+            args:
+                USER_ID: ${USER_ID:-1000}
+                GROUP_ID: ${GROUP_ID:-1000}
+        user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
         volumes:
             - ./apps/server/:/home/node/apps/server
             - ./packages/shared:/home/node/packages/shared
         networks:
-            - ft_network
-            - ft_bf_network
-
+            - ft_b_network-dev
+            - ft_bf_network-dev
         ports:
-            - "${API_PORT:-3000}:${API_PORT:-3000}"
+            - "${DEV_API_PORT:-3000}:${DEV_API_PORT:-3000}"
         secrets:
             - db_username
             - db_password
@@ -52,9 +57,9 @@ services:
         container_name: ft_transcendence-database
         image: postgres:latest
         volumes:
-            - postgres_data:/var/lib/postgresql/18/docker
+            - database_data-dev:/var/lib/postgresql/18/docker
         networks:
-            - ft_network
+            - ft_b_network-dev
         secrets:
             - db_username
             - db_password
@@ -76,9 +81,9 @@ services:
         container_name: ft_transcendence-pgadmin
         image: dpage/pgadmin4:latest
         volumes:
-            - pgadmin_data:/var/lib/pgadmin
+            - pgadmin_data-dev:/var/lib/pgadmin
         networks:
-            - ft_network
+            - ft_b_network-dev
         ports:
             - 8080:80
         depends_on:
@@ -92,13 +97,13 @@ services:
             PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: False
 
 volumes:
-    postgres_data:
-    pgadmin_data:
+    database_data-dev:
+    pgadmin_data-dev:
 
 networks:
-    ft_network:
+    ft_b_network-dev:
         driver: bridge
-    ft_bf_network:
+    ft_bf_network-dev:
         driver: bridge
 
 secrets:

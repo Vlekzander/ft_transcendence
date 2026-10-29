@@ -215,4 +215,74 @@ describe("modules/shared/shared.service", () => {
 			});
 		});
 	});
+
+	describe("SharedService.validateUser", () => {
+		it("Returns true when the user is active", async () => {
+			mockedFindUnique.mockResolvedValue({
+				isActive: true,
+			} as any);
+
+			const result = await service.validateUser("user-uuid");
+
+			expect(mockedFindUnique).toHaveBeenCalledWith({
+				where: {
+					uuid: "user-uuid",
+				},
+				select: {
+					isActive: true,
+				},
+			});
+			expect(result).toBe(true);
+		});
+
+		it("Returns false when the user is inactive", async () => {
+			mockedFindUnique.mockResolvedValue({
+				isActive: false,
+			} as any);
+
+			const result = await service.validateUser("user-uuid");
+
+			expect(result).toBe(false);
+		});
+
+		it("Throws InvalidIdError when Prisma raises error P2007", async () => {
+			const error = new Prisma.PrismaClientKnownRequestError("Message", {
+				code: "P2007",
+				clientVersion: "x.y.z",
+			});
+
+			mockedFindUnique.mockRejectedValue(error);
+
+			const action = service.validateUser("invalid-uuid");
+
+			await expect(action).rejects.toMatchObject({
+				name: "InvalidIdError",
+			});
+		});
+
+		it("Throws UnknownUserIdError when Prisma raises error P2025", async () => {
+			const error = new Prisma.PrismaClientKnownRequestError("Message", {
+				code: "P2025",
+				clientVersion: "x.y.z",
+			});
+
+			mockedFindUnique.mockRejectedValue(error);
+
+			const action = service.validateUser("unknown-uuid");
+
+			await expect(action).rejects.toMatchObject({
+				name: "UnknownUserIdError",
+			});
+		});
+
+		it("Rethrows unexpected Prisma errors", async () => {
+			const error = new Error("Database query failed");
+
+			mockedFindUnique.mockRejectedValue(error);
+
+			const action = service.validateUser("user-uuid");
+
+			await expect(action).rejects.toBe(error);
+		});
+	});
 });

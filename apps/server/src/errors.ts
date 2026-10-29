@@ -84,6 +84,13 @@ export class InvalidCredentialsError extends AppDomainError {
 	}
 }
 
+export class InactiveAccountError extends AppDomainError {
+	constructor() {
+		super("You cannot login to an inactive account");
+		this.name = "InactiveAccountError";
+	}
+}
+
 export class CannotEditUserError extends AppDomainError {
 	constructor() {
 		super("No permission for edit user");

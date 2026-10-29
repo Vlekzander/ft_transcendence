@@ -9,6 +9,7 @@ import {
 	vi,
 } from "vitest";
 import WebSocket from "ws";
+import jwt from "jsonwebtoken";
 import {
 	getOnlineUsers,
 	isUserOnline,
@@ -24,8 +25,21 @@ vi.mock("@/modules/msg/msg.service", () => ({
 	},
 }));
 
+vi.mock("@/modules/shared/shared.service", () => ({
+	sharedService: {
+		getUserById: vi.fn().mockResolvedValue({
+			uuid: "123e4567-e89b-12d3-a456-426614174000",
+		}),
+		validateUser: vi.fn().mockResolvedValue(true),
+	},
+}));
+
 const mockedSendMessage = vi.mocked(msgService.sendMessage);
 const JWT_SECRET = "websocket-test-secret";
+
+function generateUnsafeAccessToken(sub: string): string {
+	return jwt.sign({ sub }, JWT_SECRET, { expiresIn: "1h" });
+}
 
 function waitForOpen(socket: WebSocket): Promise<void> {
 	return new Promise((resolve, reject) => {
@@ -50,6 +64,8 @@ function waitForClose(socket: WebSocket): Promise<void> {
 describe("websocket server (integration)", () => {
 	let httpServer: Server;
 	let address: string;
+	const validUuid = "123e4567-e89b-12d3-a456-426614174000";
+	const validUuidMulti = "223e4567-e89b-12d3-a456-426614174000";
 
 	beforeAll(async () => {
 		process.env.JWT_SECRET = JWT_SECRET;
@@ -94,8 +110,7 @@ describe("websocket server (integration)", () => {
 		});
 
 		it("marks an authenticated user as online after connection", async () => {
-			const uuid = "user-uuid";
-			const token = generateAccessToken(uuid);
+			const token = generateAccessToken(validUuid);
 
 			const socket = new WebSocket(address, {
 				headers: { Cookie: `token=${token}` },
@@ -103,16 +118,15 @@ describe("websocket server (integration)", () => {
 
 			await waitForOpen(socket);
 
-			expect(isUserOnline(uuid)).toBe(true);
-			expect(getOnlineUsers()).toContain(uuid);
+			expect(isUserOnline(validUuid)).toBe(true);
+			expect(getOnlineUsers()).toContain(validUuid);
 
 			socket.close();
 			await waitForClose(socket);
 		});
 
 		it("reads an authentication token positioned after another cookie", async () => {
-			const uuid = "user-uuid-multi-cookie";
-			const token = generateAccessToken(uuid);
+			const token = generateAccessToken(validUuidMulti);
 
 			const socket = new WebSocket(address, {
 				headers: { Cookie: `theme=dark; token=${token}` },
@@ -120,8 +134,8 @@ describe("websocket server (integration)", () => {
 
 			await waitForOpen(socket);
 
-			expect(isUserOnline(uuid)).toBe(true);
-			expect(getOnlineUsers()).toContain(uuid);
+			expect(isUserOnline(validUuidMulti)).toBe(true);
+			expect(getOnlineUsers()).toContain(validUuidMulti);
 
 			socket.close();
 			await waitForClose(socket);
@@ -155,9 +169,27 @@ describe("websocket server (integration)", () => {
 			await waitForClose(socket);
 		});
 
+		it("does not mark a socket with a token containing a non-UUID sub as online and receives error packet", async () => {
+			const unsafeToken = generateUnsafeAccessToken("not-a-uuid-sub");
+			const socket = new WebSocket(address, {
+				headers: { Cookie: `token=${unsafeToken}` },
+			});
+
+			const messagePromise = waitForMessage(socket);
+			await waitForOpen(socket);
+			const rawMessage = await messagePromise;
+
+			const packet = JSON.parse(rawMessage);
+			expect(packet).toMatchObject({ type: "ERROR" });
+			expect(getOnlineUsers()).toEqual([]);
+
+			socket.close();
+			await waitForClose(socket);
+		});
+
 		it("keeps the user online while at least one socket remains connected across multiple tabs", async () => {
-			const uuid = "multi-tab-user";
-			const token = generateAccessToken(uuid);
+			const multiTabUuid = "323e4567-e89b-12d3-a456-426614174000";
+			const token = generateAccessToken(multiTabUuid);
 
 			const tab1 = new WebSocket(address, {
 				headers: { Cookie: `token=${token}` },
@@ -167,19 +199,19 @@ describe("websocket server (integration)", () => {
 			});
 
 			await Promise.all([waitForOpen(tab1), waitForOpen(tab2)]);
-			expect(isUserOnline(uuid)).toBe(true);
+			expect(isUserOnline(multiTabUuid)).toBe(true);
 
 			tab1.close();
 			await waitForClose(tab1);
 
-			expect(isUserOnline(uuid)).toBe(true);
-			expect(getOnlineUsers()).toContain(uuid);
+			expect(isUserOnline(multiTabUuid)).toBe(true);
+			expect(getOnlineUsers()).toContain(multiTabUuid);
 
 			tab2.close();
 			await waitForClose(tab2);
 
-			expect(isUserOnline(uuid)).toBe(false);
-			expect(getOnlineUsers()).not.toContain(uuid);
+			expect(isUserOnline(multiTabUuid)).toBe(false);
+			expect(getOnlineUsers()).not.toContain(multiTabUuid);
 		});
 	});
 
@@ -221,8 +253,8 @@ describe("websocket server (integration)", () => {
 		});
 
 		it("broadcasts message to both sender and receiver when both are online", async () => {
-			const senderUuid = "sender-online";
-			const receiverUuid = "receiver-online";
+			const senderUuid = "423e4567-e89b-12d3-a456-426614174000";
+			const receiverUuid = "523e4567-e89b-12d3-a456-426614174000";
 
 			const senderSocket = new WebSocket(address, {
 				headers: { Cookie: `token=${generateAccessToken(senderUuid)}` },
@@ -281,8 +313,8 @@ describe("websocket server (integration)", () => {
 		});
 
 		it("delivers packet to all connected tabs/sockets of the same user", async () => {
-			const senderUuid = "sender-multi-device";
-			const receiverUuid = "receiver-multi-device";
+			const senderUuid = "623e4567-e89b-12d3-a456-426614174000";
+			const receiverUuid = "723e4567-e89b-12d3-a456-426614174000";
 
 			const senderSocket = new WebSocket(address, {
 				headers: { Cookie: `token=${generateAccessToken(senderUuid)}` },
@@ -344,8 +376,8 @@ describe("websocket server (integration)", () => {
 		});
 
 		it("persists message and only sends response to sender when receiver is offline", async () => {
-			const senderUuid = "sender-offline-target";
-			const receiverUuid = "offline-target";
+			const senderUuid = "823e4567-e89b-12d3-a456-426614174000";
+			const receiverUuid = "923e4567-e89b-12d3-a456-426614174000";
 
 			const senderSocket = new WebSocket(address, {
 				headers: { Cookie: `token=${generateAccessToken(senderUuid)}` },
@@ -387,7 +419,7 @@ describe("websocket server (integration)", () => {
 		});
 
 		it("returns an error packet when the database/service layer throws", async () => {
-			const senderUuid = "sender-db-error";
+			const senderUuid = "a23e4567-e89b-12d3-a456-426614174000";
 			const senderSocket = new WebSocket(address, {
 				headers: { Cookie: `token=${generateAccessToken(senderUuid)}` },
 			});
@@ -403,7 +435,7 @@ describe("websocket server (integration)", () => {
 			senderSocket.send(
 				JSON.stringify({
 					type: "SEND_MESSAGE",
-					receiver: "target-user",
+					receiver: "b23e4567-e89b-12d3-a456-426614174000",
 					content: "Crash test",
 				}),
 			);
@@ -442,7 +474,7 @@ describe("websocket server (integration)", () => {
 		});
 
 		it("rejects self-messaging attempts", async () => {
-			const userUuid = "self-talker";
+			const userUuid = "c23e4567-e89b-12d3-a456-426614174000";
 			const socket = new WebSocket(address, {
 				headers: { Cookie: `token=${generateAccessToken(userUuid)}` },
 			});

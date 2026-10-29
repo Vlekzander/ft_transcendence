@@ -6,8 +6,11 @@ services:
         build:
             context: .
             dockerfile: ./docker/prod-frontend.Dockerfile
+            args:
+                - DOMAIN_NAME=${DOMAIN_NAME:-localhost}
+                - WEB_PORT=${WEB_PORT:-443}
         ports:
-            - "5443:443"
+            - "${WEB_PORT:-443}:443"
         networks:
             - ft_network-bf-prod
         depends_on:
@@ -24,7 +27,7 @@ services:
         volumes:
             - avatars_data:/home/node/apps/server/uploads/avatars
         networks:
-            - ft_network-prod
+            - ft_network-b-prod
             - ft_network-bf-prod
         secrets:
             - db_username
@@ -43,7 +46,7 @@ services:
         volumes:
             - database_data:/var/lib/postgresql/18/docker
         networks:
-            - ft_network-prod
+            - ft_network-b-prod
         secrets:
             - db_username
             - db_password
@@ -65,7 +68,7 @@ volumes:
     avatars_data:
 
 networks:
-    ft_network-prod:
+    ft_network-b-prod:
         driver: bridge
     ft_network-bf-prod:
         driver: bridge

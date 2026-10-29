@@ -4,6 +4,7 @@ import {
 	AlreadyAuthError,
 	CannotEditUserError,
 	DuplicateElementError,
+	InactiveAccountError,
 	InvalidCredentialsError,
 	InvalidElementError,
 	RequireAuthError,
@@ -38,7 +39,10 @@ export function mapError(err: Error): ErrorResponse {
 		return ((error.status = 400), error);
 	if (err instanceof AlreadyAuthError) return ((error.status = 403), error);
 	if (err instanceof RequireAuthError) return ((error.status = 401), error);
-	if (err instanceof CannotEditUserError)
+	if (
+		err instanceof CannotEditUserError ||
+		err instanceof InactiveAccountError
+	)
 		return ((error.status = 403), error);
 	if (err instanceof InvalidCredentialsError)
 		return ((error.status = 401), error);

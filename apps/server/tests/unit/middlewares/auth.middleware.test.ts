@@ -14,12 +14,12 @@ vi.mock("@/utils/jwt.util", () => ({
 
 vi.mock("@/modules/shared/shared.service", () => ({
 	sharedService: {
-		getUserById: vi.fn(),
+		validateUser: vi.fn(),
 	},
 }));
 
 const mockedValidateAccessToken = vi.mocked(validateAccessToken);
-const mockedGetUserById = vi.mocked(sharedService.getUserById);
+const mockedValidateUser = vi.mocked(sharedService.validateUser);
 
 function createMockReqRes(
 	options: {
@@ -82,11 +82,11 @@ describe("auth.middleware", () => {
 	});
 
 	describe("requireGuest", () => {
-		it("calls next() with AlreadyAuthError if user is authenticated and exists", async () => {
+		it("calls next() with AlreadyAuthError if user is authenticated and active", async () => {
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "user-123",
 			} as any);
-			mockedGetUserById.mockResolvedValue({ id: "user-123" } as any);
+			mockedValidateUser.mockResolvedValue(true);
 
 			const { req, res, next } = createMockReqRes({
 				cookies: { token: "valid-token" },
@@ -108,11 +108,11 @@ describe("auth.middleware", () => {
 			expect(next).toHaveBeenCalledWith();
 		});
 
-		it("calls next() without error if token is valid but user does not exist in DB", async () => {
+		it("calls next() without error if token is valid but user is inactive or missing", async () => {
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "user-unknown",
 			} as any);
-			mockedGetUserById.mockResolvedValue(null);
+			mockedValidateUser.mockResolvedValue(false);
 
 			const { req, res, next } = createMockReqRes({
 				cookies: { token: "valid-token" },
@@ -125,11 +125,11 @@ describe("auth.middleware", () => {
 	});
 
 	describe("requireAuth", () => {
-		it("calls next() without error when authenticated and user exists", async () => {
+		it("calls next() without error when authenticated and user is active", async () => {
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "user-123",
 			} as any);
-			mockedGetUserById.mockResolvedValue({ id: "user-123" } as any);
+			mockedValidateUser.mockResolvedValue(true);
 
 			const { req, res, next } = createMockReqRes({
 				cookies: { token: "valid-token" },
@@ -151,11 +151,11 @@ describe("auth.middleware", () => {
 			});
 		});
 
-		it("calls next() with RequireAuthError when token is valid but user is missing in DB", async () => {
+		it("calls next() with RequireAuthError when token is valid but user is inactive or missing in DB", async () => {
 			mockedValidateAccessToken.mockReturnValue({
 				sub: "deleted-user",
 			} as any);
-			mockedGetUserById.mockResolvedValue(null);
+			mockedValidateUser.mockResolvedValue(false);
 
 			const { req, res, next } = createMockReqRes({
 				cookies: { token: "valid-token" },

@@ -70,6 +70,24 @@ export class SharedService {
 			throw error;
 		}
 	}
+
+	async validateUser(uuid: string): Promise<boolean> {
+		try {
+			const result = await prisma.user.findUnique({
+				where: { uuid: uuid },
+				select: { isActive: true },
+			});
+
+			if (!result) return false;
+			return result.isActive;
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
 }
 
 export const sharedService = new SharedService();
