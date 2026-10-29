@@ -6,6 +6,7 @@ export * from "./schemas/ws.schemas";
 
 export * from "./types/Achievement.types";
 export * from "./types/Game.types";
+export * from "./types/Leaderboard.types";
 export * from "./types/Msg.types";
 export * from "./types/Stat.types";
 export * from "./types/Status.types";

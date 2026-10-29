@@ -174,7 +174,8 @@ function GameHistoryItem({
 
 	if (result == null) return null;
 
-	const isVictory = result.position === 1;
+	const isVictory =
+		Math.max(...game.participants.map((p) => p.score)) === result.points;
 
 	return (
 		<article>
