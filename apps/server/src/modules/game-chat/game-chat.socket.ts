@@ -32,12 +32,15 @@ export function handleGameChat(
 			packet.content,
 			packet.requestId,
 		);
-		for (const playerId of gameChatService.getPlayers(packet.roomId))
-			sendToWs(playerId, event);
+		const lobby = [...lobbiesByJoinCode.values()].find(
+			(room) => room.uuid === packet.roomId,
+		);
+		const isSpec = lobby && lobby.spectatorPlayers.has(ws.uuid);
+		for (const playerId of gameChatService.getPlayers(packet.roomId)) {
+			if (!isSpec || (lobby && lobby.spectatorPlayers.has(playerId)))
+				sendToWs(playerId, event);
+		}
 		if (event.type === "GAME_CHAT_GUESS") {
-			const lobby = [...lobbiesByJoinCode.values()].find(
-				(room) => room.uuid === packet.roomId,
-			);
 			if (lobby) completeRoundIfSolved(lobby);
 		}
 	} catch (error) {
