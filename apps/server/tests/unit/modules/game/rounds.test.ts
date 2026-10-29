@@ -14,7 +14,11 @@ vi.mock("@/websocket.server", () => ({
 vi.mock("@/lib/prisma.lib", () => ({
 	prisma: { game: { upsert: mocks.upsert } },
 }));
-import { lobbyService, lobbiesByJoinCode } from "@/modules/lobby/lobby.service";
+import {
+	CHOOSE_WORD_SECONDS,
+	lobbyService,
+	lobbiesByJoinCode,
+} from "@/modules/lobby/lobby.service";
 import {
 	registerGameSockets,
 	scheduleRoundEnd,
@@ -24,6 +28,7 @@ import {
 	reconcileGame,
 } from "@/modules/lobby/game.socket";
 import { getMatch, guessWord } from "@/modules/game/scoring.service";
+import { NotEnoughReadyPlayersError } from "@/errors";
 const defaults = CreateLobbySchema.parse({});
 beforeEach(() => {
 	vi.useFakeTimers();
@@ -59,13 +64,13 @@ describe("round lifecycle", () => {
 		const lobby = await room();
 		for (let turn = 0; turn < 2; turn++) {
 			await choose(lobby);
-			expect(statePacket(lobby).playerNumber).toBe(turn + 1);
+			expect(statePacket(lobby).turnNumber).toBe(turn + 1);
 			await vi.advanceTimersByTimeAsync(1000 + turn * 1000);
 			const guesser = lobby.drawerIds[0] === "host" ? "guest" : "host";
 			guessWord(lobby, guesser, lobby.selectedWord!);
 			completeRoundIfSolved(lobby);
-			expect(statePacket(lobby).playerNumber).toBe(turn + 1);
-			expect(statePacket(lobby).totalPlayers).toBe(2);
+			expect(statePacket(lobby).turnNumber).toBe(turn + 1);
+			expect(statePacket(lobby).totalTurns).toBe(2);
 			await vi.advanceTimersByTimeAsync(4000);
 		}
 		await vi.dynamicImportSettled();
@@ -88,7 +93,7 @@ describe("round lifecycle", () => {
 	it("auto-selects a word, times out, rotates drawer, then persists final game", async () => {
 		const lobby = await room(),
 			first = lobby.drawerIds[0];
-		await vi.advanceTimersByTimeAsync(lobby.timeToChooseWord * 1000);
+		await vi.advanceTimersByTimeAsync(CHOOSE_WORD_SECONDS * 1000);
 		expect(lobby.gamePhase).toBe("DRAWING");
 		expect(statePacket(lobby, first!).selectedWord).toBeTruthy();
 		expect(statePacket(lobby, "outsider").selectedWord).toBeNull();
@@ -146,5 +151,162 @@ describe("round lifecycle", () => {
 			phase: "FINISHED",
 			matchId: getMatch(lobby)!.id,
 		});
+	});
+});
+async function duoRoom(players: string[]) {
+	const lobby = await lobbyService.createLobby("host", {
+		...defaults,
+		mode: "DUO",
+		numberOfRounds: 1,
+	});
+	for (const id of players) await lobbyService.joinLobby(lobby.uuid, id);
+	lobby.readyPlayers = new Set(["host", ...players]);
+	await lobbyService.toggleGame(lobby.uuid, "host");
+	scheduleRoundEnd(lobby);
+	return lobby;
+}
+async function playTurn(lobby: Awaited<ReturnType<typeof duoRoom>>) {
+	await vi.advanceTimersByTimeAsync(
+		CHOOSE_WORD_SECONDS * 1000 + lobby.drawTime * 1000 + 4000,
+	);
+}
+describe("DUO mode", () => {
+	it("refuses to start with fewer than 3 ready players", async () => {
+		const lobby = await lobbyService.createLobby("host", {
+			...defaults,
+			mode: "DUO",
+		});
+		await lobbyService.joinLobby(lobby.uuid, "guest");
+		lobby.readyPlayers = new Set(["host", "guest"]);
+		await expect(
+			lobbyService.toggleGame(lobby.uuid, "host"),
+		).rejects.toThrow(NotEnoughReadyPlayersError);
+	});
+	it("pairs two new drawers per turn and lets the odd one out draw alone", async () => {
+		const lobby = await duoRoom(["p1", "p2", "p3", "p4"]);
+		const seen = new Set<string>();
+		for (const [turn, size] of [
+			[1, 2],
+			[2, 2],
+			[3, 1],
+		]) {
+			expect(lobby.drawerIds).toHaveLength(size);
+			for (const id of lobby.drawerIds) {
+				expect(seen.has(id)).toBe(false);
+				seen.add(id);
+			}
+			expect(statePacket(lobby).turnNumber).toBe(turn);
+			expect(statePacket(lobby).totalTurns).toBe(3);
+			await playTurn(lobby);
+		}
+		expect(lobby.gamePhase).toBe("FINISHED");
+	});
+	it("finishes the turn when a drawer leaves, then ends below 3 players", async () => {
+		const lobby = await duoRoom(["p1", "p2"]);
+		await vi.advanceTimersByTimeAsync(CHOOSE_WORD_SECONDS * 1000);
+		await lobbyService.leaveLobby(lobby.uuid, lobby.drawerIds[0]);
+		reconcileGame(lobby);
+		expect(lobby.gamePhase).toBe("DRAWING");
+		await vi.advanceTimersByTimeAsync(lobby.drawTime * 1000 + 4000);
+		expect(lobby.gamePhase).toBe("FINISHED");
+	});
+});
+describe("DUO word picks", () => {
+	async function pick(
+		lobby: Awaited<ReturnType<typeof duoRoom>>,
+		id: string,
+		word: string,
+	) {
+		await mocks.handlers.get("CHOOSE_WORD")!(
+			{ uuid: id },
+			{ lobbyUuid: lobby.uuid, word },
+		);
+	}
+	async function leave(
+		lobby: Awaited<ReturnType<typeof duoRoom>>,
+		id: string,
+	) {
+		await lobbyService.leaveLobby(lobby.uuid, id);
+		reconcileGame(lobby);
+	}
+	it("stores changeable picks visible only to drawers", async () => {
+		const lobby = await duoRoom(["p1", "p2"]);
+		const [a, b] = lobby.drawerIds;
+		const [w0, w1] = lobby.wordChoices;
+		const guesser = [...lobby.connectedPlayers].find(
+			(id) => !lobby.drawerIds.includes(id),
+		)!;
+		await pick(lobby, a, w0);
+		expect(lobby.gamePhase).toBe("CHOOSING");
+		expect(statePacket(lobby, b).picks).toEqual({ [a]: w0 });
+		expect(statePacket(lobby, guesser).picks).toEqual({});
+		await pick(lobby, a, w1);
+		expect(statePacket(lobby, a).picks).toEqual({ [a]: w1 });
+	});
+	it("draws one of two different picks at expiry", async () => {
+		const lobby = await duoRoom(["p1", "p2"]);
+		const [a, b] = lobby.drawerIds;
+		const [w0, w1] = lobby.wordChoices;
+		await pick(lobby, a, w0);
+		await pick(lobby, b, w1);
+		await vi.advanceTimersByTimeAsync(CHOOSE_WORD_SECONDS * 1000);
+		expect(lobby.gamePhase).toBe("DRAWING");
+		expect([w0, w1]).toContain(lobby.selectedWord);
+	});
+	it("draws the only pick at expiry", async () => {
+		const lobby = await duoRoom(["p1", "p2"]);
+		const w1 = lobby.wordChoices[1];
+		await pick(lobby, lobby.drawerIds[1], w1);
+		await vi.advanceTimersByTimeAsync(CHOOSE_WORD_SECONDS * 1000);
+		expect(lobby.selectedWord).toBe(w1);
+	});
+	it("starts at once when the partner leaves after the other picked", async () => {
+		const lobby = await duoRoom(["p1", "p2"]);
+		const [a, b] = lobby.drawerIds;
+		const w1 = lobby.wordChoices[1];
+		await pick(lobby, b, lobby.wordChoices[0]);
+		await pick(lobby, a, w1);
+		await leave(lobby, b);
+		expect(lobby.picks.has(b)).toBe(false);
+		expect(lobby.gamePhase).toBe("DRAWING");
+		expect(lobby.selectedWord).toBe(w1);
+	});
+	it("lets the remaining drawer start instantly by clicking", async () => {
+		const lobby = await duoRoom(["p1", "p2"]);
+		const [a, b] = lobby.drawerIds;
+		await leave(lobby, b);
+		expect(lobby.gamePhase).toBe("CHOOSING");
+		await pick(lobby, a, lobby.wordChoices[2]);
+		expect(lobby.gamePhase).toBe("DRAWING");
+		expect(lobby.selectedWord).toBe(lobby.wordChoices[2]);
+	});
+});
+describe("player leaving mid-turn", () => {
+	it("drops a leaver from the turn even if they come back as spectator", async () => {
+		const lobby = await lobbyService.createLobby("host", {
+			...defaults,
+			numberOfRounds: 1,
+		});
+		await lobbyService.joinLobby(lobby.uuid, "p1");
+		await lobbyService.joinLobby(lobby.uuid, "p2");
+		lobby.readyPlayers = new Set(["host", "p1", "p2"]);
+		await lobbyService.toggleGame(lobby.uuid, "host");
+		scheduleRoundEnd(lobby);
+		await choose(lobby);
+		const [left, stays] = [...lobby.connectedPlayers].filter(
+			(id) => !lobby.drawerIds.includes(id),
+		);
+		guessWord(lobby, left, lobby.selectedWord!);
+		await lobbyService.leaveLobby(lobby.uuid, left);
+		reconcileGame(lobby);
+		await lobbyService.joinLobby(lobby.uuid, left);
+		const turn = getMatch(lobby)!.turn!;
+		expect(turn.eligible).not.toContain(left);
+		expect(turn.guesses.has(left)).toBe(false);
+		expect(() => guessWord(lobby, left, lobby.selectedWord!)).toThrow();
+		expect(lobby.gamePhase).toBe("DRAWING");
+		guessWord(lobby, stays, lobby.selectedWord!);
+		completeRoundIfSolved(lobby);
+		expect(lobby.gamePhase).toBe("ROUND_END");
 	});
 });

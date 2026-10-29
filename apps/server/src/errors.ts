@@ -197,8 +197,8 @@ export class LobbyFullError extends AppDomainError {
 }
 
 export class NotEnoughReadyPlayersError extends AppDomainError {
-	constructor() {
-		super("At least 2 players must be ready");
+	constructor(minPlayers = 2) {
+		super(`At least ${minPlayers} players must be ready`);
 		this.name = "NotEnoughReadyPlayersError";
 	}
 }

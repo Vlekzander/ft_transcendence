@@ -4,7 +4,6 @@ import {
 	CreateLobbySchema,
 	DRAW_TIME,
 	NB_ROUNDS,
-	TIME_TO_CHOOSE_WORD,
 	WORD_OPTIONS_PER_TURN,
 	type CreateLobbyDTO,
 	type LobbyGameMode,
@@ -42,9 +41,6 @@ export default function CreateLobbyForm({
 	const [wordChoicesPerTurn, setWordChoicesPerTurn] = useState(
 		DEFAULTS.wordChoicesPerTurn,
 	);
-	const [timeToChooseWord, setTimeToChooseWord] = useState(
-		DEFAULTS.timeToChooseWord,
-	);
 	const [dictionary, setDictionary] = useState(DEFAULTS.usingDictionary);
 	const [onlyCustomWords, setOnlyCustomWords] = useState(false);
 	const [customWords, setCustomWords] = useState("");
@@ -61,7 +57,6 @@ export default function CreateLobbyForm({
 			drawTime,
 			numberOfRounds,
 			wordChoicesPerTurn,
-			timeToChooseWord,
 			usingDictionary: onlyCustomWords ? 0 : dictionary,
 			customWords,
 		} satisfies CreateLobbyDTO);
@@ -135,14 +130,6 @@ export default function CreateLobbyForm({
 					value={wordChoicesPerTurn}
 					options={WORD_OPTIONS_PER_TURN}
 					onChange={setWordChoicesPerTurn}
-				/>
-				<LobbyOptionSelect
-					id="choose-time"
-					label="Time to choose a word"
-					suffix="s"
-					value={timeToChooseWord}
-					options={TIME_TO_CHOOSE_WORD}
-					onChange={setTimeToChooseWord}
 				/>
 				<WordsFields
 					idPrefix="words"

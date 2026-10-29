@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import type {
-	LobbyResponseDTO,
-	UpdateLobbyDTO,
+import {
+	minPlayers,
+	type LobbyResponseDTO,
+	type UpdateLobbyDTO,
 } from "@ft_transcendence/shared";
 import { Check, Copy, Settings, UserPlus } from "lucide-react";
 import { useAuth } from "../../auth/context/AuthContext";
@@ -39,7 +40,10 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 	const users = useUsers([...lobby.connectedPlayers, ...lobby.bannedPlayers]);
 
 	const isHost = user?.uuid === lobby.hostId;
-	const canStart = lobby.readyPlayers.length >= 2;
+	const readyConnected = lobby.readyPlayers.filter((id) =>
+		lobby.connectedPlayers.includes(id),
+	).length;
+	const canStart = readyConnected >= minPlayers(lobby.mode);
 	const nameOf = (id: string) => users[id]?.username ?? "...";
 
 	const runAction = async (
@@ -259,7 +263,7 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 							? "Pause"
 							: lobby.gameHasStarted
 								? "Unpause"
-								: `Start ? ${lobby.readyPlayers.length}/${lobby.connectedPlayers.length} players ready`}
+								: `Start ? ${readyConnected}/${lobby.connectedPlayers.length} players ready`}
 					</button>
 				)}
 				{!lobby.gameHasStarted && (

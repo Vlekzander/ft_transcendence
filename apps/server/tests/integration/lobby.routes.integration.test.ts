@@ -41,7 +41,6 @@ describe("lobby routes", () => {
 					bannedPlayers: [],
 					joinCode: expect.stringMatching(/^[A-Z0-9]{6}$/),
 					wordChoicesPerTurn: expect.any(Number),
-					timeToChooseWord: expect.any(Number),
 				}),
 			);
 			expect(response.body.data).not.toHaveProperty("allWords");

@@ -8,7 +8,6 @@ export const MAX_PLAYERS = 10;
 
 export const NB_ROUNDS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 export const WORD_OPTIONS_PER_TURN = [1, 2, 3, 4, 5];
-export const TIME_TO_CHOOSE_WORD = [5, 10, 15, 20, 25];
 export const DRAW_TIME = [
 	15, 20, 30, 40, 50, 60, 70, 80, 90, 100, 120, 150, 180, 240,
 ];
@@ -50,16 +49,15 @@ const WordChoicesPerTurnSchema = z
 	.refine((value) => WORD_OPTIONS_PER_TURN.includes(value), {
 		message: "Invalid number of word choices per turn",
 	});
-const TimeToChooseWordSchema = z
-	.int()
-	.refine((value) => TIME_TO_CHOOSE_WORD.includes(value), {
-		message: "Invalid time to choose word",
-	});
 const UsingDictionarySchema = z.int().min(0);
 const JoinCodeSchema = z.string().regex(/^[A-Z0-9]{6}$/, "Invalid code");
 
 export type LobbyGameMode = z.infer<typeof GameModeSchema>;
 export type LobbyVisibility = z.infer<typeof VisibilitySchema>;
+
+export function minPlayers(mode: LobbyGameMode): number {
+	return mode === "DUO" ? 3 : 2;
+}
 
 // COMPOSITE SCHEMAS
 export const CreateLobbySchema = z
@@ -76,9 +74,6 @@ export const CreateLobbySchema = z
 		),
 		wordChoicesPerTurn: WordChoicesPerTurnSchema.default(
 			WORD_OPTIONS_PER_TURN[Math.floor(WORD_OPTIONS_PER_TURN.length / 2)],
-		),
-		timeToChooseWord: TimeToChooseWordSchema.default(
-			TIME_TO_CHOOSE_WORD[Math.floor(TIME_TO_CHOOSE_WORD.length / 2)],
 		),
 	})
 	.refine(
@@ -112,7 +107,6 @@ export const LobbyResponseSchema = z.object({
 	drawTime: DrawTimeSchema,
 	numberOfRounds: NumberOfRoundsSchema,
 	wordChoicesPerTurn: WordChoicesPerTurnSchema,
-	timeToChooseWord: TimeToChooseWordSchema,
 	customWords: CustomWordsSchema.optional(),
 });
 
@@ -131,7 +125,6 @@ export const UpdateLobbySchema = z
 		visibility: VisibilitySchema,
 		numberOfRounds: NumberOfRoundsSchema,
 		wordChoicesPerTurn: WordChoicesPerTurnSchema,
-		timeToChooseWord: TimeToChooseWordSchema,
 		drawTime: DrawTimeSchema,
 		usingDictionary: UsingDictionarySchema,
 		customWords: CustomWordsSchema,

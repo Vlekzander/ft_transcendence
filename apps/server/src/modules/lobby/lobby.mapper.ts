@@ -25,9 +25,11 @@ export type LobbyEntity = {
 	gameHasStarted: boolean;
 	gamePhase: GamePhase;
 	round: number;
+	turnNumber: number;
 	drawerIds: string[];
 	wordChoices: string[];
 	selectedWord: string | null;
+	picks: Map<string, string>;
 	timerEndsAt: number | null;
 	timeRemainingMs: number;
 	playedThisRound: Set<string>;
@@ -36,7 +38,6 @@ export type LobbyEntity = {
 	drawTime: number;
 	numberOfRounds: number;
 	wordChoicesPerTurn: number;
-	timeToChooseWord: number;
 	allWords: string[];
 };
 
@@ -61,7 +62,6 @@ export function toLobbyResponseDTO(
 		drawTime: lobby.drawTime,
 		numberOfRounds: lobby.numberOfRounds,
 		wordChoicesPerTurn: lobby.wordChoicesPerTurn,
-		timeToChooseWord: lobby.timeToChooseWord,
 		customWords: includeCustomWords
 			? lobby.customWords.join("\n")
 			: undefined,

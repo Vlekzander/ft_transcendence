@@ -134,10 +134,11 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const [drawerIds, setDrawerIds] = useState<string[]>([]);
 	const [choices, setChoices] = useState<string[]>([]);
 	const [selectedWord, setSelectedWord] = useState<string | null>(null);
+	const [picks, setPicks] = useState<Record<string, string>>({});
 	const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
 	const [clock, setClock] = useState(() => Date.now());
-	const [playerNumber, setPlayerNumber] = useState(0);
-	const [totalPlayers, setTotalPlayers] = useState(0);
+	const [turnNumber, setTurnNumber] = useState(0);
+	const [totalTurns, setTotalTurns] = useState(0);
 	const [round, setRound] = useState(0);
 	const [totalRounds, setTotalRounds] = useState(0);
 	const previousDrawingRef = useRef<string | null>(null);
@@ -162,10 +163,11 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			setRound(packet.round);
 			setTotalRounds(packet.totalRounds);
 			setDrawerIds(packet.drawerIds);
-			setPlayerNumber(packet.playerNumber);
-			setTotalPlayers(packet.totalPlayers);
+			setTurnNumber(packet.turnNumber);
+			setTotalTurns(packet.totalTurns);
 			setChoices(packet.choices);
 			setSelectedWord(packet.selectedWord);
+			setPicks(packet.picks);
 			setTimerEndsAt(packet.timerEndsAt);
 			const drawingKey = `${packet.matchId}:${packet.round}:${packet.drawerIds.join(",")}`;
 			if (
@@ -545,8 +547,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		<div>
 			<div className="mb-3 flex items-center justify-between font-semibold">
 				<span>
-					Round {round}/{totalRounds} · Drawing turn {playerNumber}/
-					{totalPlayers}
+					Round {round}/{totalRounds} · Turn {turnNumber}/{totalTurns}
 				</span>
 				{(phase === "CHOOSING" || phase === "DRAWING") && (
 					<span>{secondsLeft}s</span>
@@ -560,12 +561,24 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 							lobbyUuid: uuid ?? "",
 							word,
 						};
+						const mine = !!user && picks[user.uuid] === word;
+						const partner = Object.entries(picks).some(
+							([id, pick]) => id !== user?.uuid && pick === word,
+						);
+						const pickClass =
+							mine && partner
+								? "border-2 border-green-600 bg-green-600 font-bold text-white"
+								: mine
+									? "border-2 border-green-600 font-bold text-green-600"
+									: partner
+										? "border border-green-600 text-green-600"
+										: "border border-primary text-primary hover:bg-primary/10";
 						return (
 							<button
 								key={word}
 								type="button"
 								onClick={() => sendPacket(packet)}
-								className="border border-primary px-3 py-2 text-primary hover:bg-primary/10"
+								className={`px-3 py-2 ${pickClass}`}
 							>
 								{word}
 							</button>

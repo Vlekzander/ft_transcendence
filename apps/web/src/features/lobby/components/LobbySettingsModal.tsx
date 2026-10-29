@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
 	DRAW_TIME,
 	NB_ROUNDS,
-	TIME_TO_CHOOSE_WORD,
 	WORD_OPTIONS_PER_TURN,
 	type LobbyResponseDTO,
 	type LobbyVisibility,
@@ -33,9 +32,6 @@ export default function LobbySettingsModal({
 	const [wordChoicesPerTurn, setWordChoicesPerTurn] = useState(
 		lobby.wordChoicesPerTurn,
 	);
-	const [timeToChooseWord, setTimeToChooseWord] = useState(
-		lobby.timeToChooseWord,
-	);
 	const [onlyCustomWords, setOnlyCustomWords] = useState(
 		lobby.usingDictionary === 0,
 	);
@@ -60,7 +56,6 @@ export default function LobbySettingsModal({
 			drawTime,
 			numberOfRounds,
 			wordChoicesPerTurn,
-			timeToChooseWord,
 			usingDictionary: onlyCustomWords ? 0 : dictionary,
 			customWords,
 		});
@@ -120,14 +115,6 @@ export default function LobbySettingsModal({
 					value={wordChoicesPerTurn}
 					options={WORD_OPTIONS_PER_TURN}
 					onChange={setWordChoicesPerTurn}
-				/>
-				<LobbyOptionSelect
-					id="settings-choose-time"
-					label="Time to choose a word"
-					suffix="s"
-					value={timeToChooseWord}
-					options={TIME_TO_CHOOSE_WORD}
-					onChange={setTimeToChooseWord}
 				/>
 				<WordsFields
 					idPrefix="settings"

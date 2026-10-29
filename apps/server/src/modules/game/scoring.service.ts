@@ -101,7 +101,16 @@ export function allGuessed(lobby: LobbyEntity) {
 	);
 	return remaining.every((id) => turn.guesses.has(id));
 }
-// All inputs are server measurements. A turn with no correct answers awards zero.
+
+export function dropLeftPlayers(lobby: LobbyEntity) {
+	const turn = getMatch(lobby)?.turn;
+	if (!turn || turn.settled) return;
+	const gone = (id: string) =>
+		!lobby.connectedPlayers.has(id) || lobby.bannedPlayers.has(id);
+	turn.eligible = turn.eligible.filter((id) => !gone(id));
+	for (const id of turn.guesses.keys()) if (gone(id)) turn.guesses.delete(id);
+}
+
 export function calculateTurn(
 	turn: Turn,
 	endedMs: number,

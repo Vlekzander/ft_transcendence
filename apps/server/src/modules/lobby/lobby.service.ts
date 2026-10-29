@@ -5,6 +5,7 @@ import {
 	UpdateLobbyDTO,
 	MAX_CUSTOM_WORDS,
 	MAX_PLAYERS,
+	minPlayers,
 } from "@ft_transcendence/shared";
 import { v7 as uuidv7 } from "uuid";
 import { LobbyEntity } from "./lobby.mapper";
@@ -71,6 +72,25 @@ function findLobbyOfUser(userId: string): LobbyEntity | undefined {
 	);
 }
 
+export const CHOOSE_WORD_SECONDS = 10;
+
+export function drawersPerTurn(lobby: LobbyEntity): number {
+	return lobby.mode === "DUO" ? 2 : 1;
+}
+
+export function pickDrawers(
+	lobby: LobbyEntity,
+	candidates: string[],
+): string[] {
+	const remaining = [...candidates];
+	const drawers: string[] = [];
+	while (drawers.length < drawersPerTurn(lobby) && remaining.length > 0) {
+		const index = Math.floor(Math.random() * remaining.length);
+		drawers.push(...remaining.splice(index, 1));
+	}
+	return drawers;
+}
+
 export class LobbyService {
 	async createLobby(
 		hostId: string,
@@ -93,9 +113,11 @@ export class LobbyService {
 			gameHasStarted: false,
 			gamePhase: "WAITING",
 			round: 0,
+			turnNumber: 0,
 			drawerIds: [],
 			wordChoices: [],
 			selectedWord: null,
+			picks: new Map<string, string>(),
 			timerEndsAt: null,
 			timeRemainingMs: 0,
 			playedThisRound: new Set<string>(),
@@ -106,7 +128,6 @@ export class LobbyService {
 			drawTime: data.drawTime,
 			numberOfRounds: data.numberOfRounds,
 			wordChoicesPerTurn: data.wordChoicesPerTurn,
-			timeToChooseWord: data.timeToChooseWord,
 			allWords: buildAllWords(data.usingDictionary, localCustomWords),
 		};
 		lobbiesByJoinCode.set(code, lobby);
@@ -178,13 +199,15 @@ export class LobbyService {
 			if (
 				[...lobby.readyPlayers].filter((id) =>
 					lobby.connectedPlayers.has(id),
-				).length < 2
+				).length < minPlayers(lobby.mode)
 			)
-				throw new NotEnoughReadyPlayersError();
+				throw new NotEnoughReadyPlayersError(minPlayers(lobby.mode));
 			lobby.round = 0;
+			lobby.turnNumber = 1;
 			lobby.playedThisRound.clear();
 			lobby.drawerIds = [];
 			lobby.selectedWord = null;
+			lobby.picks.clear();
 			lobby.wordChoices = [];
 		}
 		lobby.gameStarted = !lobby.gameStarted;
@@ -203,7 +226,7 @@ export class LobbyService {
 			lobby.timerEndsAt =
 				Date.now() +
 				(startingNewGame
-					? lobby.timeToChooseWord * 1000
+					? CHOOSE_WORD_SECONDS * 1000
 					: lobby.timeRemainingMs);
 			lobby.timeRemainingMs = 0;
 			if (lobby.round === 0) lobby.round = 1;
@@ -211,9 +234,7 @@ export class LobbyService {
 				const players = Array.from(lobby.connectedPlayers).filter(
 					(id) => !lobby.spectatorPlayers.has(id),
 				);
-				const drawer =
-					players[Math.floor(Math.random() * players.length)];
-				lobby.drawerIds = drawer ? [drawer] : [];
+				lobby.drawerIds = pickDrawers(lobby, players);
 			}
 			if (lobby.wordChoices.length === 0) {
 				lobby.wordChoices = [...lobby.allWords]

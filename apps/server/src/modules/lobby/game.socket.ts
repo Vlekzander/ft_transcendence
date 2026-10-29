@@ -1,6 +1,7 @@
 import {
 	getMatch,
 	beginTurn,
+	dropLeftPlayers,
 	settleTurn,
 	allGuessed,
 	saveMatch,
@@ -15,8 +16,14 @@ import type {
 	JoinGamePacket,
 	LobbyPingPacket,
 } from "@ft_transcendence/shared";
+import { minPlayers } from "@ft_transcendence/shared";
 import { registerPacketHandler, sendToWs } from "../../websocket.server";
-import { lobbyService } from "./lobby.service";
+import {
+	CHOOSE_WORD_SECONDS,
+	drawersPerTurn,
+	lobbyService,
+	pickDrawers,
+} from "./lobby.service";
 import type { LobbyEntity } from "./lobby.mapper";
 import { notifyLobbiesChanged, notifyLobbyUpdated } from "./lobby.events";
 
@@ -35,38 +42,25 @@ function broadcast(
 }
 
 function statePacket(lobby: LobbyEntity, viewerId?: string): GameStatePacket {
-	const players = Array.from(lobby.connectedPlayers).filter(
-		(id) => !lobby.spectatorPlayers.has(id),
-	);
 	const isDrawer = !!viewerId && lobby.drawerIds.includes(viewerId);
+	const remaining = activePlayers(lobby).filter(
+		(id) => !lobby.playedThisRound.has(id) && !lobby.drawerIds.includes(id),
+	);
 	return {
 		type: "GAME_STATE",
 		lobbyUuid: lobby.uuid,
 		phase: lobby.gamePhase,
 		round: lobby.round,
 		totalRounds: lobby.numberOfRounds,
-		playerNumber:
-			lobby.drawerIds.length > 0
-				? Math.min(
-						players.length,
-						Math.max(
-							1,
-							players.filter((id) =>
-								lobby.playedThisRound.has(id),
-							).length +
-								(lobby.drawerIds.every((id) =>
-									lobby.playedThisRound.has(id),
-								)
-									? 0
-									: 1),
-						),
-					)
-				: 0,
-		totalPlayers: players.length,
+		turnNumber: lobby.turnNumber,
+		totalTurns:
+			lobby.turnNumber +
+			Math.ceil(remaining.length / drawersPerTurn(lobby)),
 		drawerIds: lobby.drawerIds,
 		choices:
 			isDrawer && lobby.gamePhase === "CHOOSING" ? lobby.wordChoices : [],
 		selectedWord: isDrawer ? lobby.selectedWord : null,
+		picks: isDrawer ? Object.fromEntries(lobby.picks) : {},
 		timerEndsAt: lobby.timerEndsAt,
 		matchId: getMatch(lobby)?.id ?? null,
 		scores: Object.fromEntries(getMatch(lobby)?.scores ?? []),
@@ -116,11 +110,15 @@ function activePlayers(lobby: LobbyEntity) {
 	);
 }
 
+function connectedDrawers(lobby: LobbyEntity) {
+	return lobby.drawerIds.filter((id) => lobby.connectedPlayers.has(id));
+}
+
 function nextTurn(lobby: LobbyEntity) {
 	const players = activePlayers(lobby);
 	const available = players.filter((id) => !lobby.playedThisRound.has(id));
 	if (
-		players.length < 2 ||
+		players.length < minPlayers(lobby.mode) ||
 		(available.length === 0 && lobby.round >= lobby.numberOfRounds)
 	) {
 		finishMatch(lobby);
@@ -129,12 +127,13 @@ function nextTurn(lobby: LobbyEntity) {
 	if (available.length === 0) {
 		lobby.round++;
 		lobby.playedThisRound.clear();
+		lobby.turnNumber = 0;
 	}
 	const candidates = players.filter((id) => !lobby.playedThisRound.has(id));
-	lobby.drawerIds = [
-		candidates[Math.floor(Math.random() * candidates.length)],
-	];
+	lobby.drawerIds = pickDrawers(lobby, candidates);
+	lobby.turnNumber++;
 	lobby.selectedWord = null;
+	lobby.picks.clear();
 	lobby.wordChoices = [...lobby.allWords]
 		.sort(() => Math.random() - 0.5)
 		.slice(0, lobby.wordChoicesPerTurn);
@@ -146,7 +145,7 @@ function nextTurn(lobby: LobbyEntity) {
 	lobby.gameStarted = true;
 	lobby.gamePhase = "CHOOSING";
 	lobby.drawHistory = [];
-	lobby.timerEndsAt = Date.now() + lobby.timeToChooseWord * 1000;
+	lobby.timerEndsAt = Date.now() + CHOOSE_WORD_SECONDS * 1000;
 	lobby.timeRemainingMs = 0;
 	broadcast(lobby, {
 		type: "DRAW_ACTION",
@@ -184,12 +183,19 @@ export function completeRoundIfSolved(lobby: LobbyEntity) {
 
 export function reconcileGame(lobby: LobbyEntity) {
 	if (!lobby.gameHasStarted) return;
+	dropLeftPlayers(lobby);
+	for (const id of lobby.picks.keys())
+		if (!lobby.connectedPlayers.has(id)) lobby.picks.delete(id);
+	const drawers = connectedDrawers(lobby);
+	const lonePick = drawers.length === 1 ? lobby.picks.get(drawers[0]) : null;
 	if (activePlayers(lobby).length < 2) {
 		settleTurn(lobby);
 		finishMatch(lobby);
 	} else if (lobby.gamePhase === "ROUND_END") return;
-	else if (!lobby.drawerIds.some((id) => lobby.connectedPlayers.has(id)))
-		finishTurn(lobby);
+	else if (drawers.length === 0) finishTurn(lobby);
+	// Partner left during DUO choosing: the remaining drawer's pick starts the turn.
+	else if (lobby.gamePhase === "CHOOSING" && lonePick)
+		startDrawing(lobby, lonePick);
 	else completeRoundIfSolved(lobby);
 }
 
@@ -212,7 +218,10 @@ export function scheduleRoundEnd(lobby: LobbyEntity) {
 			roundTimers.delete(lobby.uuid);
 			if (!lobby.gameStarted) return;
 			if (lobby.gamePhase === "CHOOSING") {
-				const word = lobby.wordChoices[0];
+				const picks = [...lobby.picks.values()];
+				const word = picks.length
+					? picks[Math.floor(Math.random() * picks.length)]
+					: lobby.wordChoices[0];
 				if (word) startDrawing(lobby, word);
 				else finishTurn(lobby);
 			} else if (lobby.gamePhase === "DRAWING") finishTurn(lobby);
@@ -240,7 +249,7 @@ async function handleJoinGame(ws: AppWebSocket, packet: JoinGamePacket) {
 		lobby.timerEndsAt =
 			Date.now() +
 			(lobby.gamePhase === "CHOOSING"
-				? lobby.timeToChooseWord
+				? CHOOSE_WORD_SECONDS
 				: lobby.drawTime) *
 				1000;
 		scheduleRoundEnd(lobby);
@@ -279,7 +288,12 @@ async function handleChooseWord(ws: AppWebSocket, packet: ChooseWordPacket) {
 		!lobby.wordChoices.includes(packet.word)
 	)
 		return;
-	startDrawing(lobby, packet.word);
+	if (connectedDrawers(lobby).length === 1) {
+		startDrawing(lobby, packet.word);
+		return;
+	}
+	lobby.picks.set(ws.uuid, packet.word);
+	broadcastState(lobby);
 }
 
 export function broadcastState(lobby: LobbyEntity) {
