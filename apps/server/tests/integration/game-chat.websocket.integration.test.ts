@@ -138,7 +138,7 @@ describe("game chat WebSocket delivery", () => {
 			guest = await connect("guest");
 		room.gameStarted = true;
 		room.gamePhase = "DRAWING";
-		room.drawerId = "host";
+		room.drawerIds = ["host"];
 		room.selectedWord = "chat";
 		room.timerEndsAt = Date.now() + room.drawTime * 1000;
 		startMatch(room);

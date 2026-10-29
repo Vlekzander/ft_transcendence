@@ -50,7 +50,7 @@ async function room() {
 }
 async function choose(lobby: Awaited<ReturnType<typeof room>>) {
 	await mocks.handlers.get("CHOOSE_WORD")!(
-		{ uuid: lobby.drawerId },
+		{ uuid: lobby.drawerIds[0] },
 		{ lobbyUuid: lobby.uuid, word: lobby.wordChoices[0] },
 	);
 }
@@ -61,7 +61,7 @@ describe("round lifecycle", () => {
 			await choose(lobby);
 			expect(statePacket(lobby).playerNumber).toBe(turn + 1);
 			await vi.advanceTimersByTimeAsync(1000 + turn * 1000);
-			const guesser = lobby.drawerId === "host" ? "guest" : "host";
+			const guesser = lobby.drawerIds[0] === "host" ? "guest" : "host";
 			guessWord(lobby, guesser, lobby.selectedWord!);
 			completeRoundIfSolved(lobby);
 			expect(statePacket(lobby).playerNumber).toBe(turn + 1);
@@ -87,7 +87,7 @@ describe("round lifecycle", () => {
 
 	it("auto-selects a word, times out, rotates drawer, then persists final game", async () => {
 		const lobby = await room(),
-			first = lobby.drawerId;
+			first = lobby.drawerIds[0];
 		await vi.advanceTimersByTimeAsync(lobby.timeToChooseWord * 1000);
 		expect(lobby.gamePhase).toBe("DRAWING");
 		expect(statePacket(lobby, first!).selectedWord).toBeTruthy();
@@ -96,7 +96,7 @@ describe("round lifecycle", () => {
 		expect(lobby.gamePhase).toBe("ROUND_END");
 		expect(mocks.upsert).not.toHaveBeenCalled();
 		await vi.advanceTimersByTimeAsync(4000);
-		expect(lobby.drawerId).not.toBe(first);
+		expect(lobby.drawerIds[0]).not.toBe(first);
 		await choose(lobby);
 		await vi.advanceTimersByTimeAsync(lobby.drawTime * 1000 + 4000);
 		expect(lobby.gamePhase).toBe("FINISHED");
@@ -116,7 +116,7 @@ describe("round lifecycle", () => {
 	it("ends early when everyone guesses and does not count a late timer twice", async () => {
 		const lobby = await room();
 		await choose(lobby);
-		const guesser = lobby.drawerId === "host" ? "guest" : "host";
+		const guesser = lobby.drawerIds[0] === "host" ? "guest" : "host";
 		vi.advanceTimersByTime(10000);
 		guessWord(lobby, guesser, lobby.selectedWord!);
 		completeRoundIfSolved(lobby);
@@ -126,13 +126,13 @@ describe("round lifecycle", () => {
 		expect(statePacket(lobby).scores).toEqual(scores);
 		await vi.advanceTimersByTimeAsync(4000);
 		expect(lobby.gamePhase).toBe("CHOOSING");
-		expect(lobby.drawerId).toBe(guesser);
+		expect(lobby.drawerIds[0]).toBe(guesser);
 		expect(getMatch(lobby)!.turn).toBeUndefined();
 	});
 	it("preserves result state on reconnect and handles departure of the drawer", async () => {
 		const lobby = await room();
 		await choose(lobby);
-		await lobbyService.leaveLobby(lobby.uuid, lobby.drawerId!);
+		await lobbyService.leaveLobby(lobby.uuid, lobby.drawerIds[0]);
 		reconcileGame(lobby);
 		expect(lobby.gamePhase).toBe("FINISHED");
 		await vi.dynamicImportSettled();

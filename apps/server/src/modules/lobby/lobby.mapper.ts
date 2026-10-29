@@ -25,7 +25,7 @@ export type LobbyEntity = {
 	gameHasStarted: boolean;
 	gamePhase: GamePhase;
 	round: number;
-	drawerId: string | null;
+	drawerIds: string[];
 	wordChoices: string[];
 	selectedWord: string | null;
 	timerEndsAt: number | null;

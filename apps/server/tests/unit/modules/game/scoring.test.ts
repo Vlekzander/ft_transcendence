@@ -21,7 +21,7 @@ async function drawing() {
 	await service.joinLobby(room.uuid, "b");
 	room.readyPlayers = new Set(["drawer", "a", "b"]);
 	await service.toggleGame(room.uuid, "drawer");
-	room.drawerId = "drawer";
+	room.drawerIds = ["drawer"];
 	room.gamePhase = "DRAWING";
 	room.selectedWord = "chat";
 	room.timerEndsAt = Date.now() + 60000;
@@ -60,7 +60,7 @@ describe("server scoring", () => {
 	});
 	it("uses both success ratio and total turn duration; zero guesses means zero points", () => {
 		const turn = {
-			drawer: "d",
+			drawers: ["d"],
 			word: "w",
 			eligible: ["a", "b"],
 			guesses: new Map([["a", 10000]]),

@@ -98,7 +98,7 @@ export const GameStatePacketSchema = z.object({
 	totalRounds: z.number(),
 	playerNumber: z.number(),
 	totalPlayers: z.number(),
-	drawerId: z.string().nullable(),
+	drawerIds: z.array(z.string()),
 	choices: z.array(z.string()),
 	selectedWord: z.string().nullable(),
 	timerEndsAt: z.number().nullable(),

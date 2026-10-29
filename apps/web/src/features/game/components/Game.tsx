@@ -130,7 +130,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		setGameStarted(lobbyGameStarted);
 	}
 	const [phase, setPhase] = useState<GamePhase>("WAITING");
-	const [drawerId, setDrawerId] = useState<string | null>(null);
+	const [drawerIds, setDrawerIds] = useState<string[]>([]);
 	const [choices, setChoices] = useState<string[]>([]);
 	const [selectedWord, setSelectedWord] = useState<string | null>(null);
 	const [timerEndsAt, setTimerEndsAt] = useState<number | null>(null);
@@ -140,7 +140,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const [round, setRound] = useState(0);
 	const [totalRounds, setTotalRounds] = useState(0);
 	const previousDrawingRef = useRef<string | null>(null);
-	const isDrawer = user?.uuid === drawerId;
+	const isDrawer = !!user && drawerIds.includes(user.uuid);
 	const canDraw = gameStarted && phase === "DRAWING" && isDrawer;
 
 	const getCtx = useCallback(() => {
@@ -160,13 +160,13 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			);
 			setRound(packet.round);
 			setTotalRounds(packet.totalRounds);
-			setDrawerId(packet.drawerId);
+			setDrawerIds(packet.drawerIds);
 			setPlayerNumber(packet.playerNumber);
 			setTotalPlayers(packet.totalPlayers);
 			setChoices(packet.choices);
 			setSelectedWord(packet.selectedWord);
 			setTimerEndsAt(packet.timerEndsAt);
-			const drawingKey = `${packet.matchId}:${packet.round}:${packet.drawerId}`;
+			const drawingKey = `${packet.matchId}:${packet.round}:${packet.drawerIds.join(",")}`;
 			if (
 				(packet.phase === "CHOOSING" || packet.phase === "DRAWING") &&
 				previousDrawingRef.current !== drawingKey

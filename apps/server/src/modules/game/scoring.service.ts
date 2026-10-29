@@ -2,7 +2,7 @@ import { v7 as uuidv7 } from "uuid";
 import type { LobbyEntity } from "../lobby/lobby.mapper";
 
 export type Turn = {
-	drawer: string;
+	drawers: string[];
 	word: string;
 	eligible: string[];
 	guesses: Map<string, number>;
@@ -43,14 +43,14 @@ export function startMatch(lobby: LobbyEntity) {
 }
 export function beginTurn(lobby: LobbyEntity) {
 	const match = getMatch(lobby);
-	if (!match || !lobby.drawerId || !lobby.selectedWord)
+	if (!match || lobby.drawerIds.length === 0 || !lobby.selectedWord)
 		throw new Error("No active match or word");
 	match.turn = {
-		drawer: lobby.drawerId,
+		drawers: [...lobby.drawerIds],
 		word: normalizeWord(lobby.selectedWord),
 		eligible: [...lobby.connectedPlayers].filter(
 			(id) =>
-				id !== lobby.drawerId &&
+				!lobby.drawerIds.includes(id) &&
 				match.scores.has(id) &&
 				!lobby.spectatorPlayers.has(id) &&
 				!lobby.bannedPlayers.has(id),
@@ -119,7 +119,8 @@ export function calculateTurn(
 				200 * ratio * speed,
 		);
 	}
-	points[turn.drawer] = Math.round(500 * ratio + 500 * ratio * speed);
+	for (const id of turn.drawers)
+		points[id] = Math.round(500 * ratio + 500 * ratio * speed);
 	return points;
 }
 export function settleTurn(lobby: LobbyEntity) {

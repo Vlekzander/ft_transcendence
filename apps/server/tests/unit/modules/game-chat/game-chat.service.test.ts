@@ -15,7 +15,7 @@ function setWord(room: LobbyEntity, word: string | null) {
 		return;
 	}
 	room.connectedPlayers.add("drawer");
-	room.drawerId = "drawer";
+	room.drawerIds = ["drawer"];
 	room.selectedWord = word;
 	room.gameStarted = true;
 	room.gamePhase = "DRAWING";

@@ -35,30 +35,35 @@ function statePacket(lobby: LobbyEntity, viewerId?: string): GameStatePacket {
 	const players = Array.from(lobby.connectedPlayers).filter(
 		(id) => !lobby.spectatorPlayers.has(id),
 	);
+	const isDrawer = !!viewerId && lobby.drawerIds.includes(viewerId);
 	return {
 		type: "GAME_STATE",
 		lobbyUuid: lobby.uuid,
 		phase: lobby.gamePhase,
 		round: lobby.round,
 		totalRounds: lobby.numberOfRounds,
-		playerNumber: lobby.drawerId
-			? Math.min(
-					players.length,
-					Math.max(
-						1,
-						players.filter((id) => lobby.playedThisRound.has(id))
-							.length +
-							(lobby.playedThisRound.has(lobby.drawerId) ? 0 : 1),
-					),
-				)
-			: 0,
+		playerNumber:
+			lobby.drawerIds.length > 0
+				? Math.min(
+						players.length,
+						Math.max(
+							1,
+							players.filter((id) =>
+								lobby.playedThisRound.has(id),
+							).length +
+								(lobby.drawerIds.every((id) =>
+									lobby.playedThisRound.has(id),
+								)
+									? 0
+									: 1),
+						),
+					)
+				: 0,
 		totalPlayers: players.length,
-		drawerId: lobby.drawerId,
+		drawerIds: lobby.drawerIds,
 		choices:
-			viewerId === lobby.drawerId && lobby.gamePhase === "CHOOSING"
-				? lobby.wordChoices
-				: [],
-		selectedWord: viewerId === lobby.drawerId ? lobby.selectedWord : null,
+			isDrawer && lobby.gamePhase === "CHOOSING" ? lobby.wordChoices : [],
+		selectedWord: isDrawer ? lobby.selectedWord : null,
 		timerEndsAt: lobby.timerEndsAt,
 		matchId: getMatch(lobby)?.id ?? null,
 		scores: Object.fromEntries(getMatch(lobby)?.scores ?? []),
@@ -123,7 +128,9 @@ function nextTurn(lobby: LobbyEntity) {
 		lobby.playedThisRound.clear();
 	}
 	const candidates = players.filter((id) => !lobby.playedThisRound.has(id));
-	lobby.drawerId = candidates[Math.floor(Math.random() * candidates.length)];
+	lobby.drawerIds = [
+		candidates[Math.floor(Math.random() * candidates.length)],
+	];
 	lobby.selectedWord = null;
 	lobby.wordChoices = [...lobby.allWords]
 		.sort(() => Math.random() - 0.5)
@@ -157,7 +164,7 @@ export function finishTurn(lobby: LobbyEntity) {
 		return;
 	stopRoundTimer(lobby.uuid);
 	settleTurn(lobby);
-	if (lobby.drawerId) lobby.playedThisRound.add(lobby.drawerId);
+	for (const id of lobby.drawerIds) lobby.playedThisRound.add(id);
 	lobby.gamePhase = "ROUND_END";
 	lobby.gameStarted = true;
 	lobby.timerEndsAt = Date.now() + 4000;
@@ -178,7 +185,7 @@ export function reconcileGame(lobby: LobbyEntity) {
 		settleTurn(lobby);
 		finishMatch(lobby);
 	} else if (lobby.gamePhase === "ROUND_END") return;
-	else if (!lobby.drawerId || !lobby.connectedPlayers.has(lobby.drawerId))
+	else if (!lobby.drawerIds.some((id) => lobby.connectedPlayers.has(id)))
 		finishTurn(lobby);
 	else completeRoundIfSolved(lobby);
 }
@@ -264,7 +271,7 @@ async function handleChooseWord(ws: AppWebSocket, packet: ChooseWordPacket) {
 		!lobby.gameStarted ||
 		!lobby.timerEndsAt ||
 		Date.now() >= lobby.timerEndsAt ||
-		lobby.drawerId !== ws.uuid ||
+		!lobby.drawerIds.includes(ws.uuid) ||
 		lobby.gamePhase !== "CHOOSING" ||
 		!lobby.wordChoices.includes(packet.word)
 	)
@@ -286,7 +293,7 @@ async function handleDrawStroke(ws: AppWebSocket, packet: DrawStrokePacket) {
 		!lobby.gameStarted ||
 		!lobby.timerEndsAt ||
 		Date.now() >= lobby.timerEndsAt ||
-		lobby.drawerId !== ws.uuid ||
+		!lobby.drawerIds.includes(ws.uuid) ||
 		lobby.gamePhase !== "DRAWING"
 	)
 		return;
@@ -303,7 +310,7 @@ async function handleDrawAction(ws: AppWebSocket, packet: DrawActionPacket) {
 		!lobby.gameStarted ||
 		!lobby.timerEndsAt ||
 		Date.now() >= lobby.timerEndsAt ||
-		lobby.drawerId !== ws.uuid ||
+		!lobby.drawerIds.includes(ws.uuid) ||
 		lobby.gamePhase !== "DRAWING"
 	)
 		return;

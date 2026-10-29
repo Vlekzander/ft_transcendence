@@ -93,7 +93,7 @@ export class LobbyService {
 			gameHasStarted: false,
 			gamePhase: "WAITING",
 			round: 0,
-			drawerId: null,
+			drawerIds: [],
 			wordChoices: [],
 			selectedWord: null,
 			timerEndsAt: null,
@@ -183,7 +183,7 @@ export class LobbyService {
 				throw new NotEnoughReadyPlayersError();
 			lobby.round = 0;
 			lobby.playedThisRound.clear();
-			lobby.drawerId = null;
+			lobby.drawerIds = [];
 			lobby.selectedWord = null;
 			lobby.wordChoices = [];
 		}
@@ -207,15 +207,13 @@ export class LobbyService {
 					: lobby.timeRemainingMs);
 			lobby.timeRemainingMs = 0;
 			if (lobby.round === 0) lobby.round = 1;
-			if (
-				!lobby.drawerId ||
-				!lobby.connectedPlayers.has(lobby.drawerId)
-			) {
+			if (!lobby.drawerIds.some((id) => lobby.connectedPlayers.has(id))) {
 				const players = Array.from(lobby.connectedPlayers).filter(
 					(id) => !lobby.spectatorPlayers.has(id),
 				);
-				lobby.drawerId =
-					players[Math.floor(Math.random() * players.length)] ?? null;
+				const drawer =
+					players[Math.floor(Math.random() * players.length)];
+				lobby.drawerIds = drawer ? [drawer] : [];
 			}
 			if (lobby.wordChoices.length === 0) {
 				lobby.wordChoices = [...lobby.allWords]
