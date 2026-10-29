@@ -21,7 +21,7 @@ import FriendsPage from "./features/friends/pages/FriendsPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
-import LeaderboardPage from "./features/leaderboard/LeaderboardPage";
+import LeaderboardPage from "./features/leaderboard/pages/LeaderboardPage";
 
 const router = createBrowserRouter([
 	{

@@ -1,32 +1,65 @@
-//Add some confettis if the current player is 1st ? need dependencies if yes ...
-//Medal or award for the third player ?
-
 import { Trophy, Crown, Medal } from "lucide-react";
-
-import { useAuth } from "../auth/context/AuthContext";
-
+import { useAuth } from "../../auth/context/AuthContext";
 import { useEffect, useState } from "react";
-
 import { Link } from "react-router-dom";
-
-import { AVATARS_PATH } from "../../config";
-
-type LeaderboardEntry = {
-	username: string;
-	uuid: string;
-	wins: number;
-	avatarPath: string | null;
-};
+import { getAvatarUrl, getErrorMessage } from "../../../config";
+import { AppDomainError, LeaderboardEntry } from "@ft_transcendence/shared";
+import { getLeaderboard } from "../services/leaderboad.service";
+import ErrorComponent from "../../../shared/components/ErrorComponent";
 
 export default function LeaderboardPage() {
-	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 	const { user } = useAuth();
+	const [isLoading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
 
 	useEffect(() => {
-		fetch("http://localhost:3000/leaderboard")
-			.then((response) => response.json())
-			.then((data) => setLeaderboard(data.leaderboard));
+		let isMounted = true;
+
+		const fetchData = async () => {
+			try {
+				setLoading(true);
+				setError(null);
+				const resLeaderboard = await getLeaderboard();
+				if (resLeaderboard.ok === false)
+					throw new AppDomainError(resLeaderboard.error);
+
+				const resultLeaderboard = resLeaderboard.data;
+
+				if (isMounted) {
+					setLeaderboard(resultLeaderboard);
+				}
+			} catch (error) {
+				const message = getErrorMessage(error);
+				if (isMounted) setError(message || "An error occured");
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		};
+
+		fetchData();
+		return () => {
+			isMounted = false;
+		};
 	}, []);
+
+	if (isLoading) {
+		return (
+			<div className="p-10 flex justify-center items-center">
+				<p className="text-2xl">Loading...</p>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<ErrorComponent
+				message={error}
+				button_text="Retry"
+				onClick={() => window.location.reload()}
+			/>
+		);
+	}
 
 	return (
 		<div className="p-10 ">
@@ -75,11 +108,7 @@ export default function LeaderboardPage() {
 									`#${index + 1}`
 								)}
 								<img
-									src={
-										player.avatarPath
-											? AVATARS_PATH + player.avatarPath
-											: "/assets/default_avatar.jpg"
-									}
+									src={getAvatarUrl(player.avatarPath)}
 									alt={`${player.username}'s avatar`}
 									width={20}
 									height={20}

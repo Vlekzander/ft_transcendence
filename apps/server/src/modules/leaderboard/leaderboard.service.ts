@@ -1,11 +1,7 @@
+import { LeaderboardEntry } from "@ft_transcendence/shared";
 import { prisma } from "../../lib/prisma.lib";
 
-let cachedLeaderboard: Array<{
-	uuid: string;
-	username: string;
-	wins: number;
-	avatarPath: string | null;
-}> = [];
+let cachedLeaderboard: Array<LeaderboardEntry> = [];
 const processedGames = new Set<string>();
 let isInit = false;
 
