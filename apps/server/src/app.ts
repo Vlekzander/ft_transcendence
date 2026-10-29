@@ -1,4 +1,3 @@
-import leaderboardRouter from "./modules/leaderboard/leaderboard.routes";
 import { hello } from "@ft_transcendence/shared";
 import cors from "cors";
 import express from "express";
@@ -9,6 +8,7 @@ import authRouter from "./modules/auth/auth.routes";
 import usersRouter from "./modules/users/users.routes";
 import msgRouter from "./modules/msg/msg.routes";
 import lobbyRouter from "./modules/lobby/lobby.routes";
+import leaderboardRouter from "./modules/leaderboard/leaderboard.routes";
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
 
@@ -26,6 +26,7 @@ app.use(cookieParser());
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 app.use("/msg", msgRouter);
+app.use("/leaderboard", leaderboardRouter);
 
 app.get("/", (_req, res) => {
 	res.json({ message: hello("API") });

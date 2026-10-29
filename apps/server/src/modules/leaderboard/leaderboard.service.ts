@@ -1,52 +1,68 @@
+import { LeaderboardEntry } from "@ft_transcendence/shared";
 import { prisma } from "../../lib/prisma.lib";
 
-type Participant = {
-	userId: string;
-	score: number;
-	user: { username: string; avatarPath: string | null };
-};
-export function rankGames(games: { participants: Participant[] }[]) {
-	const wins = new Map<
-		string,
-		{
-			uuid: string;
-			username: string;
-			avatarPath: string | null;
-			wins: number;
-		}
-	>();
-	for (const game of games) {
-		const best = Math.max(0, ...game.participants.map((p) => p.score));
-		if (best === 0) continue;
-		// Equal positive scores share the victory; empty/zero-score games award no win.
-		for (const winner of game.participants.filter(
-			(p) => p.score === best,
-		)) {
-			const entry = wins.get(winner.userId) ?? {
-				uuid: winner.userId,
-				...winner.user,
-				wins: 0,
-			};
-			entry.wins++;
-			wins.set(winner.userId, entry);
-		}
-	}
-	return [...wins.values()].sort(
-		(a, b) => b.wins - a.wins || a.uuid.localeCompare(b.uuid),
-	);
-}
+let cachedLeaderboard: Array<LeaderboardEntry> = [];
+const processedGames = new Set<string>();
+let isInit = false;
+
 export async function getLeaderboard() {
 	const games = await prisma.game.findMany({
-		where: { status: "FINISHED" },
-		include: {
+		where: {
+			status: "FINISHED",
+			...(isInit && processedGames.size > 0
+				? { uuid: { notIn: Array.from(processedGames) } }
+				: {}),
+		},
+		select: {
+			uuid: true,
 			participants: {
 				select: {
 					userId: true,
 					score: true,
-					user: { select: { username: true, avatarPath: true } },
+					user: {
+						select: {
+							username: true,
+							avatarPath: true,
+						},
+					},
 				},
 			},
 		},
 	});
-	return rankGames(games);
+
+	if (isInit && games.length === 0) return cachedLeaderboard;
+
+	const winmap = new Map(
+		cachedLeaderboard.map((item) => [item.uuid, { ...item }]),
+	);
+
+	for (const game of games) {
+		processedGames.add(game.uuid);
+		if (game.participants.length === 0) continue;
+
+		const maxScore = Math.max(...game.participants.map((p) => p.score));
+
+		const winners = game.participants.filter((p) => p.score === maxScore);
+
+		for (const winner of winners) {
+			const current = winmap.get(winner.userId);
+
+			if (current) current.wins++;
+			else {
+				winmap.set(winner.userId, {
+					uuid: winner.userId,
+					username: winner.user.username,
+					wins: 1,
+					avatarPath: winner.user.avatarPath,
+				});
+			}
+		}
+	}
+
+	cachedLeaderboard = Array.from(winmap.values()).sort(
+		(a, b) => b.wins - a.wins,
+	);
+	isInit = true;
+
+	return cachedLeaderboard;
 }
