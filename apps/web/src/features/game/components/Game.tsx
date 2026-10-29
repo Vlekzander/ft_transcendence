@@ -104,6 +104,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const { uuid } = useParams<{ uuid: string }>();
 	const { user } = useAuth();
 	const { sendPacket, isConnected } = useWebSocket();
+	const sourceRef = useRef(crypto.randomUUID());
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
 	const lastPointRef = useRef<{ x: number; y: number } | null>(null);
@@ -144,6 +145,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const previousDrawingRef = useRef<string | null>(null);
 	const isDrawer = !!user && drawerIds.includes(user.uuid);
 	const canDraw = gameStarted && phase === "DRAWING" && isDrawer;
+	const sourceUuid = sourceRef.current;
 
 	const getCtx = useCallback(() => {
 		if (!ctxRef.current && canvasRef.current)
@@ -185,7 +187,8 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 	const handleRemoteStroke = useCallback(
 		(packet: DrawStrokePacket) => {
-			if (packet.lobbyUuid !== uuid) return;
+			if (packet.lobbyUuid !== uuid || packet.sourceUuid === sourceUuid)
+				return;
 			const ctx = getCtx();
 			if (!ctx) return;
 			const strokeColor = packet.eraser ? CANVAS_BG : packet.color;
@@ -212,7 +215,8 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 
 	const handleRemoteAction = useCallback(
 		(packet: DrawActionPacket) => {
-			if (packet.lobbyUuid !== uuid) return;
+			if (packet.lobbyUuid !== uuid || packet.sourceUuid === sourceUuid)
+				return;
 			const canvas = canvasRef.current;
 			const ctx = getCtx();
 			if (!canvas || !ctx) return;
@@ -376,6 +380,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			sendPacket({
 				type: "DRAW_ACTION",
 				lobbyUuid: uuid ?? "",
+				sourceUuid: sourceUuid,
 				action: { kind: "FILL", x, y, color },
 			});
 			return;
@@ -414,6 +419,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		sendPacket({
 			type: "DRAW_STROKE",
 			lobbyUuid: uuid ?? "",
+			sourceUuid: sourceUuid,
 			from: { x, y },
 			to: { x, y },
 			color,
@@ -484,6 +490,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 			sendPacket({
 				type: "DRAW_STROKE",
 				lobbyUuid: uuid ?? "",
+				sourceUuid: sourceUuid,
 				from: lastPoint,
 				to: { x, y },
 				color,
@@ -506,6 +513,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 				sendPacket({
 					type: "DRAW_ACTION",
 					lobbyUuid: uuid ?? "",
+					sourceUuid: sourceUuid,
 					action: {
 						kind: "SHAPE",
 						mode: shapeMode,
@@ -539,6 +547,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		sendPacket({
 			type: "DRAW_ACTION",
 			lobbyUuid: uuid ?? "",
+			sourceUuid: sourceUuid,
 			action: { kind: "CLEAR" },
 		});
 	};

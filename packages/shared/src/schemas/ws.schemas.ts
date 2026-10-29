@@ -50,6 +50,7 @@ export const ChooseWordPacketSchema = z.object({
 export const DrawStrokePacketSchema = z.object({
 	type: z.literal("DRAW_STROKE"),
 	lobbyUuid: z.string(),
+	sourceUuid: z.string(),
 	from: z.object({ x: z.number(), y: z.number() }),
 	to: z.object({ x: z.number(), y: z.number() }),
 	color: z.string(),
@@ -79,6 +80,7 @@ export const DrawActionSchema = z.discriminatedUnion("kind", [
 export const DrawActionPacketSchema = z.object({
 	type: z.literal("DRAW_ACTION"),
 	lobbyUuid: z.string(),
+	sourceUuid: z.string(),
 	action: DrawActionSchema,
 });
 

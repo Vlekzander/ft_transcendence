@@ -34,10 +34,9 @@ const presenceTimers = new Map<string, NodeJS.Timeout>();
 function broadcast(
 	lobby: LobbyEntity,
 	packet: GameStatePacket | DrawStrokePacket | DrawActionPacket,
-	senderId?: string,
 ) {
 	for (const userId of lobby.connectedPlayers) {
-		if (userId !== senderId) sendToWs(userId, packet);
+		sendToWs(userId, packet);
 	}
 }
 
@@ -150,6 +149,7 @@ function nextTurn(lobby: LobbyEntity) {
 	lobby.timeRemainingMs = 0;
 	broadcast(lobby, {
 		type: "DRAW_ACTION",
+		sourceUuid: "",
 		lobbyUuid: lobby.uuid,
 		action: { kind: "CLEAR" },
 	});
@@ -316,7 +316,7 @@ async function handleDrawStroke(ws: AppWebSocket, packet: DrawStrokePacket) {
 	)
 		return;
 	lobby.drawHistory.push(packet);
-	broadcast(lobby, packet, ws.uuid);
+	broadcast(lobby, packet);
 }
 
 async function handleDrawAction(ws: AppWebSocket, packet: DrawActionPacket) {
@@ -334,7 +334,7 @@ async function handleDrawAction(ws: AppWebSocket, packet: DrawActionPacket) {
 		return;
 	if (packet.action.kind === "CLEAR") lobby.drawHistory = [];
 	else lobby.drawHistory.push(packet);
-	broadcast(lobby, packet, ws.uuid);
+	broadcast(lobby, packet);
 }
 
 export async function removePlayerFromLobby(
