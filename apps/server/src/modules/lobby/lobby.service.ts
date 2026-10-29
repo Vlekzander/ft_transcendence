@@ -189,7 +189,8 @@ export class LobbyService {
 			throw new AppDomainError("Wait for the next turn");
 		if (
 			lobby.gamePhase === "FINISHED" &&
-			getMatch(lobby)?.persistence !== "SAVED"
+			getMatch(lobby)?.persistence !== "SAVED" &&
+			getMatch(lobby)?.persistence !== "CANCELED"
 		)
 			throw new AppDomainError(
 				"Save the game results before starting again",

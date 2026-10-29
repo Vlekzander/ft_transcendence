@@ -141,6 +141,8 @@ export function GameScoreboard({
 								</button>
 							)}
 						</>
+					) : state.persistence === "CANCELED" ? (
+						<>No scores, game results not saved</>
 					) : (
 						"Saving results…"
 					)}

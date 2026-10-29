@@ -17,7 +17,7 @@ export type Match = {
 	scores: Map<string, number>;
 	turn?: Turn;
 	lastTurn: { word: string; points: Record<string, number> } | null;
-	persistence: "NONE" | "SAVING" | "SAVED" | "FAILED";
+	persistence: "NONE" | "SAVING" | "SAVED" | "FAILED" | "CANCELED";
 	saving?: Promise<void>;
 };
 const matches = new WeakMap<LobbyEntity, Match>();
@@ -169,6 +169,13 @@ export async function saveMatch(
 ): Promise<void> {
 	const match = getMatch(lobby);
 	if (!match || !match.endedAt || match.persistence === "SAVED") return;
+	const hasScores = Array.from(match.scores.values()).some(
+		(v: number) => v > 0,
+	);
+	if (!hasScores) {
+		match.persistence = "CANCELED";
+		return undefined;
+	}
 	if (match.saving) return match.saving;
 	match.persistence = "SAVING";
 	match.saving = (async () => {

@@ -74,7 +74,8 @@ async function persistResults(lobby: LobbyEntity) {
 	try {
 		const saving = saveMatch(lobby);
 		broadcastState(lobby);
-		await saving;
+
+		if (saving) await saving;
 	} catch (error) {
 		console.error("Unable to persist game results", error);
 	}

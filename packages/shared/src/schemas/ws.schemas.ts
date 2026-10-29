@@ -114,7 +114,7 @@ export const GameStatePacketSchema = z.object({
 	lastTurn: z
 		.object({ word: z.string(), points: z.record(z.string(), z.number()) })
 		.nullable(),
-	persistence: z.enum(["NONE", "SAVING", "SAVED", "FAILED"]),
+	persistence: z.enum(["NONE", "SAVING", "SAVED", "FAILED", "CANCELED"]),
 });
 
 export const LobbyUpdatedPacketSchema = z.object({

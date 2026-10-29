@@ -90,7 +90,7 @@ describe("round lifecycle", () => {
 		);
 	});
 
-	it("auto-selects a word, times out, rotates drawer, then persists final game", async () => {
+	it("auto-selects a word, times out, rotates drawer, and don't persist if no scores", async () => {
 		const lobby = await room(),
 			first = lobby.drawerIds[0];
 		await vi.advanceTimersByTimeAsync(CHOOSE_WORD_SECONDS * 1000);
@@ -106,17 +106,8 @@ describe("round lifecycle", () => {
 		await vi.advanceTimersByTimeAsync(lobby.drawTime * 1000 + 4000);
 		expect(lobby.gamePhase).toBe("FINISHED");
 		await vi.dynamicImportSettled();
-		expect(getMatch(lobby)!.persistence).toBe("SAVED");
-		expect(mocks.upsert).toHaveBeenCalledTimes(1);
-		expect(mocks.upsert.mock.calls[0][0].create).toMatchObject({
-			status: "FINISHED",
-			participants: {
-				create: expect.arrayContaining([
-					{ userId: "host", score: 0 },
-					{ userId: "guest", score: 0 },
-				]),
-			},
-		});
+		expect(getMatch(lobby)!.persistence).toBe("CANCELED");
+		expect(mocks.upsert).toHaveBeenCalledTimes(0);
 	});
 	it("ends early when everyone guesses and does not count a late timer twice", async () => {
 		const lobby = await room();
