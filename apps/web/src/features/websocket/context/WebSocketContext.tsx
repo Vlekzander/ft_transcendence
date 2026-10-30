@@ -157,7 +157,17 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 			const socket = socketRef.current;
 			socketRef.current = null;
 			setIsConnected(false);
-			socket?.close(1000, "Component unmounted");
+			if (socket) {
+				if (socket.readyState === WebSocket.OPEN)
+					socket.close(1000, "Component unmounted");
+				else if (socket.readyState === WebSocket.CONNECTING) {
+					socket.onopen = () => {
+						socket.close(1000, "Component unmounted");
+					};
+					socket.onerror = null;
+					socket.onclose = null;
+				}
+			}
 		};
 	}, [connect, clearReconnectTimeout, status]);
 
