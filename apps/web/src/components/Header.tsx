@@ -11,6 +11,7 @@ import {
 	UserPlus,
 	Menu,
 	X,
+	Settings,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -107,6 +108,12 @@ export default function Header() {
 								className="hover:text-primary transition-colors"
 							>
 								Messages
+							</Link>
+							<Link
+								to="/account"
+								className="hover:text-primary transition-colors"
+							>
+								Account
 							</Link>
 						</>
 					)}
@@ -238,6 +245,14 @@ export default function Header() {
 									className="text-primary"
 								/>
 								Messages
+							</Link>
+							<Link
+								to="/account"
+								onClick={closeMenu}
+								className="flex items-center gap-2 py-2 hover:text-primary transition-colors"
+							>
+								<Settings size={18} className="text-primary" />
+								Account
 							</Link>
 						</>
 					)}
