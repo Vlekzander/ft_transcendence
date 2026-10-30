@@ -1,9 +1,17 @@
 import { prisma } from "../../lib/prisma.lib";
-import { PlayerStat } from "@ft_transcendence/shared";
+
+type PlayerStat = {
+	wins: number;
+	correct_guess: number;
+	friends: number;
+	bigMessages: number;
+};
 
 export abstract class Achievements {
 	abstract name: string;
+	abstract description: string;
 	abstract objective: number;
+	abstract icon: string;
 	abstract current(stats: PlayerStat): number;
 	progress(stats: PlayerStat): number {
 		return Math.min((this.current(stats) / this.objective) * 100, 100);
@@ -18,6 +26,8 @@ export abstract class Achievements {
 export class FirstVictory extends Achievements {
 	name = "First victory !";
 	objective = 1;
+	description = `Win ${this.objective} game`;
+	icon = "trophy";
 	current(stats: PlayerStat): number {
 		return stats.wins;
 	}
@@ -28,6 +38,8 @@ export class FirstVictory extends Achievements {
 export class HangOfIt extends Achievements {
 	name = "Getting the hang of it";
 	objective = 10;
+	description = `Win ${this.objective} games`;
+	icon = "medal";
 	current(stats: PlayerStat): number {
 		return stats.wins;
 	}
@@ -38,6 +50,8 @@ export class HangOfIt extends Achievements {
 export class Master extends Achievements {
 	name = "Master Player";
 	objective = 100;
+	description = `Win ${this.objective} games`;
+	icon = "award";
 	current(stats: PlayerStat): number {
 		return stats.wins;
 	}
@@ -48,6 +62,8 @@ export class Master extends Achievements {
 export class Legend extends Achievements {
 	name = "Legendary Player";
 	objective = 1000;
+	description = `Win ${this.objective} games`;
+	icon = "crown";
 	current(stats: PlayerStat): number {
 		return stats.wins;
 	}
@@ -55,29 +71,33 @@ export class Legend extends Achievements {
 
 // Unstoppable
 // Win 3 games in a row
-export class Unstoppable extends Achievements {
-	name = "Unstoppable";
-	objective = 3;
-	current(stats: PlayerStat): number {
-		return stats.game_streak;
-	}
-} //Réu
+// export class Unstoppable extends Achievements {
+// 	name = "Unstoppable";
+// 	objective = 3;
+// 	description = `Win ${this.objective} games in a row`
+// 	current(stats: PlayerStat): number {
+// 		return stats.game_streak;
+// 	}
+// } //hard to implement
 
 // On Fire
 // Be the first to guess the word in 3 consecutive rounds
-export class OnFire extends Achievements {
-	name = "On fire !";
-	objective = 3;
-	current(stats: PlayerStat): number {
-		return stats.first_guess_streak;
-	}
-}
+// export class OnFire extends Achievements {
+// 	name = "On fire !";
+// 	objective = 3;
+// 	description = `Win ${this.objective} game`
+// 	current(stats: PlayerStat): number {
+// 		return stats.first_guess_streak;
+// 	}
+// } //same
 
 // Sharp Mind
 // Guess 100 words correctly
 export class SharpMind extends Achievements {
 	name = "Sharp mind";
 	objective = 100;
+	description = `Guess ${this.objective} words correctly`;
+	icon = "brain";
 	current(stats: PlayerStat): number {
 		return stats.correct_guess;
 	}
@@ -88,6 +108,8 @@ export class SharpMind extends Achievements {
 export class WiseMan extends Achievements {
 	name = "Wise man";
 	objective = 500;
+	description = `Guess ${this.objective} words correctly`;
+	icon = "graduation-cap";
 	current(stats: PlayerStat): number {
 		return stats.correct_guess;
 	}
@@ -95,76 +117,77 @@ export class WiseMan extends Achievements {
 
 // BFF
 // Make your first friend
+export class BFF extends Achievements {
+	name = "BFF";
+	objective = 1;
+	description = `Get yourself a new friend !`;
+	icon = "heart";
+	current(stats: PlayerStat): number {
+		return stats.friends;
+	}
+}
 
-// Man of the poeple
+// Poeple
 // Have 10 friends
+export class People extends Achievements {
+	name = "People Person";
+	objective = 10;
+	description = `Make ${this.objective} friends!`;
+	icon = "users";
+	current(stats: PlayerStat): number {
+		return stats.friends;
+	}
+}
 
-// 1st Warning
-// Get ban from a lobby
-
-// First Words
-// Send your first message // maybe little hard to implement here ?
+// Shakespeare
+// Send a BIG message
+export class Shakespeare extends Achievements {
+	name = "Shakespeare";
+	objective = 1;
+	description = `To be, or not to be`;
+	icon = "mail-question-mark";
+	current(stats: PlayerStat): number {
+		return stats.bigMessages;
+	}
+}
 
 const achievementsList: Achievements[] = [
 	new FirstVictory(),
 	new HangOfIt(),
 	new Master(),
 	new Legend(),
-	new Unstoppable(),
-	new OnFire(),
+	// new Unstoppable(),	//roundstreak not implemented yet
+	// new OnFire(),
 	new SharpMind(),
 	new WiseMan(),
+	new BFF(),
+	new People(),
+	new Shakespeare(),
 ];
 
 export async function getUserAchievements(uuid: string) {
-	const games = await prisma.game.findMany({
+	const userStats = await prisma.userStats.findUnique({
+		where: { userId: uuid },
+	});
+
+	const friends = await prisma.friendship.count({
 		where: {
-			status: "FINISHED",
-		},
-		include: {
-			participants: {
-				select: {
-					userId: true,
-					score: true,
-					user: {
-						select: {
-							username: true,
-						},
-					},
-				},
-			},
+			status: "ACCEPTED",
+			OR: [{ senderId: uuid }, { receiverId: uuid }],
 		},
 	});
-	let wins = 0;
-	for (const game of games) {
-		// Find the highest score in this game.
-		const highestScore = Math.max(
-			...game.participants.map((participant) => participant.score),
-		);
-
-		//for tie
-		const topPlayers = game.participants.filter(
-			(participant) => participant.score === highestScore,
-		);
-
-		if (topPlayers.length === 1 && topPlayers[0].userId === uuid) {
-			wins++;
-		}
-	}
-
 	const stats: PlayerStat = {
-		wins,
-		correct_guess: 0,
-		first_guess_streak: 0,
-		round_streak: 0,
-		game_streak: 0,
+		wins: userStats?.wins ?? 0,
+		correct_guess: userStats?.correctGuesses ?? 0,
+		friends,
+		bigMessages: userStats?.SentBigMessage ? 1 : 0,
 	};
 
 	return achievementsList.map((achievement, index) => ({
 		uuid: String(index + 1),
-		icon: "trophy",
+		icon: achievement.icon,
 		title: achievement.name,
-		description: `Win ${achievement.objective} games`,
+		description: achievement.description,
 		objective: achievement.objective,
 		current: achievement.current(stats),
 	}));

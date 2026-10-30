@@ -18,6 +18,13 @@ export class MsgService {
 				},
 			});
 
+			if (message.length >= 100) {
+				await prisma.userStats.updateMany({
+					where: { userId: sender },
+					data: { SentBigMessage: true },
+				});
+			}
+
 			return result;
 		} catch (error) {
 			if (error instanceof Prisma.PrismaClientKnownRequestError) {

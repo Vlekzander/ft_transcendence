@@ -3,6 +3,28 @@ import type { GameChatEventPacket } from "@ft_transcendence/shared";
 import { lobbiesByJoinCode } from "../lobby/lobby.service";
 import { guessWord } from "../game/scoring.service";
 import type { LobbyEntity } from "../lobby/lobby.mapper";
+// import { prisma } from "../../lib/prisma.lib";
+
+// async function updateFirstGuessStreak(
+// 	firstGuesserId: string,
+// 	eligiblePlayerIds: string[],
+// ) {
+// 	await prisma.$transaction(
+// 		eligiblePlayerIds.map((userId) =>
+// 			prisma.userStats.upsert({
+// 				where: { userId },
+// 				create: {
+// 					userId,
+// 					firstGuessStreak: userId === firstGuesserId ? 1 : 0,
+// 				},
+// 				update:
+// 					userId === firstGuesserId
+// 						? { firstGuessStreak: { increment: 1 } }
+// 						: { firstGuessStreak: 0 },
+// 			}),
+// 		),
+// 	);
+// }
 
 export class GameChatService {
 	private getRoom(roomId: string): LobbyEntity {

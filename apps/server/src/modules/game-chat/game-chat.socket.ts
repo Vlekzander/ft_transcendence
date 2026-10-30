@@ -7,6 +7,7 @@ import type {
 import { WebSocket } from "ws";
 import { registerPacketHandler, sendToWs } from "@/websocket.server";
 import { gameChatService } from "./game-chat.service";
+import { prisma } from "../../lib/prisma.lib";
 
 export function handleGameChat(
 	ws: AppWebSocket,
@@ -41,6 +42,15 @@ export function handleGameChat(
 				sendToWs(playerId, event);
 		}
 		if (event.type === "GAME_CHAT_GUESS") {
+			void prisma.userStats
+				.update({
+					where: { userId: ws.uuid },
+					data: { correctGuesses: { increment: 1 } },
+				})
+				.catch((error) => {
+					console.error("Updtaing correct guesses failed", error);
+				});
+
 			if (lobby) completeRoundIfSolved(lobby);
 		}
 	} catch (error) {

@@ -47,8 +47,8 @@ model UserStats {
 	userId				String	@id @db.Uuid
 	wins				Int		@default(0)
 	correctGuesses		Int		@default(0)
-	firstGuessStreak	Int		@default(0)
-	gameStreak			Int		@default(0)
+	SentBigMessage	Boolean @default(false)
+
 	user User @relation(fields: [userId], references: [uuid], onDelete: Cascade)
 }
 

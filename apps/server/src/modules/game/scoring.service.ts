@@ -148,21 +148,55 @@ export type ResultWriter = (result: {
 	duration: number;
 	scores: { userId: string; score: number }[];
 }) => Promise<void>;
+
 const writeResult: ResultWriter = async (result) => {
 	const { prisma } = await import("../../lib/prisma.lib");
 	// Nested create is atomic; the stable match ID makes retries idempotent.
-	await prisma.game.upsert({
-		where: { uuid: result.id },
-		update: {},
-		create: {
-			uuid: result.id,
-			mode: result.mode,
-			status: "FINISHED",
-			duration: result.duration,
-			participants: { create: result.scores },
-		},
+	await prisma.$transaction(async (tx) => {
+		// Create game only if not saved yet.
+		const existingGame = await tx.game.findUnique({
+			where: { uuid: result.id },
+			select: { uuid: true },
+		});
+		if (existingGame) return;
+
+		await tx.game.create({
+			data: {
+				uuid: result.id,
+				mode: result.mode,
+				status: "FINISHED",
+				duration: result.duration,
+				participants: { create: result.scores },
+			},
+		});
+
+		if (result.scores.length === 0) return;
+
+		const highestScore = Math.max(
+			...result.scores.map((participant) => participant.score),
+		);
+
+		const winners = result.scores.filter(
+			(participant) => participant.score === highestScore,
+		);
+
+		await Promise.all(
+			winners.map((winner) =>
+				tx.userStats.upsert({
+					where: { userId: winner.userId },
+					create: {
+						userId: winner.userId,
+						wins: 1,
+					},
+					update: {
+						wins: { increment: 1 },
+					},
+				}),
+			),
+		);
 	});
 };
+
 export async function saveMatch(
 	lobby: LobbyEntity,
 	writer: ResultWriter = writeResult,

@@ -21,6 +21,7 @@ import {
 	CreateFriendshipSchema,
 	EditFriendshipSchema,
 	FriendshipDTO,
+	FriendDTO,
 	PendingFriendRequestDTO,
 	PublicUserDTO,
 	SentFriendRequestDTO,
