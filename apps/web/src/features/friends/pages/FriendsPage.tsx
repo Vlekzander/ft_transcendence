@@ -136,6 +136,7 @@ export default function FriendsPage() {
 							<div className="divide-y divide-gray-200">
 								{pendingRequests.map((request) => (
 									<UserPreviewComponent
+										key={request.uuid}
 										user={request.sender}
 									/>
 								))}
@@ -151,6 +152,7 @@ export default function FriendsPage() {
 							<div className="divide-y divide-gray-200">
 								{sentRequests.map((request) => (
 									<UserPreviewComponent
+										key={request.uuid}
 										user={request.receiver}
 									/>
 								))}

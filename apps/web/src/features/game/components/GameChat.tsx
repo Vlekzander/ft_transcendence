@@ -13,11 +13,13 @@ export function GameChat({
 	playerIds,
 	spectatorIds,
 	users,
+	onIncomingMessage,
 }: {
 	roomId: string;
 	playerIds: string[];
 	spectatorIds: string[];
 	users: Record<string, PublicUserDTO>;
+	onIncomingMessage?: () => void;
 }) {
 	const { user } = useAuth();
 	const { sendPacket, isConnected, reconnect } = useWebSocket();
@@ -30,6 +32,7 @@ export function GameChat({
 
 	const receive = (packet: GameChatEventPacket) => {
 		if (!isPlayer || packet.roomId !== roomId) return;
+		if (packet.sender !== user?.uuid) onIncomingMessage?.();
 		setEvents((previous) =>
 			previous.some((event) => event.id === packet.id)
 				? previous
@@ -88,7 +91,7 @@ export function GameChat({
 	return (
 		<section
 			aria-label="Game chat"
-			className="min-w-0 flex flex-col border border-gray-300 bg-white shadow-sm"
+			className="h-full min-w-0 flex flex-col border border-gray-300 bg-white shadow-sm"
 		>
 			<header className="flex items-center justify-between gap-2 p-4 border-b border-gray-200">
 				<h2 className="font-bold text-lg">Game chat</h2>
@@ -104,7 +107,7 @@ export function GameChat({
 				role="log"
 				aria-live="polite"
 				aria-relevant="additions"
-				className="h-80 xl:h-96 overflow-y-auto p-4 flex flex-col gap-3"
+				className="min-h-0 flex-1 overflow-y-auto p-4 flex flex-col gap-3"
 			>
 				{events.length === 0 && (
 					<p className="text-sm text-gray-500">

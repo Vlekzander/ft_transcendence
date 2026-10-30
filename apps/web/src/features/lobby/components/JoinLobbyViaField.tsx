@@ -14,13 +14,16 @@ export default function JoinLobbyField({ onJoin, error }: Props) {
 	};
 
 	return (
-		<form onSubmit={handleSubmit} className="flex">
+		<form
+			onSubmit={handleSubmit}
+			className="flex min-w-0 flex-1 sm:flex-none"
+		>
 			<input
 				value={joinCode}
 				onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
 				maxLength={6}
 				placeholder="Join Code"
-				className="px-3 border border-gray-400 border-r-0 font-space-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10"
+				className="min-w-0 flex-1 sm:flex-none px-3 border border-gray-400 border-r-0 font-space-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:z-10"
 			/>
 			<button
 				type="submit"

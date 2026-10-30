@@ -8,6 +8,16 @@ import {
 	type PointerEvent,
 } from "react";
 import { useParams } from "react-router";
+import {
+	ChevronDownIcon,
+	ChevronUpIcon,
+	CircleIcon,
+	EraserIcon,
+	PaintBucketIcon,
+	PipetteIcon,
+	SquareIcon,
+	Trash2Icon,
+} from "lucide-react";
 import type {
 	ChooseWordPacket,
 	DrawActionPacket,
@@ -142,9 +152,13 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 	const [totalTurns, setTotalTurns] = useState(0);
 	const [round, setRound] = useState(0);
 	const [totalRounds, setTotalRounds] = useState(0);
+	const [toolsClosedTurn, setToolsClosedTurn] = useState<string | null>(null);
+	const turnKey = `${round}-${turnNumber}`;
+	const toolsOpen = toolsClosedTurn !== turnKey;
 	const previousDrawingRef = useRef<string | null>(null);
 	const isDrawer = !!user && drawerIds.includes(user.uuid);
 	const canDraw = gameStarted && phase === "DRAWING" && isDrawer;
+	const showTools = isDrawer && phase !== "WAITING" && phase !== "FINISHED";
 	const sourceUuid = sourceRef.current;
 
 	const getCtx = useCallback(() => {
@@ -278,7 +292,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 		? Math.max(0, Math.ceil((timerEndsAt - clock) / 1000))
 		: 0;
 	const toolButtonClass =
-		"rounded-sm border-2 px-3 py-1 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2";
+		"flex items-center justify-center rounded-sm border-2 p-1.5 transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2";
 	const inactiveToolButtonClass = `${toolButtonClass} border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50`;
 	const activeToolButtonClass = `${toolButtonClass} border-blue-600 bg-blue-100 text-blue-800`;
 	const predefinedColors = [
@@ -605,7 +619,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 					ref={canvasRef}
 					width={1280}
 					height={720}
-					className={`block h-auto w-full touch-none select-none border-4 border-gray-800 ${showBrushCursor ? "cursor-none" : ""}`}
+					className={`block h-auto w-full touch-none select-none border border-gray-300 ${showBrushCursor ? "cursor-none" : ""}`}
 					onPointerDown={startDrawing}
 					onPointerMove={(e) => {
 						moveBrushCursor(e);
@@ -640,182 +654,249 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 					</div>
 				)}
 			</div>
-
-			<div className="mt-7 flex w-full flex-wrap items-center justify-center gap-4">
-				<div
-					className="flex items-center gap-2"
-					aria-label="Predefined colors"
-				>
-					{predefinedColors.map((predefinedColor) => (
-						<button
-							key={predefinedColor}
-							type="button"
-							disabled={!gameStarted}
-							onClick={() => selectColor(predefinedColor)}
-							aria-label={`Use color ${predefinedColor}`}
-							className="h-7 w-7 rounded-full border-2 border-gray-300 shadow-sm transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-							style={{ backgroundColor: predefinedColor }}
-						/>
-					))}
+			{showTools && (
+				<div className="relative -mt-5 xl:mt-3">
+					<button
+						type="button"
+						onClick={() =>
+							setToolsClosedTurn(toolsOpen ? turnKey : null)
+						}
+						aria-expanded={toolsOpen}
+						aria-label={toolsOpen ? "Hide tools" : "Show tools"}
+						title={toolsOpen ? "Hide tools" : "Show tools"}
+						className={`mx-auto flex h-5 w-10 items-center justify-center rounded-t-full border border-gray-300 bg-white xl:hidden ${toolsOpen ? "border-b-0 land:border-t-0 land:border-b" : ""}`}
+					>
+						{toolsOpen ? (
+							<ChevronDownIcon size={16} />
+						) : (
+							<ChevronUpIcon size={16} />
+						)}
+					</button>
+					<div
+						className={`absolute inset-x-0 top-full land:top-auto land:bottom-full z-30 grid transition-[grid-template-rows] duration-300 xl:static xl:grid-rows-[1fr] ${toolsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+					>
+						<div className="min-h-0 overflow-hidden">
+							<div className="flex flex-wrap items-center justify-center gap-3 border border-gray-300 bg-white p-2 xl:justify-evenly">
+								<div
+									className="flex flex-wrap justify-center gap-2"
+									aria-label="Predefined colors"
+								>
+									{predefinedColors.map((predefinedColor) => (
+										<button
+											key={predefinedColor}
+											type="button"
+											disabled={!gameStarted}
+											onClick={() =>
+												selectColor(predefinedColor)
+											}
+											aria-label={`Use color ${predefinedColor}`}
+											className="h-7 w-7 rounded-full border-2 border-gray-300 shadow-sm transition hover:scale-110 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+											style={{
+												backgroundColor:
+													predefinedColor,
+											}}
+										/>
+									))}
+								</div>
+								<div
+									className="flex items-center gap-2"
+									aria-label="Recently used colors"
+								>
+									{[0, 1].map((index) => (
+										<button
+											key={index}
+											type="button"
+											disabled={!recentColors[index]}
+											onClick={() =>
+												recentColors[index] &&
+												selectColor(recentColors[index])
+											}
+											aria-label={
+												recentColors[index]
+													? `Use recent color ${recentColors[index]}`
+													: "No recent color"
+											}
+											className="h-8 w-8 rounded-sm border-2 border-gray-800 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
+											style={
+												recentColors[index]
+													? {
+															backgroundColor:
+																recentColors[
+																	index
+																],
+														}
+													: undefined
+											}
+										/>
+									))}
+								</div>
+								<div className="flex gap-2">
+									<button
+										type="button"
+										disabled={!gameStarted}
+										onClick={() => {
+											setShapeMode("freehand");
+											setIsFilling(false);
+											setIsPickingColor(false);
+											setIsErasing(
+												(previousValue) =>
+													!previousValue,
+											);
+										}}
+										aria-pressed={isErasing}
+										aria-label="Toggle eraser"
+										title="Eraser"
+										className={
+											isErasing
+												? activeToolButtonClass
+												: inactiveToolButtonClass
+										}
+									>
+										<EraserIcon size={18} />
+									</button>
+									<button
+										type="button"
+										disabled={!gameStarted}
+										onClick={() => {
+											setIsFilling(
+												(previousValue) =>
+													!previousValue,
+											);
+											setIsErasing(false);
+											setIsPickingColor(false);
+											setShapeMode("freehand");
+										}}
+										aria-pressed={isFilling}
+										aria-label="Fill"
+										title="Fill"
+										className={
+											isFilling
+												? activeToolButtonClass
+												: inactiveToolButtonClass
+										}
+									>
+										<PaintBucketIcon size={18} />
+									</button>
+									<button
+										type="button"
+										disabled={!gameStarted}
+										onClick={() => {
+											setShapeMode((previousMode) =>
+												previousMode === "rectangle"
+													? "freehand"
+													: "rectangle",
+											);
+											setIsErasing(false);
+											setIsFilling(false);
+											setIsPickingColor(false);
+										}}
+										aria-pressed={shapeMode === "rectangle"}
+										aria-label="Rectangle"
+										title="Rectangle"
+										className={
+											shapeMode === "rectangle"
+												? activeToolButtonClass
+												: inactiveToolButtonClass
+										}
+									>
+										<SquareIcon size={18} />
+									</button>
+									<button
+										type="button"
+										disabled={!gameStarted}
+										onClick={() => {
+											setShapeMode((previousMode) =>
+												previousMode === "circle"
+													? "freehand"
+													: "circle",
+											);
+											setIsErasing(false);
+											setIsFilling(false);
+											setIsPickingColor(false);
+										}}
+										aria-pressed={shapeMode === "circle"}
+										aria-label="Circle"
+										title="Circle"
+										className={
+											shapeMode === "circle"
+												? activeToolButtonClass
+												: inactiveToolButtonClass
+										}
+									>
+										<CircleIcon size={18} />
+									</button>
+									<button
+										type="button"
+										disabled={!gameStarted}
+										onClick={() =>
+											setIsPickingColor(
+												(previousValue) =>
+													!previousValue,
+											)
+										}
+										aria-pressed={isPickingColor}
+										aria-label="Pick color"
+										title="Pick color"
+										className={
+											isPickingColor
+												? activeToolButtonClass
+												: inactiveToolButtonClass
+										}
+									>
+										<PipetteIcon size={18} />
+									</button>
+									<button
+										type="button"
+										disabled={!gameStarted}
+										onClick={clearDrawing}
+										aria-label="Clear"
+										title="Clear"
+										className={inactiveToolButtonClass}
+									>
+										<Trash2Icon size={18} />
+									</button>
+								</div>
+								<input
+									type="color"
+									disabled={!gameStarted}
+									value={color}
+									onChange={(e) => {
+										setColor(e.target.value);
+										setIsErasing(false);
+									}}
+									onBlur={() => commitRecentColor(color)}
+									aria-label="Custom color"
+									className="h-8 w-8 overflow-hidden rounded-full border-0 p-0"
+								/>
+								<input
+									type="range"
+									disabled={!gameStarted}
+									value={size}
+									min={1}
+									max={50}
+									onChange={(e) =>
+										setSize(Number(e.target.value))
+									}
+									aria-label="Brush size"
+									className="w-28"
+								/>
+								<input
+									type="number"
+									disabled={!gameStarted}
+									value={size}
+									min={1}
+									max={50}
+									onChange={(e) =>
+										setSize(Number(e.target.value))
+									}
+									aria-label="Brush size value"
+									className="w-14 border border-gray-300 px-1"
+								/>
+							</div>
+						</div>
+					</div>
 				</div>
-				<div
-					className="flex items-center gap-2"
-					aria-label="Recently used colors"
-				>
-					{[0, 1].map((index) => (
-						<button
-							key={index}
-							type="button"
-							disabled={!recentColors[index]}
-							onClick={() =>
-								recentColors[index] &&
-								selectColor(recentColors[index])
-							}
-							aria-label={
-								recentColors[index]
-									? `Use recent color ${recentColors[index]}`
-									: "No recent color"
-							}
-							className="h-8 w-8 rounded-sm border-2 border-gray-800 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-100"
-							style={
-								recentColors[index]
-									? { backgroundColor: recentColors[index] }
-									: undefined
-							}
-						/>
-					))}
-				</div>
-				<button
-					type="button"
-					disabled={!gameStarted}
-					onClick={() => {
-						setShapeMode("freehand");
-						setIsFilling(false);
-						setIsPickingColor(false);
-						setIsErasing((previousValue) => !previousValue);
-					}}
-					aria-pressed={isErasing}
-					aria-label="Toggle eraser"
-					className={
-						isErasing
-							? activeToolButtonClass
-							: inactiveToolButtonClass
-					}
-				>
-					Eraser
-				</button>
-				<button
-					type="button"
-					disabled={!gameStarted}
-					onClick={() => {
-						setIsFilling((previousValue) => !previousValue);
-						setIsErasing(false);
-						setIsPickingColor(false);
-						setShapeMode("freehand");
-					}}
-					aria-pressed={isFilling}
-					className={
-						isFilling
-							? activeToolButtonClass
-							: inactiveToolButtonClass
-					}
-				>
-					Fill
-				</button>
-				<button
-					type="button"
-					disabled={!gameStarted}
-					onClick={() => {
-						setShapeMode((previousMode) =>
-							previousMode === "rectangle"
-								? "freehand"
-								: "rectangle",
-						);
-						setIsErasing(false);
-						setIsFilling(false);
-						setIsPickingColor(false);
-					}}
-					aria-pressed={shapeMode === "rectangle"}
-					className={
-						shapeMode === "rectangle"
-							? activeToolButtonClass
-							: inactiveToolButtonClass
-					}
-				>
-					Rectangle
-				</button>
-				<button
-					type="button"
-					disabled={!gameStarted}
-					onClick={() => {
-						setShapeMode((previousMode) =>
-							previousMode === "circle" ? "freehand" : "circle",
-						);
-						setIsErasing(false);
-						setIsFilling(false);
-						setIsPickingColor(false);
-					}}
-					aria-pressed={shapeMode === "circle"}
-					className={
-						shapeMode === "circle"
-							? activeToolButtonClass
-							: inactiveToolButtonClass
-					}
-				>
-					Circle
-				</button>
-				<input
-					type="color"
-					disabled={!gameStarted}
-					value={color}
-					onChange={(e) => {
-						setColor(e.target.value);
-						setIsErasing(false);
-					}}
-					onBlur={() => commitRecentColor(color)}
-					className="h-8 w-8 overflow-hidden rounded-full border-0 p-0"
-				/>
-				<button
-					type="button"
-					disabled={!gameStarted}
-					onClick={() =>
-						setIsPickingColor((previousValue) => !previousValue)
-					}
-					aria-pressed={isPickingColor}
-					className={
-						isPickingColor
-							? activeToolButtonClass
-							: inactiveToolButtonClass
-					}
-				>
-					Pick color
-				</button>
-				<input
-					type="range"
-					disabled={!gameStarted}
-					value={size}
-					min={1}
-					max={50}
-					onChange={(e) => setSize(Number(e.target.value))}
-					aria-label="Brush size"
-				/>
-				<input
-					type="number"
-					disabled={!gameStarted}
-					value={size}
-					min={1}
-					max={50}
-					onChange={(e) => setSize(Number(e.target.value))}
-				/>
-				<button
-					type="button"
-					disabled={!gameStarted}
-					onClick={clearDrawing}
-					className={inactiveToolButtonClass}
-				>
-					Clear
-				</button>
-			</div>
+			)}
 		</div>
 	);
 }
