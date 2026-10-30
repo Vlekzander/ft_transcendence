@@ -12,17 +12,67 @@ import {
 	Menu,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+const NEAR_TOP_PX = 64;
+const SCROLL_THRESHOLD_PX = 10;
 
 export default function Header() {
 	const { user } = useAuth();
 	const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+	const [headerHidden, setHeaderHidden] = useState(false);
+	const lastScrollY = useRef(0);
 
 	const closeMenu = () => setMobileMenuOpen(false);
 
+	useEffect(() => {
+		const onScroll = () => {
+			const y = window.scrollY;
+			if (y < NEAR_TOP_PX) {
+				setHeaderHidden(false);
+				lastScrollY.current = y;
+				return;
+			}
+			const delta = y - lastScrollY.current;
+			if (Math.abs(delta) < SCROLL_THRESHOLD_PX) return;
+			setHeaderHidden(delta > 0);
+			lastScrollY.current = y;
+		};
+
+		window.addEventListener("scroll", onScroll, { passive: true });
+		return () => window.removeEventListener("scroll", onScroll);
+	}, []);
+
+	useEffect(() => {
+		if (!mobileMenuOpen) return;
+
+		const previousOverflow = document.body.style.overflow;
+		document.body.style.overflow = "hidden";
+
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setMobileMenuOpen(false);
+		};
+		const noBurger = window.matchMedia(
+			user ? "(min-width: 768px)" : "(min-width: 640px)",
+		);
+		const onNoBurgerChange = () => {
+			if (noBurger.matches) setMobileMenuOpen(false);
+		};
+
+		window.addEventListener("keydown", onKeyDown);
+		noBurger.addEventListener("change", onNoBurgerChange);
+		return () => {
+			document.body.style.overflow = previousOverflow;
+			window.removeEventListener("keydown", onKeyDown);
+			noBurger.removeEventListener("change", onNoBurgerChange);
+		};
+	}, [mobileMenuOpen, user]);
+
 	return (
-		<header className="sticky top-0 z-50 flex flex-col border-b border-gray-300 bg-background shadow-sm">
-			<div className="flex items-center justify-between px-4 sm:px-6 py-3">
+		<header
+			className={`sticky top-0 z-50 flex flex-col border-b border-gray-300 bg-background shadow-sm transition-transform duration-300 ${headerHidden && !mobileMenuOpen ? "max-sm:-translate-y-full" : ""}`}
+		>
+			<div className="flex items-center justify-between px-4 sm:px-6 py-3 bg-background">
 				<Link
 					to="/"
 					onClick={closeMenu}
@@ -64,9 +114,10 @@ export default function Header() {
 
 				<div className="flex items-center gap-3">
 					{user ? (
-						<div className="hidden sm:flex items-center gap-3">
+						<div className="flex items-center gap-3">
 							<Link
 								to={`/user/${user.uuid}`}
+								onClick={closeMenu}
 								className="flex items-center gap-2 hover:opacity-85 transition-opacity"
 							>
 								<img
@@ -74,21 +125,29 @@ export default function Header() {
 									alt={user.username}
 									className="w-8 h-8 object-cover border border-gray-300"
 								/>
-								<span className="font-semibold text-sm">
+								<span className="hidden sm:inline font-semibold text-sm">
 									{user.username}
 								</span>
 							</Link>
-							<div className="h-5 w-px bg-gray-300 mx-1" />
+							<div className="hidden sm:block h-5 w-px bg-gray-300 mx-1" />
 							<Link
 								to="/logout"
 								title="Logout"
-								className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+								className="hidden sm:block p-2 text-gray-600 hover:text-red-500 transition-colors"
 							>
 								<LogOut size={18} />
 							</Link>
 						</div>
 					) : (
 						<div className="hidden sm:flex items-center gap-2">
+							<Link
+								to="/leaderboard"
+								title="Leaderboard"
+								aria-label="Leaderboard"
+								className="md:hidden p-2 hover:opacity-80 transition-opacity"
+							>
+								<Trophy size={18} className="text-primary" />
+							</Link>
 							<Link
 								to="/login"
 								className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium border border-gray-300 hover:bg-gray-100 transition-colors"
@@ -109,7 +168,7 @@ export default function Header() {
 					<button
 						type="button"
 						onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-						className="md:hidden p-2 text-gray-700 hover:text-primary transition-colors focus:outline-none"
+						className={`${user ? "md:hidden" : "sm:hidden"} p-2 text-gray-700 hover:text-primary transition-colors focus:outline-none`}
 						aria-label="Toggle menu"
 					>
 						{mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -118,12 +177,20 @@ export default function Header() {
 			</div>
 
 			{mobileMenuOpen && (
-				<div className="md:hidden flex flex-col border-t border-gray-200 bg-background px-4 py-4 gap-3 text-base shadow-inner">
+				<div
+					aria-hidden="true"
+					onClick={closeMenu}
+					className="md:hidden fixed inset-0 -z-10 bg-black/40"
+				/>
+			)}
+
+			{mobileMenuOpen && (
+				<div className="md:hidden absolute top-full left-0 right-0 max-h-[calc(100dvh-4rem)] overflow-y-auto flex flex-col border-t border-gray-200 bg-background px-4 py-4 gap-3 text-base shadow-inner">
 					{user && (
 						<Link
 							to={`/user/${user.uuid}`}
 							onClick={closeMenu}
-							className="flex items-center gap-3 py-2 border-b border-gray-100 font-semibold"
+							className="flex sm:hidden items-center gap-3 py-2 border-b border-gray-100 font-semibold"
 						>
 							<img
 								src={getAvatarUrl(user.avatarPath)}
@@ -175,7 +242,9 @@ export default function Header() {
 						</>
 					)}
 
-					<div className="pt-2 mt-2 border-t border-gray-200 flex flex-col gap-2">
+					<div
+						className={`${user ? "flex sm:hidden" : "flex"} pt-2 mt-2 border-t border-gray-200 flex-col gap-2`}
+					>
 						{user ? (
 							<Link
 								to="/logout"

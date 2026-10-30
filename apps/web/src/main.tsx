@@ -27,6 +27,9 @@ import TermsOfService from "./pages/TermsOfService";
 import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
 import LeaderboardPage from "./features/leaderboard/pages/LeaderboardPage";
 import HomePage from "./pages/HomePage";
+import type { RouteHandle } from "./components/Footer";
+
+const gamePageHandle: RouteHandle = { minimalFooter: true };
 
 const router = createBrowserRouter([
 	{
@@ -37,8 +40,16 @@ const router = createBrowserRouter([
 			{
 				element: <RequireAuth />,
 				children: [
-					{ path: "/game", element: <GamePage /> },
-					{ path: "/game/:uuid", element: <GamePage /> },
+					{
+						path: "/game",
+						element: <GamePage />,
+						handle: gamePageHandle,
+					},
+					{
+						path: "/game/:uuid",
+						element: <GamePage />,
+						handle: gamePageHandle,
+					},
 					{
 						path: "/account",
 						element: <AccountPage />,
@@ -66,10 +77,12 @@ const router = createBrowserRouter([
 					{
 						path: "/lobbies/:uuid",
 						element: <GamePage />,
+						handle: gamePageHandle,
 					},
 					{
 						path: "/lobbies/:uuid/game",
 						element: <GamePage />,
+						handle: gamePageHandle,
 					},
 					{
 						path: "/msg/:uuid",

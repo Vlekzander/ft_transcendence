@@ -5,7 +5,7 @@ import {
 	type LobbyResponseDTO,
 	type UpdateLobbyDTO,
 } from "@ft_transcendence/shared";
-import { Check, Copy, Settings, UserPlus } from "lucide-react";
+import { Check, Copy, Plus, Settings } from "lucide-react";
 import { useAuth } from "../../auth/context/AuthContext";
 import LobbySettingsModal from "../../lobby/components/LobbySettingsModal";
 import { useUsers } from "../../lobby/hooks/useUsers";
@@ -112,7 +112,7 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 					title="Copy the join code"
 					className="flex items-center gap-2 px-4 py-2 border border-primary bg-primary/10 text-primary font-space-mono text-2xl font-bold cursor-pointer hover:bg-primary/20"
 				>
-					{lobby.joinCode}
+					<span className="max-xl:sr-only">{lobby.joinCode}</span>
 					{copied ? <Check size={20} /> : <Copy size={20} />}
 				</button>
 				<div className="flex flex-wrap gap-2">
@@ -122,8 +122,8 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 						title="Copy invitation link"
 						className="btn-primary"
 					>
-						<UserPlus size={18} />
-						Invite
+						<Plus size={18} />
+						<span className="max-xl:sr-only">Invite</span>
 					</button>
 					{isHost && (
 						<button
@@ -132,7 +132,7 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 							className="btn-primary"
 						>
 							<Settings size={18} />
-							Settings
+							<span className="max-xl:sr-only">Settings</span>
 						</button>
 					)}
 				</div>
@@ -151,7 +151,14 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 							className="flex min-w-0 flex-col items-stretch gap-3 p-3"
 						>
 							<span className="font-semibold min-w-0 [overflow-wrap:anywhere]">
-								{nameOf(id)}
+								<Link
+									to={`/user/${id}`}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="hover:text-blue-600"
+								>
+									{nameOf(id)}
+								</Link>
 								{id === lobby.hostId && (
 									<span className="ml-2 text-xs uppercase text-primary">
 										host
@@ -176,14 +183,8 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 									</span>
 								)}
 							</span>
-							<div className="flex flex-wrap gap-2">
-								<Link
-									to={`/user/${id}`}
-									className="px-3 py-1 border border-gray-400 text-sm hover:bg-gray-400/10"
-								>
-									View profile
-								</Link>
-								{isHost && id !== lobby.hostId && (
+							{isHost && id !== lobby.hostId && (
+								<div className="flex flex-wrap gap-2">
 									<button
 										type="button"
 										onClick={() =>
@@ -195,8 +196,8 @@ export default function Lobby({ lobby, onLobbyChange }: LobbyProps) {
 									>
 										Ban
 									</button>
-								)}
-							</div>
+								</div>
+							)}
 						</li>
 					))}
 				</ul>
