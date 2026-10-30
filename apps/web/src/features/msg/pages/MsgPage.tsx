@@ -55,7 +55,9 @@ export default function MsgPage() {
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const isFirstLoad = useRef(true);
 
-	refresh();
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
 
 	useEffect(() => {
 		let isMounted = true;

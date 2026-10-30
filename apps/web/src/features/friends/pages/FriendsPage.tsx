@@ -39,7 +39,9 @@ export default function FriendsPage() {
 	const [searchResults, setSearchResults] = useState<PublicUserDTO[]>([]);
 	const [isSearching, setIsSearching] = useState(false);
 
-	refresh();
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
 
 	useEffect(() => {
 		const trimmed = query.trim();

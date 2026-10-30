@@ -305,7 +305,9 @@ export default function UserPage() {
 		}
 	}, [uuid, isOwnProfile]);
 
-	refresh();
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
 
 	useEffect(() => {
 		let isMounted = true;
