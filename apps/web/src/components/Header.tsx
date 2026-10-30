@@ -70,7 +70,7 @@ export default function Header() {
 
 	return (
 		<header
-			className={`sticky top-0 z-50 flex flex-col border-b border-gray-300 bg-background shadow-sm transition-transform duration-300 ${headerHidden && !mobileMenuOpen ? "max-sm:-translate-y-full" : ""}`}
+			className={`sticky top-0 z-50 flex flex-col border-b border-gray-300 bg-background shadow-sm transition-transform duration-300 ${headerHidden && !mobileMenuOpen ? "max-sm:-translate-y-full short:-translate-y-full" : ""}`}
 		>
 			<div className="flex items-center justify-between px-4 sm:px-6 py-3 bg-background">
 				<Link

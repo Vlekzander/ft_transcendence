@@ -167,20 +167,20 @@ export default function MsgPage() {
 	}
 
 	return (
-		<div className="p-4 sm:p-5 flex flex-col gap-4 max-w-6xl mx-auto w-full h-[calc(100dvh-5rem)] overflow-hidden">
-			<div className="flex items-center justify-between border-b border-gray-300 pb-4">
+		<div className="p-4 sm:p-5 short:p-2 flex flex-col gap-4 short:gap-2 max-w-6xl mx-auto w-full h-[calc(100dvh-5rem)] overflow-hidden">
+			<div className="flex items-center justify-between border-b border-gray-300 pb-4 short:sr-only">
 				<h1 className="text-2xl sm:text-3xl font-extrabold flex items-center gap-3">
 					<MessageSquare className="text-primary" size={28} />
 					Messages
 				</h1>
 			</div>
 
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-				<div className="border border-gray-300 bg-background flex flex-col overflow-y-auto">
-					<div className="p-3 border-b border-gray-200 font-semibold bg-gray-50">
+			<div className="grid grid-cols-1 md:grid-cols-3 short:grid-cols-1 short:grid-rows-[auto_minmax(0,1fr)] gap-4 short:gap-2 flex-1 min-h-0">
+				<div className="border border-gray-300 bg-background flex flex-col overflow-y-auto short:overflow-x-auto short:overflow-y-hidden">
+					<div className="p-3 border-b border-gray-200 font-semibold bg-gray-50 max-sm:hidden short:hidden">
 						Conversations
 					</div>
-					<div className="divide-y divide-gray-200 flex-1">
+					<div className="divide-y divide-gray-200 flex-1 short:flex short:divide-y-0 short:divide-x">
 						{conversations.length === 0 ? (
 							<p className="p-4 text-sm text-gray-500 text-center">
 								No conversation
@@ -202,7 +202,7 @@ export default function MsgPage() {
 												user: contact.uuid,
 											})
 										}
-										className={`w-full p-3 flex items-center gap-3 text-left transition-colors hover:bg-gray-100 ${
+										className={`w-full short:w-auto short:max-w-48 short:shrink-0 p-3 short:p-2 flex items-center gap-3 text-left transition-colors hover:bg-gray-100 ${
 											isSelected
 												? "bg-gray-100 border-l-4 border-primary"
 												: ""
@@ -215,13 +215,13 @@ export default function MsgPage() {
 											alt={contact.username}
 											className="w-10 h-10 object-cover border"
 										/>
-										<div className="flex-1 min-w-0">
+										<div className="flex-1 short:flex-none min-w-0">
 											<div className="flex justify-between items-center">
 												<span className="font-semibold text-sm truncate">
 													{contact.username}
 												</span>
 											</div>
-											<p className="text-xs text-gray-500 truncate">
+											<p className="text-xs text-gray-500 truncate short:hidden">
 												{isSender ? "You: " : ""}
 												{conv.message.content}
 											</p>
@@ -233,7 +233,7 @@ export default function MsgPage() {
 					</div>
 				</div>
 
-				<div className="md:col-span-2 flex flex-col border border-gray-300 bg-background min-h-0 overflow-hidden">
+				<div className="md:col-span-2 short:col-span-1 flex flex-col border border-gray-300 bg-background min-h-0 overflow-hidden">
 					{activeUuid && otherUser ? (
 						<>
 							<div className="flex items-center justify-between p-3 border-b border-gray-300 bg-background">
@@ -244,9 +244,9 @@ export default function MsgPage() {
 									<img
 										src={getAvatarUrl(otherUser.avatarPath)}
 										alt={otherUser.username}
-										className="w-10 h-10 object-cover border"
+										className="w-10 h-10 object-cover border short:hidden"
 									/>
-									<div className="flex flex-col">
+									<div className="flex flex-col short:flex-row short:items-center short:gap-2">
 										<span className="font-semibold text-base sm:text-lg">
 											{otherUser.username}
 										</span>

@@ -49,7 +49,8 @@ export default function LobbiesPage() {
 					onBack={alreadyInLobbyGuard.goBack}
 				/>
 			)}
-			<div className="flex items-center justify-between gap-3">
+			{/* Phone: actions on their own line under the title */}
+			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 				<h1 className="text-3xl font-extrabold">Lobbies</h1>
 				<div className="flex gap-2">
 					<button
@@ -60,22 +61,23 @@ export default function LobbiesPage() {
 					>
 						<RefreshCw size={18} />
 					</button>
-					<JoinLobbyViaField onJoin={handleJoin} error={joinError} />
+					<JoinLobbyViaField onJoin={handleJoin} />
 					<button
 						type="button"
 						onClick={() => setShowCreate(true)}
 						className="btn-primary"
 					>
 						<Plus size={18} />
-						Add a lobby
+						<span className="max-sm:sr-only">Add a lobby</span>
 					</button>
 				</div>
 			</div>
 
+			{joinError && <p className="form-alert-error">{joinError}</p>}
 			{listError && <p className="form-alert-error">{listError}</p>}
 
 			<div className="border border-gray-300">
-				<div className="grid grid-cols-[1fr_1fr_1fr_1fr_1fr_0.5fr] bg-secondary text-xs uppercase font-bold tracking-wider text-gray-600 px-4 py-2 border-b border-gray-300">
+				<div className="hidden sm:grid grid-cols-[1fr_1fr_1fr_1fr_1fr_0.5fr] bg-secondary text-xs uppercase font-bold tracking-wider text-gray-600 px-4 py-2 border-b border-gray-300">
 					<span>Host</span>
 					<span className="text-center">Draw time</span>
 					<span className="text-center">Rounds</span>
@@ -98,21 +100,31 @@ export default function LobbiesPage() {
 									onClick={() =>
 										void handleJoin(lobby.joinCode)
 									}
-									className="group grid grid-cols-[1fr_1fr_1fr_1fr_1fr_0.5fr] w-full px-4 py-3 text-left items-center hover:bg-gray-400/5 cursor-pointer"
+									className="group flex sm:grid grid-cols-[1fr_1fr_1fr_1fr_1fr_0.5fr] gap-3 sm:gap-0 w-full px-4 py-3 text-left items-center hover:bg-gray-400/5 cursor-pointer"
 								>
-									<span className="font-semibold">
-										{users[lobby.hostId]?.username ?? "..."}
+									<span className="flex min-w-0 flex-1 flex-col sm:contents">
+										<span className="font-semibold [overflow-wrap:anywhere]">
+											{users[lobby.hostId]?.username ??
+												"..."}
+										</span>
+										<span className="text-sm text-gray-500 sm:hidden">
+											{lobby.drawTime}s ·{" "}
+											{lobby.numberOfRounds} rounds ·{" "}
+											{lobby.wordChoicesPerTurn} words ·{" "}
+											{lobby.connectedPlayers.length}/
+											{lobby.maxPlayers ?? MAX_PLAYERS}
+										</span>
 									</span>
-									<span className="text-center">
+									<span className="hidden sm:block text-center">
 										{lobby.drawTime}
 									</span>
-									<span className="text-center">
+									<span className="hidden sm:block text-center">
 										{lobby.numberOfRounds}
 									</span>
-									<span className="text-center">
+									<span className="hidden sm:block text-center">
 										{lobby.wordChoicesPerTurn}
 									</span>
-									<span className="text-center">
+									<span className="hidden sm:block text-center">
 										{lobby.connectedPlayers.length}/
 										{lobby.maxPlayers ?? MAX_PLAYERS}
 									</span>

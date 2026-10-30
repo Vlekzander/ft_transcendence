@@ -70,16 +70,16 @@ function GameRoom({ uuid }: { uuid?: string }) {
 		setUnreadChat(false);
 	};
 	const panelClass = (id: Tab) =>
-		`row-start-3 col-start-1 min-h-0 min-w-0 overflow-y-auto sm:row-start-2 sm:block ${tab === id ? "" : "hidden"}`;
+		`row-start-3 col-start-1 min-h-0 min-w-0 overflow-y-auto sm:row-start-2 sm:block land:col-start-2 ${tab === id ? "" : "hidden land:hidden"}`;
 	return (
-		<div className="grid h-[calc(100dvh-4rem)] grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 p-2 sm:grid-cols-3 sm:grid-rows-[auto_minmax(0,1fr)] xl:grid-cols-[18rem_minmax(0,1fr)_22rem]">
-			<div className="row-start-1 col-start-1 w-full min-w-0 max-w-[calc((100dvh-12rem)*16/9)] justify-self-center sm:col-span-3 xl:col-span-1 xl:col-start-2 xl:row-span-2">
+		<div className="grid h-[calc(100dvh-4rem)] grid-cols-1 grid-rows-[auto_auto_minmax(0,1fr)] gap-3 p-2 sm:grid-cols-3 sm:grid-rows-[auto_minmax(0,1fr)] land:grid-cols-[minmax(0,1fr)_20rem] xl:grid-cols-[18rem_minmax(0,1fr)_22rem]">
+			<div className="row-start-1 col-start-1 w-full min-w-0 max-w-[calc((100dvh-12rem)*16/9)] justify-self-center sm:col-span-3 land:col-span-1 land:row-span-2 xl:col-span-1 xl:col-start-2 xl:row-span-2">
 				<Game gameStarted={lobby.gameStarted} />
 			</div>
 			<div
 				role="tablist"
 				aria-label="Game panels"
-				className="row-start-2 col-start-1 flex border border-gray-300 bg-white sm:hidden"
+				className="row-start-2 col-start-1 flex border border-gray-300 bg-white sm:hidden land:flex land:row-start-1 land:col-start-2"
 			>
 				{TABS.map(({ id, label }) => (
 					<button

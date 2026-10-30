@@ -664,7 +664,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 						aria-expanded={toolsOpen}
 						aria-label={toolsOpen ? "Hide tools" : "Show tools"}
 						title={toolsOpen ? "Hide tools" : "Show tools"}
-						className={`mx-auto flex h-5 w-10 items-center justify-center rounded-t-full border border-gray-300 bg-white xl:hidden ${toolsOpen ? "border-b-0" : ""}`}
+						className={`mx-auto flex h-5 w-10 items-center justify-center rounded-t-full border border-gray-300 bg-white xl:hidden ${toolsOpen ? "border-b-0 land:border-t-0 land:border-b" : ""}`}
 					>
 						{toolsOpen ? (
 							<ChevronDownIcon size={16} />
@@ -673,7 +673,7 @@ export default function Game({ gameStarted: lobbyGameStarted }: GameProps) {
 						)}
 					</button>
 					<div
-						className={`absolute inset-x-0 top-full z-30 grid transition-[grid-template-rows] duration-300 xl:static xl:grid-rows-[1fr] ${toolsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+						className={`absolute inset-x-0 top-full land:top-auto land:bottom-full z-30 grid transition-[grid-template-rows] duration-300 xl:static xl:grid-rows-[1fr] ${toolsOpen ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
 					>
 						<div className="min-h-0 overflow-hidden">
 							<div className="flex flex-wrap items-center justify-center gap-3 border border-gray-300 bg-white p-2 xl:justify-evenly">
