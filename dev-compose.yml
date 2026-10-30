@@ -16,12 +16,12 @@ services:
         networks:
             - ft_bf_network-dev
         ports:
-            - "${DEV_WEB_PORT:-5173}:5173"
+            - "${WEB_PORT:-5173}:5173"
         environment:
             VITE_API_URL: "/api"
             VITE_WS_URL: "ws://localhost:${DEV_API_PORT:-3000}"
-        env_file:
-            - .env
+        depends_on:
+            - backend
 
     backend:
         container_name: ft_transcendence-backend
@@ -40,15 +40,13 @@ services:
             - ft_bf_network-dev
         ports:
             - "${DEV_API_PORT:-3000}:${DEV_API_PORT:-3000}"
-        secrets:
-            - db_username
-            - db_password
-            - jwt_secret
         environment:
+            API_PORT: ${DEV_API_PORT:-3000}
             DB_HOST: database
-            DB_NAME: ft_transcendence
-        env_file:
-            - .env
+            DB_NAME: ${DB_NAME}
+            DB_USER: ${DB_USER}
+            DB_PASSWORD: ${DB_PASSWORD}
+            JWT_SECRET: ${JWT_SECRET}
         depends_on:
             database:
                 condition: service_healthy
@@ -60,19 +58,12 @@ services:
             - database_data-dev:/var/lib/postgresql/18/docker
         networks:
             - ft_b_network-dev
-        secrets:
-            - db_username
-            - db_password
         environment:
-            POSTGRES_DB: ft_transcendence
-            POSTGRES_USER_FILE: /run/secrets/db_username
-            POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+            POSTGRES_DB: ${DB_NAME}
         healthcheck:
-            test:
-                [
-                    "CMD-SHELL",
-                    "sh -c 'pg_isready -U $(cat /run/secrets/db_username) -d ft_transcendence'",
-                ]
+            test: ["CMD-SHELL", 'sh -c "pg_isready -U $DB_USER -d $DB_NAME"']
             interval: 10s
             timeout: 3s
             retries: 3
@@ -88,11 +79,9 @@ services:
             - 8080:80
         depends_on:
             - database
-        secrets:
-            - db_password
         environment:
             PGADMIN_DEFAULT_EMAIL: apierret@student.42belgium.be
-            PGADMIN_DEFAULT_PASSWORD_FILE: /run/secrets/db_password
+            PGADMIN_DEFAULT_PASSWORD: $DB_PASSWORD
             PGADMIN_CONFIG_SERVER_MODE: False
             PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: False
 
@@ -105,11 +94,3 @@ networks:
         driver: bridge
     ft_bf_network-dev:
         driver: bridge
-
-secrets:
-    db_username:
-        file: docker/secrets/db_username.txt
-    db_password:
-        file: docker/secrets/db_password.txt
-    jwt_secret:
-        file: docker/secrets/jwt_secret.txt
