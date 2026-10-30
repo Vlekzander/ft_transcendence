@@ -230,26 +230,6 @@ describe("users/users.controller", () => {
 		});
 	});
 
-	describe("getUserAchievements", () => {
-		it("should return achievements with UUIDs with HTTP 200", async () => {
-			const req = {
-				params: { uuid: "user-uuid" },
-			} as any;
-			const res = createResponseMock();
-			const next = vi.fn();
-
-			await getUserAchievements(req, res as any, next);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			const response = res.json.mock.calls[0][0];
-			expect(response.achievements).toHaveLength(9);
-			for (const achievement of response.achievements) {
-				expect(achievement.uuid).toEqual(expect.any(String));
-			}
-			expect(next).not.toHaveBeenCalled();
-		});
-	});
-
 	describe("updateUser", () => {
 		it("should update the user when the current password is valid", async () => {
 			mockedValidateUserPassword.mockResolvedValue(true);

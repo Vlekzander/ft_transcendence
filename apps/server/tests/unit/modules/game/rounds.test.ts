@@ -1,19 +1,46 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
 import { CreateLobbySchema } from "@ft_transcendence/shared";
+
 const mocks = vi.hoisted(() => ({
 	send: vi.fn(),
 	handlers: new Map<string, (ws: unknown, p: unknown) => Promise<void>>(),
 	upsert: vi.fn().mockResolvedValue({}),
+	gameFindUnique: vi.fn().mockResolvedValue(null),
+	gameCreate: vi.fn().mockResolvedValue({}),
+	userStatsUpsert: vi.fn().mockResolvedValue({}),
 }));
+
 vi.mock("@/websocket.server", () => ({
 	sendToWs: mocks.send,
 	getOnlineUsers: () => [],
 	registerPacketHandler: (name: string, fn: never) =>
 		mocks.handlers.set(name, fn),
 }));
+
 vi.mock("@/lib/prisma.lib", () => ({
-	prisma: { game: { upsert: mocks.upsert } },
+	prisma: {
+		game: {
+			upsert: mocks.upsert,
+			findUnique: mocks.gameFindUnique,
+			create: mocks.gameCreate,
+		},
+		userStats: {
+			upsert: mocks.userStatsUpsert,
+		},
+		$transaction: async (callback: any) => {
+			return callback({
+				game: {
+					findUnique: mocks.gameFindUnique,
+					create: mocks.gameCreate,
+				},
+				userStats: {
+					upsert: mocks.userStatsUpsert,
+				},
+			});
+		},
+	},
 }));
+
 import {
 	CHOOSE_WORD_SECONDS,
 	lobbyService,
@@ -29,19 +56,26 @@ import {
 } from "@/modules/lobby/game.socket";
 import { getMatch, guessWord } from "@/modules/game/scoring.service";
 import { NotEnoughReadyPlayersError } from "@/errors";
+
 const defaults = CreateLobbySchema.parse({});
+
 beforeEach(() => {
 	vi.useFakeTimers();
 	vi.setSystemTime(100000);
 	lobbiesByJoinCode.clear();
 	mocks.upsert.mockClear();
+	mocks.gameFindUnique.mockClear();
+	mocks.gameCreate.mockClear();
+	mocks.userStatsUpsert.mockClear();
 	mocks.send.mockClear();
 	registerGameSockets();
 });
+
 afterEach(() => {
 	for (const r of lobbiesByJoinCode.values()) stopRoundTimer(r.uuid);
 	vi.useRealTimers();
 });
+
 async function room() {
 	const lobby = await lobbyService.createLobby("host", {
 		...defaults,
@@ -53,12 +87,14 @@ async function room() {
 	scheduleRoundEnd(lobby);
 	return lobby;
 }
+
 async function choose(lobby: Awaited<ReturnType<typeof room>>) {
 	await mocks.handlers.get("CHOOSE_WORD")!(
 		{ uuid: lobby.drawerIds[0] },
 		{ lobbyUuid: lobby.uuid, word: lobby.wordChoices[0] },
 	);
 }
+
 describe("round lifecycle", () => {
 	it("saves positive totals after all players draw and keeps them on refresh", async () => {
 		const lobby = await room();
@@ -74,17 +110,21 @@ describe("round lifecycle", () => {
 			await vi.advanceTimersByTimeAsync(4000);
 		}
 		await vi.dynamicImportSettled();
+		await vi.runAllTimersAsync();
+
 		expect(lobby.gamePhase).toBe("FINISHED");
 		const totals = [...getMatch(lobby)!.scores.values()];
 		expect(totals.every((score) => score > 0)).toBe(true);
-		const saved = mocks.upsert.mock.calls[0][0].create.participants.create;
+
+		const saved =
+			mocks.gameCreate.mock.calls[0][0].data.participants.create;
 		expect(saved).toEqual(
 			[...getMatch(lobby)!.scores].map(([userId, score]) => ({
 				userId,
 				score,
 			})),
 		);
-		expect(mocks.upsert).toHaveBeenCalledTimes(1);
+		expect(mocks.gameCreate).toHaveBeenCalledTimes(1);
 		expect(statePacket(lobby, "host").scores).toEqual(
 			Object.fromEntries(getMatch(lobby)!.scores),
 		);
@@ -99,7 +139,7 @@ describe("round lifecycle", () => {
 		expect(statePacket(lobby, "outsider").selectedWord).toBeNull();
 		await vi.advanceTimersByTimeAsync(lobby.drawTime * 1000);
 		expect(lobby.gamePhase).toBe("ROUND_END");
-		expect(mocks.upsert).not.toHaveBeenCalled();
+		expect(mocks.gameCreate).not.toHaveBeenCalled();
 		await vi.advanceTimersByTimeAsync(4000);
 		expect(lobby.drawerIds[0]).not.toBe(first);
 		await choose(lobby);
@@ -107,8 +147,9 @@ describe("round lifecycle", () => {
 		expect(lobby.gamePhase).toBe("FINISHED");
 		await vi.dynamicImportSettled();
 		expect(getMatch(lobby)!.persistence).toBe("CANCELED");
-		expect(mocks.upsert).toHaveBeenCalledTimes(0);
+		expect(mocks.gameCreate).toHaveBeenCalledTimes(0);
 	});
+
 	it("ends early when everyone guesses and does not count a late timer twice", async () => {
 		const lobby = await room();
 		await choose(lobby);
@@ -125,6 +166,7 @@ describe("round lifecycle", () => {
 		expect(lobby.drawerIds[0]).toBe(guesser);
 		expect(getMatch(lobby)!.turn).toBeUndefined();
 	});
+
 	it("preserves result state on reconnect and handles departure of the drawer", async () => {
 		const lobby = await room();
 		await choose(lobby);
@@ -144,6 +186,7 @@ describe("round lifecycle", () => {
 		});
 	});
 });
+
 async function duoRoom(players: string[]) {
 	const lobby = await lobbyService.createLobby("host", {
 		...defaults,
@@ -156,11 +199,13 @@ async function duoRoom(players: string[]) {
 	scheduleRoundEnd(lobby);
 	return lobby;
 }
+
 async function playTurn(lobby: Awaited<ReturnType<typeof duoRoom>>) {
 	await vi.advanceTimersByTimeAsync(
 		CHOOSE_WORD_SECONDS * 1000 + lobby.drawTime * 1000 + 4000,
 	);
 }
+
 describe("DUO mode", () => {
 	it("refuses to start with fewer than 3 ready players", async () => {
 		const lobby = await lobbyService.createLobby("host", {
@@ -173,6 +218,7 @@ describe("DUO mode", () => {
 			lobbyService.toggleGame(lobby.uuid, "host"),
 		).rejects.toThrow(NotEnoughReadyPlayersError);
 	});
+
 	it("pairs two new drawers per turn and lets the odd one out draw alone", async () => {
 		const lobby = await duoRoom(["p1", "p2", "p3", "p4"]);
 		const seen = new Set<string>();
@@ -192,6 +238,7 @@ describe("DUO mode", () => {
 		}
 		expect(lobby.gamePhase).toBe("FINISHED");
 	});
+
 	it("finishes the turn when a drawer leaves, then ends below 3 players", async () => {
 		const lobby = await duoRoom(["p1", "p2"]);
 		await vi.advanceTimersByTimeAsync(CHOOSE_WORD_SECONDS * 1000);
@@ -202,6 +249,7 @@ describe("DUO mode", () => {
 		expect(lobby.gamePhase).toBe("FINISHED");
 	});
 });
+
 describe("DUO word picks", () => {
 	async function pick(
 		lobby: Awaited<ReturnType<typeof duoRoom>>,
@@ -213,6 +261,7 @@ describe("DUO word picks", () => {
 			{ lobbyUuid: lobby.uuid, word },
 		);
 	}
+
 	async function leave(
 		lobby: Awaited<ReturnType<typeof duoRoom>>,
 		id: string,
@@ -220,6 +269,7 @@ describe("DUO word picks", () => {
 		await lobbyService.leaveLobby(lobby.uuid, id);
 		reconcileGame(lobby);
 	}
+
 	it("stores changeable picks visible only to drawers", async () => {
 		const lobby = await duoRoom(["p1", "p2"]);
 		const [a, b] = lobby.drawerIds;
@@ -234,6 +284,7 @@ describe("DUO word picks", () => {
 		await pick(lobby, a, w1);
 		expect(statePacket(lobby, a).picks).toEqual({ [a]: w1 });
 	});
+
 	it("draws one of two different picks at expiry", async () => {
 		const lobby = await duoRoom(["p1", "p2"]);
 		const [a, b] = lobby.drawerIds;
@@ -244,6 +295,7 @@ describe("DUO word picks", () => {
 		expect(lobby.gamePhase).toBe("DRAWING");
 		expect([w0, w1]).toContain(lobby.selectedWord);
 	});
+
 	it("draws the only pick at expiry", async () => {
 		const lobby = await duoRoom(["p1", "p2"]);
 		const w1 = lobby.wordChoices[1];
@@ -251,6 +303,7 @@ describe("DUO word picks", () => {
 		await vi.advanceTimersByTimeAsync(CHOOSE_WORD_SECONDS * 1000);
 		expect(lobby.selectedWord).toBe(w1);
 	});
+
 	it("starts at once when the partner leaves after the other picked", async () => {
 		const lobby = await duoRoom(["p1", "p2"]);
 		const [a, b] = lobby.drawerIds;
@@ -262,6 +315,7 @@ describe("DUO word picks", () => {
 		expect(lobby.gamePhase).toBe("DRAWING");
 		expect(lobby.selectedWord).toBe(w1);
 	});
+
 	it("lets the remaining drawer start instantly by clicking", async () => {
 		const lobby = await duoRoom(["p1", "p2"]);
 		const [a, b] = lobby.drawerIds;
@@ -272,6 +326,7 @@ describe("DUO word picks", () => {
 		expect(lobby.selectedWord).toBe(lobby.wordChoices[2]);
 	});
 });
+
 describe("player leaving mid-turn", () => {
 	it("drops a leaver from the turn even if they come back as spectator", async () => {
 		const lobby = await lobbyService.createLobby("host", {
