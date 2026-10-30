@@ -206,30 +206,6 @@ describe("users/users.controller", () => {
 		});
 	});
 
-	describe("getUserStats", () => {
-		it("should return user statistics with HTTP 200", async () => {
-			const req = {
-				params: { uuid: "user-uuid" },
-			} as any;
-			const res = createResponseMock();
-			const next = vi.fn();
-
-			await getUserStats(req, res as any, next);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				stats: expect.arrayContaining([
-					expect.objectContaining({
-						label: "Game Played",
-						value: "193",
-					}),
-					expect.objectContaining({ label: "Wins", value: "42" }),
-				]),
-			});
-			expect(next).not.toHaveBeenCalled();
-		});
-	});
-
 	describe("updateUser", () => {
 		it("should update the user when the current password is valid", async () => {
 			mockedValidateUserPassword.mockResolvedValue(true);

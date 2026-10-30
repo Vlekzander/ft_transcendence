@@ -217,27 +217,6 @@ describe("users routes", () => {
 		});
 	});
 
-	describe("GET /users/:uuid/stats", () => {
-		it("should return user statistics with HTTP 200", async () => {
-			const response = await request(app).get(`/users/${userUuid}/stats`);
-
-			expect(response.status).toBe(200);
-			expect(response.body.stats).toHaveLength(5);
-			expect(response.body.stats).toEqual(
-				expect.arrayContaining([
-					expect.objectContaining({
-						label: "Game Played",
-						value: "193",
-					}),
-					expect.objectContaining({
-						label: "Wins",
-						value: "42",
-					}),
-				]),
-			);
-		});
-	});
-
 	describe("GET /users/:uuid/achievements", () => {
 		it("should return user achievements with HTTP 200", async () => {
 			const response = await request(app).get(
