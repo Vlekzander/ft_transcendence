@@ -420,7 +420,13 @@ export default function UserPage() {
 						</div>
 						<div className="flex items-center justify-center sm:justify-start gap-1 m-1">
 							<UserStatusComponent
-								status={userData.online ? "online" : "offline"}
+								status={
+									isOwnProfile
+										? "online"
+										: userData.online
+											? "online"
+											: "offline"
+								}
 							/>
 						</div>
 						<div className="grid grid-cols-2 gap-4 mt-3">

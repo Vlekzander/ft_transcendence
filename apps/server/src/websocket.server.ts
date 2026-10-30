@@ -144,8 +144,6 @@ export const setupWebSocketServer = (httpserver: Server) => {
 	wss.on("connection", (ws: AppWebSocket, req) => {
 		ws.isAlive = true;
 
-		// Install listeners immediately, but wait for account validation before
-		// dispatching messages. A JWT alone does not prove the account is active.
 		const authentication = (async () => {
 			try {
 				const token = req.headers.cookie

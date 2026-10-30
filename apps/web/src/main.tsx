@@ -12,7 +12,6 @@ import LoginPage from "./features/auth/pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LogoutPage from "./features/auth/pages/LogoutPage";
 import UserPage from "./features/user/pages/UserPage";
-import TestWsPage from "./features/websocket/pages/TestWsPage";
 import GamePage from "./features/game/pages/GamePage";
 import { WebSocketProvider } from "./features/websocket/context/WebSocketContext";
 import { AuthProvider } from "./features/auth/context/AuthContext";
@@ -130,11 +129,6 @@ const router = createBrowserRouter([
 			{
 				path: "/user/:uuid",
 				element: <UserPage />,
-			},
-
-			{
-				path: "/testws",
-				element: <TestWsPage />,
 			},
 			{
 				path: "/leaderboard",
