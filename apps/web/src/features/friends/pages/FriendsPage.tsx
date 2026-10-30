@@ -32,12 +32,14 @@ function UserPreviewComponent({ user }: { user: PublicUserDTO }) {
 }
 
 export default function FriendsPage() {
-	const { friends, removeFriend, pendingRequests, sentRequests } =
+	const { friends, removeFriend, pendingRequests, sentRequests, refresh } =
 		useFriends();
 
 	const [query, setQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<PublicUserDTO[]>([]);
 	const [isSearching, setIsSearching] = useState(false);
+
+	refresh();
 
 	useEffect(() => {
 		const trimmed = query.trim();

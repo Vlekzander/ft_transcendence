@@ -271,7 +271,7 @@ export default function UserPage() {
 	const { user } = useAuth();
 	const { uuid } = useParams<{ uuid: string }>();
 	const isOwnProfile = user?.uuid === uuid;
-	const { friends, removeFriend } = useFriends();
+	const { friends, removeFriend, refresh } = useFriends();
 	const [isLoading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -304,6 +304,8 @@ export default function UserPage() {
 			console.error("Failed to refresh profile friends:", err);
 		}
 	}, [uuid, isOwnProfile]);
+
+	refresh();
 
 	useEffect(() => {
 		let isMounted = true;

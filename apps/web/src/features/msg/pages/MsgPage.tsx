@@ -27,6 +27,7 @@ import { MessageSquare, Send } from "lucide-react";
 import { FriendActionButton } from "../../friends/components/FriendActionButton";
 import { getAvatarUrl, getErrorMessage } from "../../../config";
 import UserStatusComponent from "../../user/components/UserStatus";
+import { useFriends } from "../../friends/context/FriendContext";
 
 export function MsgRedirect() {
 	const { uuid } = useParams<{ uuid: string }>();
@@ -39,6 +40,7 @@ export default function MsgPage() {
 	const activeUuid = searchParams.get("user");
 
 	const { user } = useAuth();
+	const { refresh } = useFriends();
 	const { sendPacket } = useWebSocket();
 
 	const [conversations, setConversations] = useState<
@@ -52,6 +54,8 @@ export default function MsgPage() {
 
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const isFirstLoad = useRef(true);
+
+	refresh();
 
 	useEffect(() => {
 		let isMounted = true;
