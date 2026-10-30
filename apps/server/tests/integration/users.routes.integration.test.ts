@@ -245,7 +245,7 @@ describe("users routes", () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.achievements).toHaveLength(3);
+			expect(response.body.achievements).toHaveLength(9);
 
 			for (const achievement of response.body.achievements) {
 				expect(achievement.uuid).toEqual(expect.any(String));

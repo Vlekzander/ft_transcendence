@@ -208,7 +208,9 @@ describe("users/users.controller", () => {
 
 	describe("getUserStats", () => {
 		it("should return user statistics with HTTP 200", async () => {
-			const req = {} as any;
+			const req = {
+				params: { uuid: "user-uuid" },
+			} as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -230,7 +232,9 @@ describe("users/users.controller", () => {
 
 	describe("getUserAchievements", () => {
 		it("should return achievements with UUIDs with HTTP 200", async () => {
-			const req = {} as any;
+			const req = {
+				params: { uuid: "user-uuid" },
+			} as any;
 			const res = createResponseMock();
 			const next = vi.fn();
 
@@ -238,7 +242,7 @@ describe("users/users.controller", () => {
 
 			expect(res.status).toHaveBeenCalledWith(200);
 			const response = res.json.mock.calls[0][0];
-			expect(response.achievements).toHaveLength(3);
+			expect(response.achievements).toHaveLength(9);
 			for (const achievement of response.achievements) {
 				expect(achievement.uuid).toEqual(expect.any(String));
 			}
