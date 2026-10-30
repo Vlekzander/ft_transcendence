@@ -14,7 +14,6 @@ import {
 	Medal,
 	MessageSquare,
 	Star,
-	Trophy,
 	UserRound,
 	UserRoundPlus,
 } from "lucide-react";
@@ -438,30 +437,6 @@ export default function UserPage() {
 											: "offline"
 								}
 							/>
-						</div>
-						<div className="grid grid-cols-2 gap-4 mt-3">
-							<div className="flex items-center justify-center sm:justify-start gap-2">
-								<Star className="text-orange-400" />
-								<div className="flex flex-col">
-									<span className="text-xl font-bold">
-										48720
-									</span>
-									<span className="text-gray-500 text-sm">
-										points
-									</span>
-								</div>
-							</div>
-							<div className="flex items-center justify-center sm:justify-start gap-2">
-								<Trophy className="text-primary" />
-								<div className="flex flex-col">
-									<span className="text-xl font-bold">
-										#1
-									</span>
-									<span className="text-gray-500 text-sm">
-										rank
-									</span>
-								</div>
-							</div>
 						</div>
 					</div>
 				</div>

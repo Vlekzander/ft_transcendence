@@ -3,7 +3,6 @@ import { sharedService } from "../shared/shared.service";
 import {
 	toUserResponseDTO,
 	EditUserSchema,
-	Stat,
 	UserParamsSchema,
 	toFriendshipDTO,
 	toSentFriendRequestDTO,
@@ -87,40 +86,19 @@ export async function getUserHistory(
 }
 
 export async function getUserStats(
-	_req: UserRequest,
+	req: UserRequest,
 	res: Response,
-	_next: NextFunction,
+	next: NextFunction,
 ) {
-	//WARN: TEMP FAKE STATS
-	const stats: Stat[] = [
-		{
-			icon: "gamepad-2",
-			label: "Game Played",
-			value: "193",
-		},
-		{
-			icon: "trophy",
-			label: "Wins",
-			value: "42",
-		},
-		{
-			icon: "lightbulb",
-			label: "Words Guessed",
-			value: "1247",
-		},
-		{
-			icon: "pencil-line",
-			label: "Drawings",
-			value: "251",
-		},
-		{
-			icon: "star",
-			label: "Best score",
-			value: "520",
-		},
-	];
+	try {
+		const { uuid } = req.parsedParams!;
 
-	res.status(200).json({ stats: stats });
+		const stats = await usersService.getUserStats(uuid);
+
+		return res.status(200).json({ stats: stats });
+	} catch (err) {
+		next(err);
+	}
 }
 
 export async function updateUser(

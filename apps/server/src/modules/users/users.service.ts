@@ -366,6 +366,58 @@ export class UsersService {
 
 		return result;
 	}
+
+	async getUserStats(uuid: string) {
+		try {
+			const user = await sharedService.getUserById(uuid);
+			if (!user) throw new UnknownUserIdError();
+
+			const userStats = await prisma.userStats.findUnique({
+				where: { userId: uuid },
+			});
+
+			const friendsCount = await prisma.friendship.count({
+				where: {
+					status: "ACCEPTED",
+					OR: [{ senderId: uuid }, { receiverId: uuid }],
+				},
+			});
+
+			return [
+				{
+					icon: "gamepad-2",
+					label: "Game Played",
+					value: String(userStats?.games ?? 0),
+				},
+				{
+					icon: "trophy",
+					label: "Wins",
+					value: String(userStats?.wins ?? 0),
+				},
+				{
+					icon: "lightbulb",
+					label: "Words Guessed",
+					value: String(userStats?.correctGuesses ?? 0),
+				},
+				{
+					icon: "users",
+					label: "Friends",
+					value: String(friendsCount),
+				},
+				{
+					icon: "star",
+					label: "Best score",
+					value: String(userStats?.bestScore ?? 0),
+				},
+			];
+		} catch (error) {
+			if (error instanceof Prisma.PrismaClientKnownRequestError) {
+				if (error.code === "P2007") throw new InvalidIdError();
+				if (error.code === "P2025") throw new UnknownUserIdError();
+			}
+			throw error;
+		}
+	}
 }
 
 export const usersService = new UsersService();

@@ -194,6 +194,33 @@ const writeResult: ResultWriter = async (result) => {
 				}),
 			),
 		);
+
+		await Promise.all(
+			result.scores.map(async (r) => {
+				const existing = await tx.userStats.findUnique({
+					where: { userId: r.userId },
+					select: { bestScore: true },
+				});
+
+				const newBestScore = Math.max(
+					existing?.bestScore ?? 0,
+					r.score,
+				);
+
+				return tx.userStats.upsert({
+					where: { userId: r.userId },
+					create: {
+						userId: r.userId,
+						games: 1,
+						bestScore: r.score,
+					},
+					update: {
+						games: { increment: 1 },
+						bestScore: newBestScore,
+					},
+				});
+			}),
+		);
 	});
 };
 
