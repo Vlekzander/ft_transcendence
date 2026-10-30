@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { useNavigate } from "react-router";
 import { MAX_PLAYERS, type LobbyResponseDTO } from "@ft_transcendence/shared";
-import { Plus, RefreshCw, ChevronRight } from "lucide-react";
+import { Plus, RefreshCw, ChevronRight, Tv2 } from "lucide-react";
 import { joinLobby, listLobbies } from "../services/lobby.service";
 import { useUsers } from "../hooks/useUsers";
 import ActiveLobbyPrompt from "../components/ActiveLobbyPrompt";
@@ -51,7 +51,13 @@ export default function LobbiesPage() {
 			)}
 			{/* Phone: actions on their own line under the title */}
 			<div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-				<h1 className="text-3xl font-extrabold">Lobbies</h1>
+				<div className="flex flex-col sm:flex-row">
+					<h1 className="text-3xl font-extrabold flex items-center gap-3">
+						<Tv2 className="text-primary" size={32} />
+						Lobbies
+					</h1>
+				</div>
+
 				<div className="flex gap-2">
 					<button
 						type="button"
