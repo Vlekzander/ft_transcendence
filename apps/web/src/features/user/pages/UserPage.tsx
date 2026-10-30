@@ -316,15 +316,16 @@ export default function UserPage() {
 				setError(null);
 
 				const resUser = await getUser(uuid);
+
+				if (resUser.ok === false)
+					throw new AppDomainError(resUser.error);
+
 				const resHistory = await getHistory(uuid);
 				const resStats = await getStats(uuid);
 				const resAchievements = await getAchievements(uuid);
 
 				let resFriends = undefined;
 				if (!isOwnProfile) resFriends = await getFriends(uuid);
-
-				if (resUser.ok === false)
-					throw new AppDomainError(resUser.error);
 
 				const resultUser = resUser.data;
 				const resultHistory = resHistory.ok ? resHistory.data : [];
