@@ -21,7 +21,6 @@ import {
 	CreateFriendshipSchema,
 	EditFriendshipSchema,
 	FriendshipDTO,
-	FriendDTO,
 	PendingFriendRequestDTO,
 	PublicUserDTO,
 	SentFriendRequestDTO,
@@ -122,44 +121,6 @@ export async function getUserStats(
 	];
 
 	res.status(200).json({ stats: stats });
-}
-
-export async function getUserFriends(
-	_req: UserRequest,
-	res: Response,
-	_next: NextFunction,
-) {
-	const friends: FriendDTO[] = [
-		{
-			user: {
-				uuid: crypto.randomUUID(),
-				username: "Another",
-				email: "spongybobby@gmail.com",
-				avatarPath: null,
-			},
-			status: "in_game",
-		},
-		{
-			user: {
-				uuid: crypto.randomUUID(),
-				username: "Blabla",
-				email: "spongybobby@gmail.com",
-				avatarPath: null,
-			},
-			status: "online",
-		},
-		{
-			user: {
-				uuid: crypto.randomUUID(),
-				username: "Nobody",
-				email: "spongybobby@gmail.com",
-				avatarPath: null,
-			},
-			status: "offline",
-		},
-	];
-
-	res.status(200).json({ friends: friends });
 }
 
 export async function updateUser(

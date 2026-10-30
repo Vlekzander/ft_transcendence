@@ -69,28 +69,6 @@ export class Legend extends Achievements {
 	}
 }
 
-// Unstoppable
-// Win 3 games in a row
-// export class Unstoppable extends Achievements {
-// 	name = "Unstoppable";
-// 	objective = 3;
-// 	description = `Win ${this.objective} games in a row`
-// 	current(stats: PlayerStat): number {
-// 		return stats.game_streak;
-// 	}
-// } //hard to implement
-
-// On Fire
-// Be the first to guess the word in 3 consecutive rounds
-// export class OnFire extends Achievements {
-// 	name = "On fire !";
-// 	objective = 3;
-// 	description = `Win ${this.objective} game`
-// 	current(stats: PlayerStat): number {
-// 		return stats.first_guess_streak;
-// 	}
-// } //same
-
 // Sharp Mind
 // Guess 100 words correctly
 export class SharpMind extends Achievements {
@@ -156,8 +134,6 @@ const achievementsList: Achievements[] = [
 	new HangOfIt(),
 	new Master(),
 	new Legend(),
-	// new Unstoppable(),	//roundstreak not implemented yet
-	// new OnFire(),
 	new SharpMind(),
 	new WiseMan(),
 	new BFF(),
