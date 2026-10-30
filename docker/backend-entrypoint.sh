@@ -15,4 +15,5 @@ export DATABASE_URL=$(node -e '
 ')
 
 npx prisma db push
+npx prisma generate
 exec "$@"

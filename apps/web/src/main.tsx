@@ -12,25 +12,43 @@ import LoginPage from "./features/auth/pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LogoutPage from "./features/auth/pages/LogoutPage";
 import UserPage from "./features/user/pages/UserPage";
-import TestWsPage from "./features/websocket/pages/TestWsPage";
+import GamePage from "./features/game/pages/GamePage";
 import { WebSocketProvider } from "./features/websocket/context/WebSocketContext";
 import { AuthProvider } from "./features/auth/context/AuthContext";
 import AccountPage from "./features/user/pages/AccountPage";
 import { FriendProvider } from "./features/friends/context/FriendContext";
 import FriendsPage from "./features/friends/pages/FriendsPage";
+import LobbiesPage from "./features/lobby/pages/LobbiesPage";
+import CreateLobbyPage from "./features/lobby/pages/CreateLobbyPage";
+import JoinLobbyPage from "./features/lobby/pages/JoinLobbyPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
 import LeaderboardPage from "./features/leaderboard/pages/LeaderboardPage";
+import HomePage from "./pages/HomePage";
+import type { RouteHandle } from "./components/Footer";
+
+const gamePageHandle: RouteHandle = { minimalFooter: true };
 
 const router = createBrowserRouter([
 	{
 		path: "/",
 		element: <Layout />,
 		children: [
+			{ path: "/leaderboard", element: <LeaderboardPage /> },
 			{
 				element: <RequireAuth />,
 				children: [
+					{
+						path: "/game",
+						element: <GamePage />,
+						handle: gamePageHandle,
+					},
+					{
+						path: "/game/:uuid",
+						element: <GamePage />,
+						handle: gamePageHandle,
+					},
 					{
 						path: "/account",
 						element: <AccountPage />,
@@ -42,6 +60,28 @@ const router = createBrowserRouter([
 					{
 						path: "/msg",
 						element: <MsgPage />,
+					},
+					{
+						path: "/lobbies",
+						element: <LobbiesPage />,
+					},
+					{
+						path: "/lobbies/new",
+						element: <CreateLobbyPage />,
+					},
+					{
+						path: "/lobbies/join/:joinCode",
+						element: <JoinLobbyPage />,
+					},
+					{
+						path: "/lobbies/:uuid",
+						element: <GamePage />,
+						handle: gamePageHandle,
+					},
+					{
+						path: "/lobbies/:uuid/game",
+						element: <GamePage />,
+						handle: gamePageHandle,
 					},
 					{
 						path: "/msg/:uuid",
@@ -80,7 +120,7 @@ const router = createBrowserRouter([
 			},
 			{
 				path: "/",
-				element: <div className="bg-red-500">Une page</div>,
+				element: <HomePage />,
 			},
 			{
 				path: "/logout",
@@ -89,11 +129,6 @@ const router = createBrowserRouter([
 			{
 				path: "/user/:uuid",
 				element: <UserPage />,
-			},
-
-			{
-				path: "/testws",
-				element: <TestWsPage />,
 			},
 			{
 				path: "/leaderboard",

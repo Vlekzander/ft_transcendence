@@ -32,12 +32,16 @@ function UserPreviewComponent({ user }: { user: PublicUserDTO }) {
 }
 
 export default function FriendsPage() {
-	const { friends, removeFriend, pendingRequests, sentRequests } =
+	const { friends, removeFriend, pendingRequests, sentRequests, refresh } =
 		useFriends();
 
 	const [query, setQuery] = useState("");
 	const [searchResults, setSearchResults] = useState<PublicUserDTO[]>([]);
 	const [isSearching, setIsSearching] = useState(false);
+
+	useEffect(() => {
+		refresh();
+	}, [refresh]);
 
 	useEffect(() => {
 		const trimmed = query.trim();
@@ -136,6 +140,7 @@ export default function FriendsPage() {
 							<div className="divide-y divide-gray-200">
 								{pendingRequests.map((request) => (
 									<UserPreviewComponent
+										key={request.uuid}
 										user={request.sender}
 									/>
 								))}
@@ -151,6 +156,7 @@ export default function FriendsPage() {
 							<div className="divide-y divide-gray-200">
 								{sentRequests.map((request) => (
 									<UserPreviewComponent
+										key={request.uuid}
 										user={request.receiver}
 									/>
 								))}

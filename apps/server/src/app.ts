@@ -7,6 +7,7 @@ import { AVATAR_DIR } from "./config/upload.config";
 import authRouter from "./modules/auth/auth.routes";
 import usersRouter from "./modules/users/users.routes";
 import msgRouter from "./modules/msg/msg.routes";
+import lobbyRouter from "./modules/lobby/lobby.routes";
 import leaderboardRouter from "./modules/leaderboard/leaderboard.routes";
 
 const WEB_PORT = process.env.WEB_PORT || 5173;
@@ -39,6 +40,9 @@ app.use(
 		maxAge: "7d",
 	}),
 );
+
+app.use("/lobbies", lobbyRouter);
+app.use("/leaderboard", leaderboardRouter);
 
 app.use(errorHandler);
 export default app;

@@ -2,9 +2,7 @@ import { NextFunction, Response } from "express";
 import { sharedService } from "../shared/shared.service";
 import {
 	toUserResponseDTO,
-	Achievement,
 	EditUserSchema,
-	Stat,
 	UserParamsSchema,
 	toFriendshipDTO,
 	toSentFriendRequestDTO,
@@ -88,75 +86,19 @@ export async function getUserHistory(
 }
 
 export async function getUserStats(
-	_req: UserRequest,
+	req: UserRequest,
 	res: Response,
-	_next: NextFunction,
+	next: NextFunction,
 ) {
-	//WARN: TEMP FAKE STATS
-	const stats: Stat[] = [
-		{
-			icon: "gamepad-2",
-			label: "Game Played",
-			value: "193",
-		},
-		{
-			icon: "trophy",
-			label: "Wins",
-			value: "42",
-		},
-		{
-			icon: "lightbulb",
-			label: "Words Guessed",
-			value: "1247",
-		},
-		{
-			icon: "pencil-line",
-			label: "Drawings",
-			value: "251",
-		},
-		{
-			icon: "star",
-			label: "Best score",
-			value: "520",
-		},
-	];
+	try {
+		const { uuid } = req.parsedParams!;
 
-	res.status(200).json({ stats: stats });
-}
+		const stats = await usersService.getUserStats(uuid);
 
-export async function getUserAchievements(
-	_req: UserRequest,
-	res: Response,
-	_next: NextFunction,
-) {
-	//WARN: TEMP FAKE ACHIEVEMENTS
-	const achievements: Achievement[] = [
-		{
-			uuid: crypto.randomUUID(),
-			icon: "flame",
-			title: "aaa",
-			description: "bbb",
-			objective: 13,
-			current: 1,
-		},
-		{
-			uuid: crypto.randomUUID(),
-			icon: "zap",
-			title: "ccc",
-			description: "ddd",
-			objective: 100,
-			current: 57,
-		},
-		{
-			uuid: crypto.randomUUID(),
-			icon: "user",
-			title: "Blablablabla",
-			description: "blibliblibli",
-			objective: 38,
-			current: 192,
-		},
-	];
-	res.status(200).json({ achievements: achievements });
+		return res.status(200).json({ stats: stats });
+	} catch (err) {
+		next(err);
+	}
 }
 
 export async function updateUser(

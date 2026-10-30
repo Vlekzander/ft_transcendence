@@ -8,8 +8,20 @@ import {
 	userDtoSelect,
 } from "@/modules/shared/shared.service";
 
+const { tx } = vi.hoisted(() => ({
+	tx: {
+		user: {
+			create: vi.fn(),
+		},
+		userStats: {
+			create: vi.fn(),
+		},
+	},
+}));
+
 vi.mock("@/lib/prisma.lib", () => ({
 	prisma: {
+		$transaction: vi.fn(async (callback) => callback(tx)),
 		user: {
 			create: vi.fn(),
 			findUnique: vi.fn(),
@@ -33,8 +45,9 @@ vi.mock("@/modules/shared/shared.service", () => ({
 	},
 }));
 
-const mockedCreate = vi.mocked(prisma.user.create);
+const mockedCreate = vi.mocked(tx.user.create);
 const mockedFindUnique = vi.mocked(prisma.user.findUnique);
+const mockedStatsCreate = vi.mocked(tx.userStats.create);
 const mockedGenerateHash = vi.mocked(generateHash);
 const mockedCompareHash = vi.mocked(compareHash);
 const mockedGetPrismaConstraintFields = vi.mocked(getPrismaConstraintFields);
@@ -58,6 +71,7 @@ describe("auth/auth.service", () => {
 		it("Creates a user with a hashed password and userDtoSelect", async () => {
 			mockedGenerateHash.mockResolvedValue("hashed-password");
 			mockedCreate.mockResolvedValue(user as any);
+			mockedStatsCreate.mockResolvedValue({ userId: user.uuid } as any);
 
 			const data = {
 				email: "user@email.com",

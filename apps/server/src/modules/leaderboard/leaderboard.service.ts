@@ -30,8 +30,6 @@ export async function getLeaderboard() {
 		},
 	});
 
-	if (isInit && games.length === 0) return cachedLeaderboard;
-
 	const winmap = new Map(
 		cachedLeaderboard.map((item) => [item.uuid, { ...item }]),
 	);
@@ -41,20 +39,42 @@ export async function getLeaderboard() {
 		if (game.participants.length === 0) continue;
 
 		const maxScore = Math.max(...game.participants.map((p) => p.score));
-
 		const winners = game.participants.filter((p) => p.score === maxScore);
 
 		for (const winner of winners) {
 			const current = winmap.get(winner.userId);
 
-			if (current) current.wins++;
-			else {
+			if (current) {
+				current.wins++;
+			} else {
 				winmap.set(winner.userId, {
 					uuid: winner.userId,
 					username: winner.user.username,
 					wins: 1,
 					avatarPath: winner.user.avatarPath,
 				});
+			}
+		}
+	}
+
+	if (winmap.size > 0) {
+		const userIds = Array.from(winmap.keys());
+		const refreshedUsers = await prisma.user.findMany({
+			where: { uuid: { in: userIds } },
+			select: {
+				uuid: true,
+				username: true,
+				avatarPath: true,
+			},
+		});
+
+		const userMap = new Map(refreshedUsers.map((u) => [u.uuid, u]));
+
+		for (const [userId, entry] of winmap.entries()) {
+			const freshUser = userMap.get(userId);
+			if (freshUser) {
+				entry.username = freshUser.username;
+				entry.avatarPath = freshUser.avatarPath;
 			}
 		}
 	}

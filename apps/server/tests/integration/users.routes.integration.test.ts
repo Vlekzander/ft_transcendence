@@ -1,3 +1,4 @@
+import { assertTestDatabase } from "./database";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import app from "@/app";
@@ -12,6 +13,7 @@ describe("users routes", () => {
 	});
 
 	beforeEach(async () => {
+		assertTestDatabase();
 		await prisma.friendship.deleteMany();
 		await prisma.userOnGame.deleteMany();
 		await prisma.game.deleteMany();
@@ -215,27 +217,6 @@ describe("users routes", () => {
 		});
 	});
 
-	describe("GET /users/:uuid/stats", () => {
-		it("should return user statistics with HTTP 200", async () => {
-			const response = await request(app).get(`/users/${userUuid}/stats`);
-
-			expect(response.status).toBe(200);
-			expect(response.body.stats).toHaveLength(5);
-			expect(response.body.stats).toEqual(
-				expect.arrayContaining([
-					expect.objectContaining({
-						label: "Game Played",
-						value: "193",
-					}),
-					expect.objectContaining({
-						label: "Wins",
-						value: "42",
-					}),
-				]),
-			);
-		});
-	});
-
 	describe("GET /users/:uuid/achievements", () => {
 		it("should return user achievements with HTTP 200", async () => {
 			const response = await request(app).get(
@@ -243,7 +224,7 @@ describe("users routes", () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.achievements).toHaveLength(3);
+			expect(response.body.achievements).toHaveLength(9);
 
 			for (const achievement of response.body.achievements) {
 				expect(achievement.uuid).toEqual(expect.any(String));

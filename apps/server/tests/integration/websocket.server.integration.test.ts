@@ -1,3 +1,4 @@
+import { sharedService } from "@/modules/shared/shared.service";
 import { createServer, Server } from "node:http";
 import {
 	afterAll,
@@ -27,11 +28,9 @@ vi.mock("@/modules/msg/msg.service", () => ({
 
 vi.mock("@/modules/shared/shared.service", () => ({
 	sharedService: {
-		getUserById: vi
-			.fn()
-			.mockResolvedValue({
-				uuid: "123e4567-e89b-12d3-a456-426614174000",
-			}),
+		getUserById: vi.fn().mockResolvedValue({
+			uuid: "123e4567-e89b-12d3-a456-426614174000",
+		}),
 		validateUser: vi.fn().mockResolvedValue(true),
 	},
 }));
@@ -517,5 +516,49 @@ describe("websocket server (integration)", () => {
 			socket.close();
 			await waitForClose(socket);
 		});
+	});
+	it("handles an account lookup failure without an unhandled rejection", async () => {
+		vi.mocked(sharedService.getUserById).mockRejectedValueOnce(
+			new Error("Account lookup failed"),
+		);
+		const socket = new WebSocket(address, {
+			headers: { Cookie: `token=${generateAccessToken(validUuid)}` },
+		});
+		const message = waitForMessage(socket);
+		await waitForOpen(socket);
+		expect(JSON.parse(await message)).toMatchObject({
+			type: "ERROR",
+			text: "Account lookup failed",
+		});
+		const closed = waitForClose(socket);
+		socket.close();
+		await closed;
+		expect(isUserOnline(validUuid)).toBe(false);
+	});
+
+	it("does not add a closed socket to presence after a delayed account lookup", async () => {
+		let release!: () => void;
+		const lookup = new Promise<void>((resolve) => {
+			release = resolve;
+		});
+		vi.mocked(sharedService.getUserById).mockImplementationOnce(
+			async () => {
+				await lookup;
+				return { uuid: validUuid } as Awaited<
+					ReturnType<typeof sharedService.getUserById>
+				>;
+			},
+		);
+		const socket = new WebSocket(address, {
+			headers: { Cookie: `token=${generateAccessToken(validUuid)}` },
+		});
+		await waitForOpen(socket);
+		const closed = waitForClose(socket);
+		socket.close();
+		await closed;
+		release();
+		// Flush the pending database continuation before inspecting presence.
+		await new Promise<void>((resolve) => setImmediate(resolve));
+		expect(isUserOnline(validUuid)).toBe(false);
 	});
 });

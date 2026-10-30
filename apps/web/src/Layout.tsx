@@ -1,18 +1,15 @@
 import { Outlet } from "react-router";
-import { useAuth } from "./features/auth/context/AuthContext";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
 
 export default function Layout() {
-	const { user } = useAuth();
-
 	return (
-		<div className="flex flex-col min-h-screen">
-			<header className="bg-red-500">
-				TODO HEADER - {user ? user.username : "Guest"}
-			</header>
-			<main className="flex flex-col grow">
+		<div className="flex flex-col min-h-screen bg-background text-foreground">
+			<Header />
+			<main className="flex flex-col grow min-h-0">
 				<Outlet />
 			</main>
-			<footer className="bg-blue-400">TODO FOOTER</footer>
+			<Footer />
 		</div>
 	);
 }

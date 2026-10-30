@@ -6,7 +6,6 @@ import {
 	getPendingFriendRequests,
 	getSentFriendRequests,
 	getUser,
-	getUserAchievements,
 	getUserHistory,
 	getUserStats,
 	searchUser,
@@ -14,6 +13,8 @@ import {
 	updateAvatar,
 	updateUser,
 } from "@/modules/users/users.controller";
+
+import { getUserAchievements } from "@/modules/achievements/achievements.controller";
 import { sharedService } from "@/modules/shared/shared.service";
 import { usersService } from "@/modules/users/users.service";
 import {
@@ -202,46 +203,6 @@ describe("users/users.controller", () => {
 			await getUserHistory(req, res as any, next);
 
 			expect(next).toHaveBeenCalledWith(error);
-		});
-	});
-
-	describe("getUserStats", () => {
-		it("should return user statistics with HTTP 200", async () => {
-			const req = {} as any;
-			const res = createResponseMock();
-			const next = vi.fn();
-
-			await getUserStats(req, res as any, next);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			expect(res.json).toHaveBeenCalledWith({
-				stats: expect.arrayContaining([
-					expect.objectContaining({
-						label: "Game Played",
-						value: "193",
-					}),
-					expect.objectContaining({ label: "Wins", value: "42" }),
-				]),
-			});
-			expect(next).not.toHaveBeenCalled();
-		});
-	});
-
-	describe("getUserAchievements", () => {
-		it("should return achievements with UUIDs with HTTP 200", async () => {
-			const req = {} as any;
-			const res = createResponseMock();
-			const next = vi.fn();
-
-			await getUserAchievements(req, res as any, next);
-
-			expect(res.status).toHaveBeenCalledWith(200);
-			const response = res.json.mock.calls[0][0];
-			expect(response.achievements).toHaveLength(3);
-			for (const achievement of response.achievements) {
-				expect(achievement.uuid).toEqual(expect.any(String));
-			}
-			expect(next).not.toHaveBeenCalled();
 		});
 	});
 

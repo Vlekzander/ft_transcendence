@@ -1,5 +1,6 @@
 import { WebSocket } from "ws";
 import z from "zod";
+import { LobbyResponseSchema } from "./lobby.schemas";
 
 export const ErrorPacketSchema = z.object({
 	type: z.literal("ERROR"),
@@ -25,6 +26,141 @@ export const ReceiveMessagePacketSchema = z.object({
 	content: z.string(),
 });
 
+export const JoinGamePacketSchema = z.object({
+	type: z.literal("JOIN_GAME"),
+	lobbyUuid: z.string(),
+});
+
+export const LobbyPingPacketSchema = z.object({
+	type: z.literal("LOBBY_PING"),
+	lobbyUuid: z.string(),
+});
+
+export const RetryGameSavePacketSchema = z.object({
+	type: z.literal("RETRY_GAME_SAVE"),
+	lobbyUuid: z.string(),
+});
+
+export const ChooseWordPacketSchema = z.object({
+	type: z.literal("CHOOSE_WORD"),
+	lobbyUuid: z.string(),
+	word: z.string(),
+});
+
+export const DrawStrokePacketSchema = z.object({
+	type: z.literal("DRAW_STROKE"),
+	lobbyUuid: z.string(),
+	sourceUuid: z.string(),
+	from: z.object({ x: z.number(), y: z.number() }),
+	to: z.object({ x: z.number(), y: z.number() }),
+	color: z.string(),
+	size: z.number(),
+	eraser: z.boolean(),
+});
+
+export const DrawActionSchema = z.discriminatedUnion("kind", [
+	z.object({
+		kind: z.literal("SHAPE"),
+		mode: z.union([z.literal("rectangle"), z.literal("circle")]),
+		from: z.object({ x: z.number(), y: z.number() }),
+		to: z.object({ x: z.number(), y: z.number() }),
+		color: z.string(),
+		size: z.number(),
+		eraser: z.boolean(),
+	}),
+	z.object({
+		kind: z.literal("FILL"),
+		x: z.number(),
+		y: z.number(),
+		color: z.string(),
+	}),
+	z.object({ kind: z.literal("CLEAR") }),
+]);
+
+export const DrawActionPacketSchema = z.object({
+	type: z.literal("DRAW_ACTION"),
+	lobbyUuid: z.string(),
+	sourceUuid: z.string(),
+	action: DrawActionSchema,
+});
+
+export const DrawHistoryPacketSchema = z.object({
+	type: z.literal("DRAW_HISTORY"),
+	lobbyUuid: z.string(),
+	packets: z.array(z.union([DrawStrokePacketSchema, DrawActionPacketSchema])),
+});
+
+export const GameStatePacketSchema = z.object({
+	type: z.literal("GAME_STATE"),
+	lobbyUuid: z.string(),
+	phase: z.union([
+		z.literal("WAITING"),
+		z.literal("CHOOSING"),
+		z.literal("DRAWING"),
+		z.literal("PAUSED"),
+		z.literal("ROUND_END"),
+		z.literal("FINISHED"),
+	]),
+	round: z.number(),
+	totalRounds: z.number(),
+	turnNumber: z.number(),
+	totalTurns: z.number(),
+	drawerIds: z.array(z.string()),
+	choices: z.array(z.string()),
+	selectedWord: z.string().nullable(),
+	picks: z.record(z.string(), z.string()),
+	timerEndsAt: z.number().nullable(),
+	matchId: z.string().nullable(),
+	scores: z.record(z.string(), z.number()),
+	guessedPlayers: z.array(z.string()),
+	lastTurn: z
+		.object({ word: z.string(), points: z.record(z.string(), z.number()) })
+		.nullable(),
+	persistence: z.enum(["NONE", "SAVING", "SAVED", "FAILED", "CANCELED"]),
+});
+
+export const LobbyUpdatedPacketSchema = z.object({
+	type: z.literal("LOBBY_UPDATED"),
+	lobby: LobbyResponseSchema,
+});
+
+export const LobbiesChangedPacketSchema = z.object({
+	type: z.literal("LOBBIES_CHANGED"),
+});
+
+export const SendGameChatPacketSchema = z.object({
+	type: z.literal("SEND_GAME_CHAT"),
+	roomId: z.string().min(1).max(100),
+	requestId: z.string().min(1).max(100),
+	content: z.string().trim().min(1).max(500),
+});
+const gameChatEventFields = {
+	roomId: z.string().min(1).max(100),
+	requestId: z.string().min(1).max(100),
+	id: z.string(),
+	sender: z.string(),
+};
+export const GameChatMessagePacketSchema = z.object({
+	type: z.literal("GAME_CHAT_MESSAGE"),
+	...gameChatEventFields,
+	content: z.string().min(1).max(500),
+});
+export const GameChatGuessPacketSchema = z.object({
+	type: z.literal("GAME_CHAT_GUESS"),
+	...gameChatEventFields,
+});
+export const GameChatErrorPacketSchema = z.object({
+	type: z.literal("GAME_CHAT_ERROR"),
+	roomId: z.string(),
+	requestId: z.string(),
+	text: z.string(),
+});
+export type SendGameChatPacket = z.infer<typeof SendGameChatPacketSchema>;
+export type GameChatMessagePacket = z.infer<typeof GameChatMessagePacketSchema>;
+export type GameChatGuessPacket = z.infer<typeof GameChatGuessPacketSchema>;
+export type GameChatErrorPacket = z.infer<typeof GameChatErrorPacketSchema>;
+export type GameChatEventPacket = GameChatMessagePacket | GameChatGuessPacket;
+
 export const AppPacketSchema = z.discriminatedUnion(
 	"type",
 	[
@@ -32,6 +168,20 @@ export const AppPacketSchema = z.discriminatedUnion(
 		MessagePacketSchema,
 		SendMessagePacketSchema,
 		ReceiveMessagePacketSchema,
+		JoinGamePacketSchema,
+		LobbyPingPacketSchema,
+		RetryGameSavePacketSchema,
+		ChooseWordPacketSchema,
+		DrawStrokePacketSchema,
+		DrawActionPacketSchema,
+		DrawHistoryPacketSchema,
+		GameStatePacketSchema,
+		LobbyUpdatedPacketSchema,
+		LobbiesChangedPacketSchema,
+		SendGameChatPacketSchema,
+		GameChatMessagePacketSchema,
+		GameChatGuessPacketSchema,
+		GameChatErrorPacketSchema,
 	],
 	"Unknown type",
 );
@@ -40,6 +190,17 @@ export type ErrorPacket = z.infer<typeof ErrorPacketSchema>;
 export type MessagePacket = z.infer<typeof MessagePacketSchema>;
 export type SendMessagePacket = z.infer<typeof SendMessagePacketSchema>;
 export type ReceiveMessagePacket = z.infer<typeof ReceiveMessagePacketSchema>;
+export type JoinGamePacket = z.infer<typeof JoinGamePacketSchema>;
+export type LobbyPingPacket = z.infer<typeof LobbyPingPacketSchema>;
+export type ChooseWordPacket = z.infer<typeof ChooseWordPacketSchema>;
+export type DrawStrokePacket = z.infer<typeof DrawStrokePacketSchema>;
+export type DrawAction = z.infer<typeof DrawActionSchema>;
+export type DrawActionPacket = z.infer<typeof DrawActionPacketSchema>;
+export type DrawHistoryPacket = z.infer<typeof DrawHistoryPacketSchema>;
+export type GamePhase = GameStatePacket["phase"];
+export type GameStatePacket = z.infer<typeof GameStatePacketSchema>;
+export type LobbyUpdatedPacket = z.infer<typeof LobbyUpdatedPacketSchema>;
+export type LobbiesChangedPacket = z.infer<typeof LobbiesChangedPacketSchema>;
 export type AppPacket = z.infer<typeof AppPacketSchema>;
 
 export type PacketAction = AppPacket["type"];

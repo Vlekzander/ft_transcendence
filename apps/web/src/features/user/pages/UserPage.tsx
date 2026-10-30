@@ -14,7 +14,6 @@ import {
 	Medal,
 	MessageSquare,
 	Star,
-	Trophy,
 	UserRound,
 	UserRoundPlus,
 } from "lucide-react";
@@ -272,7 +271,7 @@ export default function UserPage() {
 	const { user } = useAuth();
 	const { uuid } = useParams<{ uuid: string }>();
 	const isOwnProfile = user?.uuid === uuid;
-	const { friends, removeFriend } = useFriends();
+	const { friends, removeFriend, refresh } = useFriends();
 	const [isLoading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 
@@ -307,45 +306,60 @@ export default function UserPage() {
 	}, [uuid, isOwnProfile]);
 
 	useEffect(() => {
+		refresh();
+	}, [refresh]);
+
+	useEffect(() => {
 		let isMounted = true;
 
 		const fetchData = async () => {
 			if (!uuid) return;
+
 			try {
 				setLoading(true);
 				setError(null);
+
 				const resUser = await getUser(uuid);
-				const resHistory = await getHistory(uuid);
-				const resStats = await getStats(uuid);
-				const resAchievements = await getAchievements(uuid);
-				let resFriends = undefined;
-				if (!isOwnProfile) resFriends = await getFriends(uuid);
 
 				if (resUser.ok === false)
 					throw new AppDomainError(resUser.error);
 
+				const resHistory = await getHistory(uuid);
+				const resStats = await getStats(uuid);
+				const resAchievements = await getAchievements(uuid);
+
+				let resFriends = undefined;
+				if (!isOwnProfile) resFriends = await getFriends(uuid);
+
 				const resultUser = resUser.data;
 				const resultHistory = resHistory.ok ? resHistory.data : [];
 				const resultStats = resStats.ok ? resStats.data : [];
-				const resultAchievements = resAchievements.ok
+				const resultAchievements: Achievement[] = resAchievements.ok
 					? resAchievements.data
 					: [];
+
 				let loadedFriends: FriendshipDTO[] = [];
-				if (resFriends && resFriends.ok) {
+				if (resFriends?.ok) {
 					loadedFriends = resFriends.data || [];
 				}
+
 				if (resultHistory.length > 0) {
 					resultHistory.forEach((game) => {
 						game.participants.sort((a, b) => b.score - a.score);
 					});
 				}
+
 				if (isMounted) {
 					setUserData(resultUser);
-					setHistory(resultHistory || []);
-					setStats(resultStats || []);
-					setAchievements(resultAchievements || []);
-					if (!isOwnProfile) setProfileFriends(loadedFriends);
+					setHistory(resultHistory);
+					setStats(resultStats);
+					setAchievements(resultAchievements);
+
+					if (!isOwnProfile) {
+						setProfileFriends(loadedFriends);
+					}
 				}
+
 				if (!resHistory.ok || !resStats.ok || !resAchievements.ok)
 					throw new PartialProfileError();
 			} catch (error) {
@@ -420,32 +434,14 @@ export default function UserPage() {
 						</div>
 						<div className="flex items-center justify-center sm:justify-start gap-1 m-1">
 							<UserStatusComponent
-								status={userData.online ? "online" : "offline"}
+								status={
+									isOwnProfile
+										? "online"
+										: userData.online
+											? "online"
+											: "offline"
+								}
 							/>
-						</div>
-						<div className="grid grid-cols-2 gap-4 mt-3">
-							<div className="flex items-center justify-center sm:justify-start gap-2">
-								<Star className="text-orange-400" />
-								<div className="flex flex-col">
-									<span className="text-xl font-bold">
-										48720
-									</span>
-									<span className="text-gray-500 text-sm">
-										points
-									</span>
-								</div>
-							</div>
-							<div className="flex items-center justify-center sm:justify-start gap-2">
-								<Trophy className="text-primary" />
-								<div className="flex flex-col">
-									<span className="text-xl font-bold">
-										#1
-									</span>
-									<span className="text-gray-500 text-sm">
-										rank
-									</span>
-								</div>
-							</div>
 						</div>
 					</div>
 				</div>
