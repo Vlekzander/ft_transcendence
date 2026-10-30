@@ -1,4 +1,3 @@
-import LeaderboardPage from "./features/leaderboard/LeaderboardPage";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import "./styles/global.css";
@@ -13,7 +12,6 @@ import LoginPage from "./features/auth/pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import LogoutPage from "./features/auth/pages/LogoutPage";
 import UserPage from "./features/user/pages/UserPage";
-import TestWsPage from "./features/websocket/pages/TestWsPage";
 import GamePage from "./features/game/pages/GamePage";
 import { WebSocketProvider } from "./features/websocket/context/WebSocketContext";
 import { AuthProvider } from "./features/auth/context/AuthContext";
@@ -26,6 +24,8 @@ import JoinLobbyPage from "./features/lobby/pages/JoinLobbyPage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import MsgPage, { MsgRedirect } from "./features/msg/pages/MsgPage";
+import LeaderboardPage from "./features/leaderboard/pages/LeaderboardPage";
+import HomePage from "./pages/HomePage";
 
 const router = createBrowserRouter([
 	{
@@ -107,7 +107,7 @@ const router = createBrowserRouter([
 			},
 			{
 				path: "/",
-				element: <div className="bg-red-500">Une page</div>,
+				element: <HomePage />,
 			},
 			{
 				path: "/logout",
@@ -117,10 +117,9 @@ const router = createBrowserRouter([
 				path: "/user/:uuid",
 				element: <UserPage />,
 			},
-
 			{
-				path: "/testws",
-				element: <TestWsPage />,
+				path: "/leaderboard",
+				element: <LeaderboardPage />,
 			},
 		],
 	},

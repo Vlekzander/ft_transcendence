@@ -19,7 +19,7 @@ services:
             DB_USER: spongebob
             DB_PASSWORD: krustykrab
             JWT_SECRET: patrick
-        command: npx vitest --watch
+        command: npx vitest run --maxWorkers=1
         depends_on:
             database:
                 condition: service_healthy

@@ -174,7 +174,8 @@ function GameHistoryItem({
 
 	if (result == null) return null;
 
-	const isVictory = result.position === 1;
+	const isVictory =
+		Math.max(...game.participants.map((p) => p.score)) === result.points;
 
 	return (
 		<article>
@@ -429,7 +430,13 @@ export default function UserPage() {
 						</div>
 						<div className="flex items-center justify-center sm:justify-start gap-1 m-1">
 							<UserStatusComponent
-								status={userData.online ? "online" : "offline"}
+								status={
+									isOwnProfile
+										? "online"
+										: userData.online
+											? "online"
+											: "offline"
+								}
 							/>
 						</div>
 						<div className="grid grid-cols-2 gap-4 mt-3">

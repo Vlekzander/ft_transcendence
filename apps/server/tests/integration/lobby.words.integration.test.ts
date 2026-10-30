@@ -1,4 +1,16 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { assertTestDatabase } from "./database";
+import { prisma } from "@/lib/prisma.lib";
+import { stopRoundTimer } from "@/modules/lobby/game.socket";
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import request from "supertest";
 import app from "@/app";
 import { generateAccessToken } from "@/utils/jwt.util";
@@ -32,7 +44,28 @@ describe("lobby routes (current lobby, words and dictionaries)", () => {
 		vi.stubEnv("JWT_SECRET", "test-secret");
 	});
 
-	beforeEach(() => {
+	afterEach(() => {
+		for (const lobby of lobbiesByJoinCode.values())
+			stopRoundTimer(lobby.uuid);
+		lobbiesByJoinCode.clear();
+	});
+	afterAll(async () => {
+		await prisma.$disconnect();
+		vi.unstubAllEnvs();
+	});
+	beforeEach(async () => {
+		assertTestDatabase();
+		await prisma.user.deleteMany();
+		await prisma.user.createMany({
+			data: [HOST, GUEST, "00000000-0000-4000-8000-000000000003"].map(
+				(uuid, i) => ({
+					uuid,
+					username: "player" + i,
+					email: "player" + i + "@test.local",
+					password: "unused",
+				}),
+			),
+		});
 		lobbiesByJoinCode.clear();
 	});
 

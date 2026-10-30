@@ -1,4 +1,16 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { assertTestDatabase } from "./database";
+import { prisma } from "@/lib/prisma.lib";
+import { stopRoundTimer } from "@/modules/lobby/game.socket";
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import request from "supertest";
 import app from "@/app";
 import { generateAccessToken } from "@/utils/jwt.util";
@@ -19,7 +31,26 @@ describe("lobby routes", () => {
 		vi.stubEnv("JWT_SECRET", "test-secret");
 	});
 
-	beforeEach(() => {
+	afterEach(() => {
+		for (const lobby of lobbiesByJoinCode.values())
+			stopRoundTimer(lobby.uuid);
+		lobbiesByJoinCode.clear();
+	});
+	afterAll(async () => {
+		await prisma.$disconnect();
+		vi.unstubAllEnvs();
+	});
+	beforeEach(async () => {
+		assertTestDatabase();
+		await prisma.user.deleteMany();
+		await prisma.user.createMany({
+			data: [HOST, GUEST, OTHER].map((uuid, i) => ({
+				uuid,
+				username: "player" + i,
+				email: "player" + i + "@test.local",
+				password: "unused",
+			})),
+		});
 		lobbiesByJoinCode.clear();
 	});
 
@@ -27,6 +58,24 @@ describe("lobby routes", () => {
 		const response = await request(app).get("/lobbies");
 
 		expect(response.status).toBe(401);
+	});
+
+	it("rejects a valid token when its account is missing or inactive", async () => {
+		const missing = "00000000-0000-4000-8000-000000000099";
+		await request(app)
+			.get("/lobbies")
+			.set("Cookie", cookie(missing))
+			.expect(401);
+		await prisma.user.update({
+			where: { uuid: HOST },
+			data: { isActive: false },
+		});
+		await request(app)
+			.post("/lobbies")
+			.set("Cookie", cookie(HOST))
+			.send({})
+			.expect(401);
+		expect(lobbiesByJoinCode.size).toBe(0);
 	});
 
 	describe("POST /lobbies", () => {
@@ -94,14 +143,18 @@ describe("lobby routes", () => {
 			expect(response.body.data.uuid).toBe(body.data.uuid);
 		});
 
-		it("Rejects a non-member with HTTP 403", async () => {
+		it("Lets an active non-member resolve the join code without exposing words or joining", async () => {
 			const { body } = await createLobby();
 
 			const response = await request(app)
 				.get(`/lobbies/${body.data.uuid}`)
 				.set("Cookie", cookie(GUEST));
 
-			expect(response.status).toBe(403);
+			expect(response.status).toBe(200);
+			expect(response.body.data.joinCode).toBe(body.data.joinCode);
+			expect(response.body.data.connectedPlayers).toEqual([HOST]);
+			expect(response.body.data).not.toHaveProperty("customWords");
+			expect(response.body.data).not.toHaveProperty("allWords");
 		});
 
 		it("Returns HTTP 404 for an unknown lobby", async () => {

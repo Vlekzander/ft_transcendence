@@ -30,7 +30,7 @@ interface WebSocketProviderProps {
 }
 
 export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
-	const { user } = useAuth();
+	const { status } = useAuth();
 	const [isConnected, setIsConnected] = useState(false);
 	const mountedRef = useRef(false);
 	const socketRef = useRef<WebSocket | null>(null);
@@ -146,6 +146,8 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 	}, [connect]);
 
 	useEffect(() => {
+		if (status === "loading") return;
+
 		mountedRef.current = true;
 		connect();
 
@@ -155,10 +157,19 @@ export function WebSocketProvider({ children, wsUrl }: WebSocketProviderProps) {
 			const socket = socketRef.current;
 			socketRef.current = null;
 			setIsConnected(false);
-			socket?.close(1000, "Component unmounted");
+			if (socket) {
+				if (socket.readyState === WebSocket.OPEN)
+					socket.close(1000, "Component unmounted");
+				else if (socket.readyState === WebSocket.CONNECTING) {
+					socket.onopen = () => {
+						socket.close(1000, "Component unmounted");
+					};
+					socket.onerror = null;
+					socket.onclose = null;
+				}
+			}
 		};
-		// Reopen with the current cookie after login/logout or an account switch.
-	}, [connect, clearReconnectTimeout, user?.uuid]);
+	}, [connect, clearReconnectTimeout, status]);
 
 	useEffect(() => {
 		const handlePageHide = () => {
